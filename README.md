@@ -6,9 +6,13 @@ just a funky little site for my funky little internet sharing things
 
 # projects to be migrated
 all of the menguinjod folder is a bunch of scratch-related projects that have no direct relation to this website but are hosted on this website
+
 new-scratch/ is a from-the-ground-up rewrite of the scratch engine
+
 pmp-newform.js needs to be merged into the pm code base
+
 import-tests.php was made for loading in pmp-newform.js
+
 test-save.zip is a save file for testing purposes; made and used by pmp-newform.js
 
 # system documention
