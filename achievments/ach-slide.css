@@ -1,0 +1,13 @@
+@keyframes slideIn {
+    from {
+        right: calc(100vw + 100%);
+    }
+    to {
+        right: 100vw;
+    }
+}
+.ach-card {
+    animation: slideIn 1s;
+    position: absolute;
+    right: 100vw;
+}

@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+
+    <link rel="stylesheet" href="./site-card.css">
+    <script src="./site-card.js"></script> 
+
+    <script>
+        const colors = {
+            background: '#242424',
+            altbg: '#3b3b3b',
+            button: '#686868',
+            buttonBorder: '#a8a8a836',
+            buttonContent: '#a8a8a8',
+            buttonContentFill: '#c8c8c8',
+            buttonSelected: '#f8f8f8'
+        }
+        function isInside(point, start, end) {
+            start = Math.min(start, end)
+            end = Math.max(end, start)
+            return point > start && point < end
+        }
+        window.addEventListener('load', () => {
+            const clickableTargets = []
+            let clickedItem = null
+            let camX = 0
+            let camY = 0
+            let camZoom = 1
+            let mouseX = 0
+            let mouseY = 0
+            let clientX = 0
+            let clientY = 0
+            let mouseDownX = 0
+            let mouseDownY = 0
+            let mouseDown = false
+            let dragStarted = false
+            function getCamInfo() {
+                return [(camX * camZoom) + 240, (camY * camZoom) + 180]
+            }
+            /**
+             * @type {HTMLCanvasElement}
+             */
+            const canvas = document.getElementById('app')
+            const tilecountX = Math.ceil(canvas.width / 10) + 4
+            const tilecountY = Math.ceil(canvas.height / 10) + 4
+            canvas.width = canvas.width * scale
+            canvas.height = canvas.height * scale
+            const ctx = canvas.getContext('2d')
+            ctx.scale(scale, scale)
+            redrawAll()
+
+            /**
+             * gui buttons
+             */
+            class MenuButton {
+                x = 0
+                y = 0
+                w = 24
+                h = 24
+                gui = true
+                render() {
+                    ctx.fillStyle = colors.button
+                    ctx.strokeStyle = colors.buttonBorder
+                    ctx.lineWidth = 3
+                    drawDot(12, 12, 10)
+                    ctx.stroke()
+                }
+            }
+            class ZoomMinusButton extends MenuButton {
+                onclick() {
+                    camZoom -= 0.25
+                    camZoom = Math.max(camZoom, 0.25)
+                    redrawAll()
+                }
+                render() {
+                    super.render()
+
+                    ctx.strokeStyle = colors.buttonContent
+                    ctx.lineCap = 'round'
+                    ctx.beginPath()
+                    ctx.moveTo(7, 12)
+                    ctx.lineTo(17, 12)
+                    ctx.stroke()
+                }
+            }
+            class ZoomResetButton extends MenuButton {
+                x = 24
+                onclick() {
+                    camZoom = 1
+                    redrawAll()
+                }
+                render() {
+                    super.render()
+
+                    ctx.strokeStyle = colors.buttonContent
+                    ctx.lineCap = 'round'
+                    ctx.beginPath()
+                    ctx.moveTo(7, 9)
+                    ctx.lineTo(17, 9)
+                    ctx.moveTo(7, 15)
+                    ctx.lineTo(17, 15)
+                    ctx.stroke()
+                }
+            }
+            class ZoomPlusButton extends MenuButton {
+                x = 48
+                onclick() {
+                    camZoom += 0.25
+                    redrawAll()
+                }
+                render() {
+                    super.render()
+
+                    ctx.strokeStyle = colors.buttonContent
+                    ctx.lineCap = 'round'
+                    ctx.beginPath()
+                    ctx.moveTo(12, 7)
+                    ctx.lineTo(12, 17)
+                    ctx.moveTo(7, 12)
+                    ctx.lineTo(17, 12)
+                    ctx.stroke()
+                }
+            }
+            /**
+             * main components
+             */
+            class BasicComponent {
+                w = 10
+                h = 10
+                gui = false
+                center = true
+                nodes = {
+                    name: [0, 0, []]
+                }
+                constructor(x, y) {
+                    this.x = x ?? 0
+                    this.y = y ?? 0
+                }
+                onclick() {}
+                // enables dragging
+                ondrag() {}
+                connectTo(name, target, targetNode) {
+                    for (const [{idx}] of this.nodes[name][2]) {
+                        // we already connected to this target
+                        if (idx === target.idx) return
+                    }
+                    this.nodes[name][2].push([target, targetNode])
+                }
+                disconnectFrom(name, targetIdx) {
+                    this.nodes[name] = this.nodes[name][2]
+                        .filter(target => target.idx === targetIdx)
+                }
+                _renderConnections() {
+                    for (const name in this.nodes) {
+                        const [x, y, targets] = this.nodes[name]
+                        drawDot(x, y, 2)
+                        ctx.lineWidth = 1
+                        ctx.lineCap = 'butt'
+                        ctx.strokeStyle = 'grey'
+                        ctx.beginPath()
+                        for (const [target, nodeName] of targets) {
+                            const targetNode = target.nodes[nodeName]
+                            const tx = ((target.x + targetNode[0]) - this.x) / camZoom
+                            const ty = ((target.y + targetNode[1]) - this.y) / camZoom
+                            ctx.moveTo(x, y)
+                            ctx.lineTo(tx, ty)
+                        }
+                        ctx.stroke()
+                    }
+                }
+                render() {
+                    this._renderConnections()
+                }
+            }
+            /**
+             * component tooling
+             */
+            let selectedTool = null
+            class BasicTool extends MenuButton {
+                x = 452
+                y = 20
+                toolName = ''
+                onclick() {
+                    selectedTool = selectedTool === this.toolName
+                        ? null
+                        : this.toolName
+                    redrawAll()
+                }
+                _drawButton() {
+                    ctx.fillStyle = selectedTool === this.toolName 
+                        ? colors.buttonSelected 
+                        : colors.button
+                    ctx.strokeStyle = colors.buttonBorder
+                    ctx.lineWidth = 3
+                    ctx.beginPath()
+                    ctx.roundRect(0, 0, 24, 24, 5)
+                    ctx.fill()
+                    ctx.stroke()
+                }
+                render() {
+                    this._drawButton()
+                }
+            }
+            class WireCutter extends BasicTool {
+                toolName = 'wireCutter'
+                ondrag() {
+                    // skip drag handling and instead handle this tools drag handling
+                    redrawAll()
+                    ctx.strokeStyle = 'red'
+                    ctx.lineWidth = 2
+                    ctx.lineCap = 'butt'
+                    ctx.beginPath()
+                    ctx.moveTo(mouseDownX, mouseDownY)
+                    ctx.lineTo(clientX, clientY)
+                    ctx.stroke()
+                    return true
+                }
+                onmouseup() {
+                    for (const target of clickableTargets) {
+                        const px = target.x
+                        const py = target.y
+                        for (const name in target.nodes) {
+                            const node = target.nodes[name]
+                            for (const idx in node[2]) {
+                                const [lineTarget, targetNode] = node[2][idx]
+                                const lsx = px + node[0]
+                                const lsy = py + node[1]
+                                const lex = lineTarget.x + lineTarget.nodes[targetNode][0]
+                                const ley = lineTarget.y + lineTarget.nodes[targetNode][1]
+
+                                // generated by penguinbot
+                                const d = (clientX - mouseDownX) * (lsy - ley) -
+                                          (lsx - lex) * (clientY - mouseDownY);
+                                
+                                console.log(d)
+                                if (d === 0) {
+                                    // Lines are parallel, no intersection
+                                    continue;
+                                }
+                                const l = Math.abs(((lsy - mouseDownY) * (lsx - lex) -
+                                           (lsx - mouseDownX) * (lsy - ley)) / d);
+                                const g = Math.abs(((mouseDownX - clientY) * (lsx - mouseDownX) +
+                                           (clientX - mouseDownX) * (lsy - mouseDownY)) / d);
+                                console.log(l, g)
+                                if (l >= 0 && l <= 1 && g >= 0 && g <= 1) {
+                                    node[2].splice(idx, 1)
+                                }
+                            }
+                        }
+                    }
+                    // clear whatever we just drew
+                    redrawAll()
+                }
+                render() {
+                    this._drawButton()
+
+                    ctx.strokeStyle = colors.buttonContent
+                    ctx.lineWidth = 1.5
+                    ctx.lineCap = 'butt'
+                    ctx.beginPath()
+                    ctx.moveTo(8, 2)
+                    ctx.lineTo(12, 16)
+                    ctx.moveTo(18, 12)
+                    ctx.lineTo(2, 8)
+                    ctx.stroke()
+                    ctx.beginPath()
+                    ctx.ellipse(12, 18, 2, 3, -20 * Math.PI / 180, 0, 2 * Math.PI)
+                    ctx.stroke()
+                    ctx.beginPath()
+                    ctx.ellipse(19, 12, 2, 3, -70 * Math.PI / 180, 0, 2 * Math.PI)
+                    ctx.stroke()
+                }
+            }
+            class WireMaker extends BasicTool {
+                y = 48
+                startNode = null
+                ondrag() {
+                    const [tCamX, tCamY] = getCamInfo()
+                    const target = clickableTargets[clickedItem]
+                    // skip anything that doesnt have nodes
+                    // we returning if its a gui item or not just in case its us thats being dragged
+                    if (!target.nodes) return target.gui
+                    if (clickedItem !== null) {
+                        if (!this.startNode) {
+                            const tx = target.x
+                            const ty = target.y
+                            this.startNode = [Infinity, Infinity, '']
+                            for (const name in target.nodes) {
+                                const node = target.nodes[name]
+                                const dx = Math.abs(mouseX - ((node[0] + tx) * camZoom))
+                                const dy = Math.abs(mouseY - ((node[1] + ty) * camZoom))
+                                if (dx < this.startNode[0] && dy < this.startNode[1]) {
+                                    this.startNode = [dx, dy, name]
+                                }
+                            }
+                            // reduce the data we collected down to what we actually care about
+                            const closestNodeName = this.startNode[2]
+                            let ox = tCamX
+                            let oy = tCamY
+                            if (target.center) {
+                                ox + target.w / 2
+                                oy + target.h / 2
+                            }
+                            const nx = ((target.nodes[closestNodeName][0] + tx) * camZoom) + ox
+                            const ny = ((target.nodes[closestNodeName][1] + ty) * camZoom) + oy
+                            console.log(nx, ny)
+                            this.startNode = [closestNodeName, nx, ny, target]
+                        }
+                        // begin doing literally the exact same thingy as the wire cutter
+                        redrawAll()
+                        ctx.strokeStyle = 'red'
+                        ctx.lineCap = 'butt'
+                        ctx.beginPath()
+                        ctx.moveTo(this.startNode[1], this.startNode[2])
+                        /* js, please, shut the fuck up, its already defined, there is already a definition to read before this one */{
+                            const [[nx, ny], target] = this.findTouchingTarget()
+                            if (target) {
+                                let ox = tCamX
+                                let oy = tCamY
+                                if (target.center) {
+                                    ox + target.w / 2
+                                    oy + target.h / 2
+                                }
+                                const dx = ((nx + target.x) * camZoom) + ox
+                                const dy = ((ny + target.y) * camZoom) + oy
+                                
+                                ctx.lineWidth = 1
+                                ctx.lineTo(dx, dy)
+                            } else {
+                                ctx.lineWidth = 2
+                                ctx.lineTo(clientX, clientY)
+                            }
+                        }
+                        ctx.stroke()
+                        return true
+                    }
+                    return false
+                }
+                findTouchingTarget() {
+                    for (const target of clickableTargets) {
+                        // skip gui elements
+                        if (target.gui) continue
+                        const tx = target.x * camZoom
+                        const ty = target.y * camZoom
+                        const rightEdge = target.x + (target.w * camZoom)
+                        const bottomEdge = target.y + (target.h * camZoom)
+                        if (isInside(mouseX, tx, rightEdge) && isInside(mouseY, ty, bottomEdge)) {
+                            let closestNode = [Infinity, Infinity, '']
+                            for (const name in target.nodes) {
+                                const node = target.nodes[name]
+                                const dx = Math.abs(mouseX - ((node[0] + tx) * camZoom))
+                                const dy = Math.abs(mouseY - ((node[1] + ty) * camZoom))
+                                if (dx < closestNode[0] && dy < closestNode[1]) {
+                                    closestNode = [dx, dy, name]
+                                }
+                            }
+                            // skip if we never even found a node to connect to
+                            if (!closestNode[2]) continue
+                            return [closestNode, target]
+                        }
+                    }
+                    // dont make anyone error at the destructor, just feed undefined over to make it clear we never found anything
+                    return [[]]
+                }
+                onmouseup() {
+                    const [[,, targetNode], target] = this.findTouchingTarget()
+                    // didnt find any target
+                    if (!target) return
+
+                    const startTarget = this.startNode[3]
+                    startTarget.connectTo(this.startNode[0], target, targetNode)
+    
+                    this.startNode = null
+                    clickedItem = null
+                            
+                    // clear whatever we just drew
+                    redrawAll()
+                }
+                render() {
+                    this._drawButton()
+
+                    ctx.strokeStyle = colors.buttonContent
+                    ctx.lineWidth = 1.5
+                    ctx.lineCap = 'butt'
+                    ctx.beginPath()
+                    ctx.ellipse(12, 20, 5, 1, 0 / 180, 0, 2 * Math.PI)
+                    ctx.ellipse(12, 18, 4, 1, 0 / 180, 0, 2 * Math.PI)
+                    ctx.ellipse(12, 16, 4, 1, 0 / 180, 0, 2 * Math.PI)
+                    ctx.ellipse(12, 14, 4, 1, 0 / 180, 0, 2 * Math.PI)
+                    ctx.ellipse(12, 12, 5, 1, 0 / 180, 0, 2 * Math.PI)
+                    ctx.stroke()
+                }
+            }
+            const selectableTools = ((tools) => {
+                const wireCutter = new WireCutter
+                tools[wireCutter.toolName] = wireCutter
+                const wireMaker = new WireMaker
+                tools[wireMaker.toolName] = wireMaker
+
+                return tools
+            })({})
+            
+            canvas.onmousedown = e => {
+                e.preventDefault()
+                mouseDown = true
+                clickedItem = null
+                mouseDownX = clientX
+                mouseDownY = clientY
+                for (const idx in clickableTargets) {
+                    const target = clickableTargets[idx]
+                    const rightEdge = target.x + (target.gui 
+                        ? target.w 
+                        : (target.w * camZoom))
+                    const bottomEdge = target.y + (target.gui 
+                        ? target.h 
+                        : (target.h * camZoom))
+                    const mx = target.gui
+                        ? clientX
+                        : mouseX
+                    const my = target.gui
+                        ? clientY
+                        : mouseY
+                    
+                    if (isInside(mx, target.x, rightEdge) && isInside(my, target.y, bottomEdge)) {
+                        target.onclick()
+                        clickedItem = idx
+                        drawSelection()
+                        return
+                    }
+                    clickedItem = null
+                }
+            }
+            canvas.onwheel = e => {
+                camX += e.deltaX
+                camY += -e.deltaY
+                camZoom += e.deltaZ
+                redrawAll()
+            }
+            document.onmouseup = e => {
+                e.preventDefault()
+                mouseDown = false
+                dragStarted = false
+                const draggingTarget = clickableTargets[clickedItem]
+                draggingTarget?.onmouseup?.()
+                const toolTarget = selectableTools[selectedTool]
+                toolTarget?.onmouseup?.()
+            }
+            document.onmousemove = e => {
+                const [tCamX, tCamY] = getCamInfo()
+                const width = window.innerWidth
+                const height = window.innerHeight
+                const lastX = clientX
+                const lastY = clientY
+                clientX = (e.clientX - ((width / 2) - (240 * scale))) / scale
+                clientY = (e.clientY - ((height / 2) - (180 * scale))) / scale
+                mouseX = clientX - tCamX
+                mouseY = clientY - tCamY
+                dragStarted = mouseDown
+
+                if (dragStarted) {
+                    const activeTool = selectableTools[selectedTool]
+                    if (activeTool) {
+                        const shouldSkipRest = activeTool.ondrag()
+                        if (shouldSkipRest) return
+                    }
+                    const draggedItem = clickableTargets[clickedItem]
+                    if (!draggedItem) {
+                        camX += (clientX - lastX) / camZoom
+                        camY += (clientY - lastY) / camZoom
+                        redrawAll()
+                        return
+                    }
+                    if (!draggedItem.ondrag) return
+                    const shouldSkipMove = draggedItem.ondrag(lastX, lastY)
+                    if (!shouldSkipMove) {
+                        draggedItem.x += clientX - lastX
+                        draggedItem.y += clientY - lastY
+                    }
+                    redrawAll()
+                }
+            }
+            function drawSelection() {
+                let {x, y, w, h, gui} = clickableTargets[clickedItem]
+                ctx.strokeStyle = 'red'
+                if (!gui) {
+                    const [tCamX, tCamY] = getCamInfo()
+                    x += tCamX
+                    y += tCamY
+                    w *= camZoom
+                    h *= camZoom
+                }
+                ctx.strokeRect(x, y, w, h)
+            }
+            function drawDot(x, y, radius) {
+                ctx.beginPath()
+                ctx.ellipse(x, y, radius, radius, Math.PI / 4, 0, 2 * Math.PI)
+                ctx.fill()
+            }
+            function redrawAll() {
+                ctx.fillStyle = colors.background
+                ctx.fillRect(0, 0, canvas.width, canvas.height)
+                const scaledTileX = Math.ceil(tilecountX / camZoom) + 2
+                const scaledTileY = Math.ceil(tilecountY / camZoom) + 2
+                const [tCamX, tCamY] = getCamInfo()
+                for (
+                    let x = 0, 
+                        y = 0; 
+                    x < scaledTileX || y < scaledTileY; 
+                    x = x > scaledTileX
+                        ? 0 
+                        : x+1, 
+                    y = x > scaledTileX
+                        ? y+1 
+                        : y
+                ) {
+                    ctx.fillStyle = colors.altbg
+                    if ((x % 2) ^ (y % 2)) {
+                        const sx = (x - 2) * 10
+                        const sy = (y - 2) * 10
+                        const tx = ((camX % 20) + sx) * camZoom
+                        const ty = ((camY % 20) + sy) * camZoom
+                        ctx.fillRect(tx, ty, 10 * camZoom, 10 * camZoom)
+                    }
+                }
+
+                ctx.fillStyle = 'white'
+                ctx.textBaseline = 'top'
+                ctx.textAlign = 'right'
+                ctx.fillText(`X: ${Math.floor(camX)}, Y: ${Math.floor(camY)}`, 480, 0)
+
+                ctx.fillStyle = 'white'
+                ctx.strokeStyle = 'white'
+                ctx.lineWidth = 0.5
+                drawDot(tCamX, tCamY, 3, 3)
+                ctx.beginPath()
+                ctx.moveTo(0, tCamY)
+                ctx.lineTo(480, tCamY)
+                ctx.moveTo(tCamX, 0)
+                ctx.lineTo(tCamX, 360)
+                ctx.stroke()
+
+                // draw visual thingys
+                for (const idx in clickableTargets) {
+                    const target = clickableTargets[idx]
+                    // make sure the target knows where it is in the list
+                    target.idx = idx
+                    if (clickedItem === idx) {
+                        drawSelection()
+                    }
+                    ctx.save()
+                    ctx.translate(target.x, target.y)
+                    // gui components arnt translated to the camera
+                    if (!target.gui) {
+                        ctx.translate(tCamX, tCamY)
+                        ctx.scale(camZoom, camZoom)
+                    }
+                    if (target.center) {
+                        ctx.translate(target.w / 2, target.h / 2)
+                    }
+                    target.render()
+                    ctx.restore()
+                }
+            }
+            // init gui
+            clickableTargets.push(new ZoomMinusButton)
+            clickableTargets.push(new ZoomResetButton)
+            clickableTargets.push(new ZoomPlusButton)
+            for (const name in selectableTools) {
+                clickableTargets.push(selectableTools[name])
+            }
+
+            const node = new BasicComponent(0, 0)
+            const otherNode = new BasicComponent(30, 30)
+            node.connectTo('name', otherNode, 'name')
+            clickableTargets.push(node)
+            clickableTargets.push(otherNode)
+            redrawAll()
+        })
+    </script>
+</head>
+<body>
+    <div class="card" id="main" style="overflow-y: hidden;">
+        <canvas id="app" width="480" height="360" style="width: 480px; height: 360px;"></canvas>
+    </div>
+</body>
+</html>

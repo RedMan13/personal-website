@@ -1,0 +1,12 @@
+<xml>
+    <circuit>
+        <pos x="0" y="0" z="0">
+        <vel x="0" y="0" z="0">
+        <dir pitch="0" yaw="0" roll="0">
+        <ang pitch="0" yaw="0" roll="0">
+        
+        <parts>
+            <pin>
+        </parts>
+    </circuit>
+</xml>
