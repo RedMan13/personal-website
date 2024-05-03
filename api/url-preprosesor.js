@@ -159,53 +159,6 @@ module.exports = async function(req, res, next) {
         return handleFileError(res)({code: 'ENOENT', path: realPath})
     }
 
-    if ('viewSource' in req.query) {
-        if (info.isDirectory()) {
-            const fileList = await fs.readdir(realPath)
-                .then(async files => {
-                    const info = []
-                    for (const file of files) {
-                        const filePath = path.resolve(realPath, file)
-                        const protectionLevel = getProtLevelOf(filePath)
-                        // skip all truely hidden files
-                        if (protectionLevel === 3) continue
-                        const stats = await fs.stat(filePath).catch(() => false)
-                        info.push({
-                            name: file,
-                            filePath: `.${path.resolve(decodedPath, file)}`,
-                            directory: stats?.isDirectory?.() ?? false,
-                            isError: !stats  
-                        })
-                    }
-
-                    return info
-                })
-                .then(info => info.sort((a, b) => b.directory - a.directory))
-                .then(info => info.map(file => {
-                    const infoFlag = file.isError 
-                        ? '!' 
-                        : file.directory 
-                            ? '/' 
-                            : ''
-                    const redirectUrl = `.${file.filePath}?viewSource`
-                    
-                    return`<a href="${redirectUrl}">${file.name} ${infoFlag}</a>`
-                }))
-                .catch(handleFileError(res))
-            if (!fileList) return
-            
-            let page = `<h2>${decodedPath}</h2>`
-            page += `<a href="./">Return To MainPage</a><br>`
-            page += `<br><a href="./${req.path.split('/').slice(0, -1).join('/')}?viewSource">../</a><br>`
-            page += fileList.join('<br>')
-            
-            res.header("Content-Type", 'text/html')
-            res.send(page)
-            return
-        }
-        return res.sendFile(realPath)
-    }
-
     if (info.isDirectory()) {
         res.status(505)
         res.send('cannot read directory as file')

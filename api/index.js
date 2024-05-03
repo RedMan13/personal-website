@@ -32,7 +32,7 @@ server.useHTTP(handleURL)
 // static file dealer
 server.useHTTP(async (req, res) => {
     const {realPath, pathInfo} = req
-    if (pathInfo.ext === '.php' && !('viewSource' in req.query)) {
+    if (pathInfo.ext === '.php') {
         const scriptReturn = await runPHP(req, realPath)
         for (const [name, value] of scriptReturn.headers) 
             res.header(name, value)
