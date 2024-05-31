@@ -7,6 +7,7 @@
     <script src="/site-card.js"></script>
 
     <link rel="stylesheet" href="/sliders.css">
+    <link rel="stylesheet" href="/popup.css">
     <?php 
     function renderSlideDiv($slides) {
         $slideLength = max(count($slides), 5);
@@ -22,8 +23,21 @@
         echo '</div>';
     }
     ?>
+    <script event="DOMContentLoaded">window.addEventListener("DOMContentLoaded", async (ev) => {
+        const warningPopup = document.getElementById('warning-modal')
+        const dissmissWarning = document.getElementById('dissmissWarning')
+        warningPopup.hidden = !!localStorage['dissmissed-warning']
+        dissmissWarning.onclick = () => {
+            warningPopup.hidden = true
+            localStorage['dissmissed-warning'] = 'true'
+        }
+    })</script>
 </head>
 <body>
+    <div class="popup" id="warning-modal">
+        <h1 style="color: #FF0F0F">WARNING: im still in the process of re-building the api framework to compile on github and push to serv00. i am also still in the process of building the website, so be warned NOT EVERYTHING MAY BE IMPLEMENTED/INTENDED FOR USE</h1>
+        <button id="dissmissWarning">dissmiss warning</button>
+    </div>
     <div class="card" id="main">
         hie, welcome to mie site of goofy gooberness cause silly good!!!!!! <br>
         <h3 class="horizontalCenter">all the projects i have worked on sofar</h3>

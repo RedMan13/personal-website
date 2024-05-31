@@ -64,12 +64,15 @@ function computeSize() {
     const width = window.innerWidth
     const height = window.innerHeight
     const card = document.getElementById('main')
-    scale = Math.min(width / 480, height / 360) - scaleOffset
+    const cw = ((card.width ?? +(card.style.width).slice(0, -2)) || 480) 
+    const ch = ((card.height ?? +(card.style.height).slice(0, -2)) || 360)
+    const scale = Math.min(width / cw, height / ch) - scaleOffset
     if (scale <= 0) {
         scale = 0
         initiateSelfDestruct()
     }
+    card.setAttribute('scale', scale)
     card.style.transform = `scale(${scale})`
 }
-window.onload = computeSize;
+window.addEventListener('DOMContentLoaded', computeSize);
 window.onresize = computeSize;

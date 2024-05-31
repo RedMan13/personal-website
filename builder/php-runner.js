@@ -1,6 +1,5 @@
 const child = require('child_process');
-const repeatValue = require('./repeat-value')
-const projectInfo = require('./package.json')
+const projectInfo = require('../dev-api/package.json');
 const phpEnvDefualts = {
     // The name and version of the information server software answering the request (and running the gateway). Format: name/version
     SERVER_SOFTWARE: `${projectInfo.name}/${projectInfo.version}`,
@@ -23,19 +22,19 @@ const phpEnvDefualts = {
 
     // i have no fucking idea what this is
     REDIRECT_STATUS: ''
-}
+};
 
 module.exports = (req, file, opt_args = []) => new Promise(resolve => {
     // we need time to give all the info to php
-    req.pause()
+    req.pause();
     
-    const urlInfo = req.originalUrl.slice(req.path.length)
-    const hashChar = urlInfo.indexOf('#')
+    const urlInfo = req.originalUrl.slice(req.path.length);
+    const hashChar = urlInfo.indexOf('#');
     const queryStringEnd = hashChar === -1 
         ? urlInfo.length + 1 
-        : hashChar
-    const hashString = decodeURIComponent(urlInfo.slice(urlInfo.indexOf('#') + 1))
-    const queryString = urlInfo.slice(urlInfo.indexOf('?') + 1, queryStringEnd)
+        : hashChar;
+    const hashString = decodeURIComponent(urlInfo.slice(urlInfo.indexOf('#') + 1));
+    const queryString = urlInfo.slice(urlInfo.indexOf('?') + 1, queryStringEnd);
     const env = {
         // The name and revision of the information protcol this request came in with. Format: protocol/revision
         SERVER_PROTOCOL: req.protocol, // so uhhhhhh, the fuck is revision? i have never heard of that anywhere in relation to request protocol
@@ -71,24 +70,24 @@ module.exports = (req, file, opt_args = []) => new Promise(resolve => {
         CONTENT_LENGTH: req.get('Content-Length'),
             
         ...phpEnvDefualts
-    }
+    };
     for (const header in req.headers) {
-        const transformed = `HTTP_${header.toUpperCase().replaceAll('-', '_')}`
-        const data = req.headers[header]
-        env.ALL_HTTP += `${transformed}: ${data}\n`
-        env.ALL_RAW += `${header}: ${data}\n`
-        env[transformed] = data
+        const transformed = `HTTP_${header.toUpperCase().replaceAll('-', '_')}`;
+        const data = req.headers[header];
+        env.ALL_HTTP += `${transformed}: ${data}\n`;
+        env.ALL_RAW += `${header}: ${data}\n`;
+        env[transformed] = data;
     }
 
-    let res = ''
-    let err = ''
-    const php = child.spawn('php-cgi', opt_args, {env})
+    let res = '';
+    let err = '';
+    const php = child.spawn('php-cgi', opt_args, {env});
     php.stdin.on('error', function() {
-        console.error("Error from server")
+        console.error("Error from server");
     });
     
-    req.pipe(php.stdin)
-    req.resume()
+    req.pipe(php.stdin);
+    req.resume();
 
     php.stdout.on('data', function(data) {
         res += data.toString();
@@ -104,33 +103,33 @@ module.exports = (req, file, opt_args = []) => new Promise(resolve => {
         php.stdin.end();
 
         // where ever the first double new-line is or the start of the data
-        const headerEnd = res.indexOf('\r\n\r\n')
-        const headerStrings = res.slice(0, headerEnd + 1)
-        const htmlString = headerEnd < 0 
+        const headerEnd = res.indexOf('\r\n\r\n');
+        const headerStrings = res.slice(0, headerEnd + 1);
+        const htmlString = headerEnd < 0
             ? res 
-            : res.slice(headerEnd + 4)
-        const headers = []
-        let status = 200
+            : res.slice(headerEnd + 4);
+        const headers = [];
+        let status = 200;
 
-        // at too doo, actouowoleay make this gregex work
         for (const [m, name, value] of headerStrings.matchAll(/\r?\n([a-z]+(-[a-z])?): ([^\r\n]+)/gi)) {
-            console.log(m)
+            console.log(m);
             if (name === 'Status') {
-                status = parseInt(value)
+                status = parseInt(value);
                 continue
             }
-            headers.push([name, value])
+            headers.push([name, value]);
         }
         
 
         if (err) {
-            console.log('ohnows an php error!!!!!!!!!!!!!!')
-            console.error(err)
+            console.log('ohnows an php error!!!!!!!!!!!!!!');
+            console.error(err);
         }
         resolve({
             headers,
             status,
-            html: htmlString || err
-        })
+            html: htmlString || err,
+            err
+        });
     });
 })

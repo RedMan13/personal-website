@@ -6,14 +6,11 @@ class PrecompUtils {
     }
     tokenize(tokenCaptures, filterGroup) {
         let regex = ''
-        let rules = 'g'
         const tokenNames = Object.keys(tokenCaptures)
         for (const [name, tokenReg] of Object.entries(tokenCaptures)) {
-            for (const char of tokenReg.flags)
-                if (!rules.includes(char)) rules += char
-            regex += `|(?<${name}>${tokenReg.source})`
+            regex += `|(?<${name}>${tokenReg})`
         }
-        regex = new RegExp(regex.slice(1), rules)
+        regex = new RegExp(regex.slice(1), 'gui')
 
         const tokens = []
         let groupChunk = []

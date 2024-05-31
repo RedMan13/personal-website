@@ -3,7 +3,7 @@ const fs = require('fs/promises')
 const crypto = require('crypto')
 const PrecompUtils = require('./precomp-utils.js')
 const {handleFileError, getProtLevelOf} = require('./file-utils.js')
-const RollingCache = require('./rolling-cache')
+const RollingCache = require('./rolling-cache.js')
 
 // compares two strings un-literally, only checking per keyword, ignoring keyword order while also keeping track of path order
 // also ignoring file extensions such as .js, .html, .php, etc...
@@ -28,7 +28,7 @@ function compareFileNames(string, comp) {
     return isReal
 }
 
-const ignoredFiles = ['node_modules', 'useless-history', 'builds']
+const ignoredFiles = ['node_modules', 'useless-history', 'builds', '.git']
 const pathList = []
 const precompFiles = []
 const precomps = {}
@@ -113,7 +113,7 @@ const mainFileAlts = [
 function findRealName(name) {
     const nameData = path.parse(name)
     let nameModifier = 0b00000000
-    if (mainFileAlts.includes(nameData.name)) return '/main page.php'
+    if (mainFileAlts.includes(nameData.name)) return '/index.php'
     // server isnt ready!?!??!?!?!?!!?!?!?!!?!?!??!?!?! nah it chill this happens alot when in dev testing
     if (!readyToHandle) return name.endsWith(/\.\w+$/i) ? name : name + '.php'
     // if we never find the desired name then assume it just isnt in our list of names and give back the inputed name

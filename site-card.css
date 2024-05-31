@@ -1,5 +1,9 @@
 body {
     background: linear-gradient(to bottom, rgb(48, 127, 201) 0px, #0195FA 100vh);
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+    margin-bottom: 20px;
 }
 .card {
     background-color: white;
@@ -12,10 +16,9 @@ body {
     overflow-x: hidden;
     overflow-y: auto;
     position: absolute;
-    left: calc(50% - 240px);
-    top: calc(50% - 180px);
     width: 480px;
     height: 360px;
+    z-index: 1;
 }
 @keyframes popupAlarm {
     from {

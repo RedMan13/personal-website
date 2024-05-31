@@ -24,7 +24,9 @@ server.useHTTP((req, res, next) => {
     // i fucking hate that cors is PERMANENTLY ENFORCED on webbrowsers making it so you HAVE to only use resources with cors systems
     // even shittier, most API's wont send cors headers and most static file hosts (github-pages and vercel to be specific) WONT LET YOU change the cors options for the webpage(s)
     // if i found a genie one of my first whishes would be "make cors nolonger enforced in browsers allowing content from none-cors compliant systems to be accessed"
+    // what even is the point on cors? what the fuck does cors even do?, be an actual pain the mother fucking ass is all it does
     res.header('Access-Control-Allow-Origin', '*')
+    res.header('Referrer-Policy', 'unsafe-url')
     next()
 })
 console.log('setting up main file dealer')
