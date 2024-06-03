@@ -4,8 +4,7 @@ const path = require('path');
 const runPHP =  require('./php-runner');
 const PrecompUtils = require('./precomp-utils');
 
-const serverStatic = '~/domains/godslayerakp.serv00.net/public_html'
-const buildDir = path.resolve('./build')
+const buildDir = path.resolve('./build');
 if (fs.existsSync(buildDir)) {
     console.log('removing old build dir');
     fs.rmSync(buildDir, { recursive: true, force: true });
@@ -24,14 +23,23 @@ const fakeReq = {
     headers: {}
 };
 (async () => {
-    const precomps = [];
+    console.log('getting precomps...');
+    const precomps = fs.readdirSync('./preprocessors')
+        .filter(filePath => filePath.endsWith('.precomp.js'))
+        .map(filePath => {
+            const precomp = require(path.resolve('preprocessors', filePath));
+            precomp.name = path.basename(filePath).replace('.precomp.js', '');
+            return precomp;
+        })
+        .sort((a, b) => (a.weight ?? 0) - (b.weight ?? 0));
     const constantPhps = [];
     const staticFiles = [];
     // unused atm, as there is no server to put the end points in
     const serverEndpoints = [];
 
-    console.log('getting files to build...')
-    const filesToIgnore = new RegExp(`^${path.resolve('.').replaceAll('\\', '\\\\') + (path.win32 ? '\\\\' : '/')}(` + fs.readFileSync('.buildignore', { encoding: 'utf8' })
+    console.log('getting files to build...');
+    const toAlwaysIgnore = '\nbuild\n\\.gitignore\npreprocessors\n\\.buildignore\n\\.git\nnode_modules\npackage-lock\\.json\npackage\\.json';
+    const filesToIgnore = new RegExp(`^${path.resolve('.').replaceAll('\\', '\\\\') + (path.win32 ? '\\\\' : '/')}(` + (fs.readFileSync('.buildignore', { encoding: 'utf8' }) + toAlwaysIgnore)
         .split(/\n|\r\n/gi)
         .map(match => match.replace('/', '\\/'))
         .join('|') + ')', 'i');
@@ -43,12 +51,6 @@ const fakeReq = {
         const stat = fs.statSync(truePath);
         if (filesToIgnore.test(truePath) || stat.isDirectory()) continue;
         switch (typePiece) {
-        case 'precomp.js':
-            const precomp = require(truePath);
-            precomp.name = path.basename(file, '.precomp.js');
-            precomps.push(precomp);
-            console.log('precomp', file);
-            break;
         case 'server.js':
             serverEndpoints.push(require(truePath));
             console.log('server endpoint', file);
@@ -63,19 +65,8 @@ const fakeReq = {
             console.log('static', file);
         }
     }
-    console.log('waiting for copy operations to finnish...')
+    console.log('waiting for copy operations to finnish...');
     await Promise.all(waitingCopies);
-
-    console.log('building constant php\'s...');
-    for (const [phpSrc, pathName] of constantPhps) {
-        fakeReq.path = pathName;
-        console.log(`building ${pathName}...`)
-        let destPath = path.resolve(buildDir, pathName.replace('.const.php', ''));
-        if (path.extname(destPath).length < 2) destPath += '.html';
-        fs.mkdirSync(path.dirname(destPath), { recursive: true });
-        fs.writeFileSync(destPath, (await runPHP(fakeReq, phpSrc)).html);
-        staticFiles.push(destPath);
-    }
 
     console.log('running precomps on build files...');
     for (const file of staticFiles) {
@@ -89,6 +80,17 @@ const fakeReq = {
         }
         
         if (!neverRan) fs.writeFileSync(file, utils.file);
+    }
+
+    console.log('building constant php\'s...');
+    for (const [phpSrc, pathName] of constantPhps) {
+        fakeReq.path = pathName;
+        console.log(`building ${pathName}...`)
+        let destPath = path.resolve(buildDir, pathName.replace('.const.php', ''));
+        if (path.extname(destPath).length < 2) destPath += '.html';
+        fs.mkdirSync(path.dirname(destPath), { recursive: true });
+        fs.writeFileSync(destPath, (await runPHP(fakeReq, phpSrc)).html);
+        staticFiles.push(destPath);
     }
 
     console.log('forming index file for faster indexing...');

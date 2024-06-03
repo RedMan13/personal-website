@@ -1,13 +1,6 @@
 menguinjod
 useless-history
-builder
-build
 dev-api
-README\.md
-\.gitignore
-\.git
-\.buildignore
-node_modules
-package-lock.json
-package.json
+builder
 visitors.txt
+README\.md

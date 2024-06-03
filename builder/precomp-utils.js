@@ -63,7 +63,7 @@ class PrecompUtils {
 
         this.tokens = tokens
     }
-    // cutout some piece of text from the file
+
     replace(start, end, str) {
         const left = this.file.slice(0, start)
         const right = this.file.slice(end)

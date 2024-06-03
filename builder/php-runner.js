@@ -1,8 +1,7 @@
 const child = require('child_process');
-const projectInfo = require('../dev-api/package.json');
 const phpEnvDefualts = {
     // The name and version of the information server software answering the request (and running the gateway). Format: name/version
-    SERVER_SOFTWARE: `${projectInfo.name}/${projectInfo.version}`,
+    SERVER_SOFTWARE: 'gsa-website-builder/V1.0',
     
     // The server's hostname, DNS alias, or IP address as it would appear in self-referencing URLs.
     SERVER_NAME: 'localhost',

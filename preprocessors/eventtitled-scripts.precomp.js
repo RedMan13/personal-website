@@ -1,6 +1,3 @@
-const fs = require('fs/promises')
-const path = require('path')
-
 module.exports = async function(util) {
     if (!util.matchType('php,html')) return true
 
