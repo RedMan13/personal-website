@@ -25,5 +25,6 @@ jobs:
           server: 's3.serv00.com'
           username: 'godslayerakp'
           password: '${{ secrets.SSH_PASSWORD }}'
+          delete_remote_files: true
           local_path: './public_html'
           remote_path: '/usr/home/godslayerakp/domains/godslayerakp.serv00.net/'
