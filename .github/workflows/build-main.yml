@@ -18,7 +18,7 @@ jobs:
         with:
           node-version: 20.x
       - name: Install dependencies and build site
-        run: npm i && node ./builder
+        run: npm i && node ./builder && cd ./build
       - name: Push built to Site
         uses: wlixcc/SFTP-Deploy-Action@v1.2.4
         with:
@@ -26,5 +26,5 @@ jobs:
           username: 'godslayerakp'
           password: '${{ secrets.SSH_PASSWORD }}'
           delete_remote_files: true 
-          local_path: './build'
+          local_path: '.'
           remote_path: '/usr/home/godslayerakp/domains/godslayerakp.serv00.net/public_html'
