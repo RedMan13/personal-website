@@ -31,6 +31,6 @@ jobs:
         host: 's3.serv00.com'
         protocol: 'sftp'
         username: 'godslayerakp'
-        password: ${{ secrets.ssh-password }}
+        password: ${{ secrets.SSH_PASSWORD }}
         local_path: './build'
         remote_path: '/usr/home/godslayerakp/domains/godslayerakp.serv00.net/public_html'
