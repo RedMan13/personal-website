@@ -4,7 +4,7 @@ const path = require('path');
 const runPHP =  require('./php-runner');
 const PrecompUtils = require('./precomp-utils');
 
-const buildDir = path.resolve('./build');
+const buildDir = path.resolve('./public_html');
 if (fs.existsSync(buildDir)) {
     console.log('removing old build dir');
     fs.rmSync(buildDir, { recursive: true, force: true });
