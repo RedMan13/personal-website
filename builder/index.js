@@ -40,9 +40,10 @@ const fakeReq = {
     console.log('getting files to build...');
     const toAlwaysIgnore = '\nbuild\n\\.gitignore\npreprocessors\n\\.buildignore\n\\.git\nnode_modules\npackage-lock\\.json\npackage\\.json';
     const filesToIgnore = new RegExp(`^${path.resolve('.').replaceAll('\\', '\\\\') + (path.win32 ? '\\\\' : '/')}(` + (fs.readFileSync('.buildignore', { encoding: 'utf8' }) + toAlwaysIgnore)
-        .split(/\n|\r\n/gi)
+        .split(/\r?\n/gi)
         .map(match => match.replace('/', '\\/'))
         .join('|') + ')', 'i');
+    console.log(filesToIgnore)
     const files = fs.readdirSync('.', { recursive: true });
     const waitingCopies = [];
     for (const file of files) {

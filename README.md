@@ -16,18 +16,30 @@ import-tests.php was made for loading in pmp-newform.js
 test-save.zip is a save file for testing purposes; made and used by pmp-newform.js
 
 # system documention
-## `.precomp.js` files
-this file extension dictates a file to be used for transpiling certain files ahead of time, allowing for things like e4x or jsx to be added into the dealt code easily without needing to compile the whole thing
-
-the executors for these files lives inside [`api/url-preprocessor.js`](https://github.com/redman13/personal-website/master/api/url-preprocessor.js#L40)
+## default ignored files
+- `.git`
+- `.gitignore`
+- `.buildignore`
+- `node_modules`
+- `package-lock.json`
+- `package.json`
+- `build`
+- `preprocessors`
+## `.server.js` files
+an unimplemented system for writing in a nodejs server end point, these files are expected to export a single function that gets run when the files path is called in the url.
+## `.const.php` files
+these files are built once and served always either as the ext defined before the `.const.php` or as the ext `.html`
+## `preprocessors/*.prepcomp.js` files
+these files transpile certain files ahead of time, allowing for things like e4x or jsx to be added into the dealt code easily.
 
 here is a list of all currently implemented precomp files
-| filename            | file filter | purpose                                                                                                          |
-|---------------------|-------------|------------------------------------------------------------------------------------------------------------------|
-| eventtitled-scripts | html,php    | allows you to set a an event that a script element should listen too                                             |
+| filename | file filter | purpose |
+| --- | --- | --- |
+| eventtitled-scripts | html php | allows you to set a an event that a script element should listen too |
+| ecma-for-xml | html php js | implements ECMAScript for XML ontop of the existing js |
 
-the util class can be found inside [`api/precomp-utils.js`](https://github.com/redman13/personal-website/master/api/precomp-utils.js) and is reused accross a single file
-every .precomp.js file is expected to export a function who when run, will first verify that the file is applicable to this precomp, to say that this precomp is not applicable you simply return a truthy value, returning a falsey value will result in the executor assuming that you did something with the util
+the util class can be found inside [`builder/precomp-utils.js`](https://github.com/redman13/personal-website/main/builder/precomp-utils.js) and is reused accross a single file
+every .precomp.js file is expected to export a function who when run, will first verify that the file is applicable to this precomp, to say that this precomp is not applicable you simply return a truthy value, returning a falsey value will result in the executor assuming that you did something with the util and so saving the utils data into the operating file.
 
 ## running/testing
-simply cd into the `api` directory then run `node .` and the node server will startup from there
+to make a full build simply run the `builder` folder with `node` while outside the `builder` folder (`pwd=./personal-website`), for running as a dev server do the same thing but change the target to `dev-api`, the url on which the dev page is hosted will be given in the console. 
