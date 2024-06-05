@@ -43,7 +43,6 @@ const fakeReq = {
         .split(/\r?\n/gi)
         .map(match => match.replace('/', '\\/'))
         .join('|') + ')', 'i');
-    console.log(filesToIgnore)
     const files = fs.readdirSync('.', { recursive: true });
     const waitingCopies = [];
     for (const file of files) {
@@ -103,6 +102,7 @@ const fakeReq = {
             const fileName = path.basename(file);
             let top = index;
             for (const folder of folders) top = top[folder] ??= {};
+            console.log('adding filename', fileName)
             top[fileName] = fileName.slice(0, -path.extname(fileName).length);
         }
     }
