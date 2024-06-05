@@ -26,5 +26,7 @@ jobs:
           protocol: 'sftp'
           username: 'godslayerakp'
           password: ${{ secrets.SSH_PASSWORD }}
+          # for some reason serv00 isnt registered by default, so the build fails cause the key cant be verified
+          ssl_verify_cert: false 
           local_path: './build'
           remote_path: '/usr/home/godslayerakp/domains/godslayerakp.serv00.net/public_html'
