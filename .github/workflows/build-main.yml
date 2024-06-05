@@ -3,7 +3,7 @@ on: [push]
 permissions:
   contents: read
 
-concurrency:
+concurrency: 
   group: "deploy"
   cancel-in-progress: true
   #ci-${{ github.ref }}
