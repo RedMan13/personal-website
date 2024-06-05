@@ -25,7 +25,7 @@ jobs:
           host: 's3.serv00.com'
           protocol: 'sftp'
           username: 'godslayerakp'
-          password: ${{ secrets.SSH_PASSWORD }}
+          password: '${{ secrets.SSH_PASSWORD }}'
           # for some reason serv00 isnt registered by default, so the build fails cause the key cant be verified
           ssl_verify_cert: false 
           local_path: './build'
