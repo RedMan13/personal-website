@@ -3,104 +3,7 @@
         const intr = setInterval(() => {
             if (window.ScratchBlocks && window.vm) resolve(clearInterval(intr))
         }, 600)
-    })
-    // this is to be merged into the extension manager atfer it is done being tested
-    if (!vm.extensionManager.__proto__.constructor.coolPatchBro) {
-        const ogConstructor = vm.extensionManager.__proto__.constructor
-        vm.extensionManager.__proto__.constructor = function(...struff) {
-            ogConstructor.call(this, ...struff)
-            this.extUrlCodes = {}
-            // extensions that the user has stated (when they where loaded) that they do not wnat updated
-            this.keepOlder = []
-            // map of all new shas so we know when a new code update has happened and so ask the user about it
-            this.extensionHashes = {}
-        }
-        vm.extensionManager.extUrlCodes = {}
-        vm.extensionManager.keepOlder = []
-        vm.extensionManager.extensionHashes = {}
-        vm.extensionManager.__proto__.constructor.prototype.loadExtensionURL = async function(extensionURL) {
-            if (this.isBuiltinExtension(extensionURL, oldHash)) {
-                this.loadExtensionIdSync(extensionURL);
-                return [extensionURL];
-            }
-    
-            if (this.isExtensionURLLoaded(extensionURL)) {
-                // Extension is already loaded.
-                return;
-            }
-    
-            if (!this._isValidExtensionURL(extensionURL)) {
-                throw new Error(`Invalid extension URL: ${extensionURL}`);
-            }
-    
-            if (extensionURL.includes("penguinmod.site")) {
-                alert("Extensions using penguinmod.site are deprecated, please swap them over to use penguinmod.com instead.")
-            }
-            const normalURL = extensionURL.replace("penguinmod.site", "penguinmod.com");
-    
-            this.runtime.setExternalCommunicationMethod('customExtensions', true);
-    
-            this.loadingAsyncExtensions++;
-    
-            const sandboxMode = await this.securityManager.getSandboxMode(normalURL);
-            const rewritten = await this.securityManager.rewriteExtensionURL(normalURL);
-            const blob = (await fetch(rewritten).then(req => req.blob()))
-            const blobUrl = URL.createObjectURL(blob)
-            const newHash = await new Promise(resolve => {
-                const reader = new FileReader()
-                reader.onload = async ({ target: { result } }) => {
-                    console.log(result)
-                    this.extUrlCodes[url] = result
-                    resolve(await sha256(result))
-                }
-                reader.onerror = err => {
-                    console.error('couldnt read the contents of url', url, err)
-                }
-                read.readAsText(blob)
-            })
-            this.extensionHashes[extensionURL] = newHash
-            if (oldHash && oldHash !== newHash && this.securityManager.shouldUseLocal(extensionURL)) return Promise.reject('useLocal') 
-    
-            if (sandboxMode === 'unsandboxed') {
-                const { load } = require('./tw-unsandboxed-extension-runner');
-                const extensionObjects = await load(blobUrl, this.vm)
-                    .catch(error => this._failedLoadingExtensionScript(error));
-                const fakeWorkerId = this.nextExtensionWorker++;
-                const returnedIDs = [];
-                this.workerURLs[fakeWorkerId] = normalURL;
-    
-                for (const extensionObject of extensionObjects) {
-                    const extensionInfo = extensionObject.getInfo();
-                    const serviceName = `unsandboxed.${fakeWorkerId}.${extensionInfo.id}`;
-                    dispatch.setServiceSync(serviceName, extensionObject);
-                    dispatch.callSync('extensions', 'registerExtensionServiceSync', serviceName);
-                    this._loadedExtensions.set(extensionInfo.id, serviceName);
-                    returnedIDs.push(extensionInfo.id);
-                    this.runtime.compilerRegisterExtension(extensionInfo.id, extensionObject);
-                }
-    
-                this._finishedLoadingExtensionScript();
-                return returnedIDs;
-            }
-    
-            /* eslint-disable max-len */
-            let ExtensionWorker;
-            if (sandboxMode === 'worker') {
-                ExtensionWorker = require('worker-loader?name=js/extension-worker/extension-worker.[hash].js!./extension-worker');
-            } else if (sandboxMode === 'iframe') {
-                ExtensionWorker = (await import(/* webpackChunkName: "iframe-extension-worker" */ './tw-iframe-extension-worker')).default;
-            } else {
-                throw new Error(`Invalid sandbox mode: ${sandboxMode}`);
-            }
-            /* eslint-enable max-len */
-    
-            return new Promise((resolve, reject) => {
-                this.pendingExtensions.push({ extensionURL: blobUrl, resolve, reject });
-                dispatch.addWorker(new ExtensionWorker());
-            }).catch(error => this._failedLoadingExtensionScript(error));
-        }
-        vm.extensionManager.__proto__.constructor.coolPatchBro = true
-    }
+    }) 
     const { 
         Sprite, // require('../sprites/sprite')
         RenderedTarget, // require('../sprites/rendered-target')
@@ -115,13 +18,6 @@
         ArgumentType // require('../extension-support/argument-type')
     } = Scratch
     
-    // thhank yoh random stack droverflwo person
-    async function sha256(source) {
-        const sourceBytes = new TextEncoder().encode(source);
-        const digest = await crypto.subtle.digest("SHA-256", sourceBytes);
-        const resultBytes = [...new Uint8Array(digest)];
-        return resultBytes.map(x => x.toString(16).padStart(2, '0')).join("");
-    }
     /**
      * im doing it this way cause its easier to test (atleast to me it is)
      * load this as an extension then go to the console and run either newSave or newLoad (passing the output of newSave into newLoad)
