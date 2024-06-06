@@ -13,6 +13,9 @@
     <link rel="stylesheet" href="/site-card.css">
     <script src="/site-card.js"></script>
 
+    <link rel="stylesheet" href="/achievments/ach-slide.css">
+    <script src="/achievments/achievments.js"></script>
+
     <link rel="stylesheet" href="/sliders.css">
     <link rel="stylesheet" href="/popup.css">
     <?php
@@ -30,19 +33,6 @@
         echo '</div>';
     }
     ?>
-    <!-- popup handler -->
-    <script event="DOMContentLoaded">
-        const warningPopup = document.getElementById('warning-modal');
-        const cover = document.getElementById('cover');
-        const dissmissWarning = document.getElementById('dissmissWarning');
-        warningPopup.hidden = !!localStorage['dissmissed-warning'];
-        cover.hidden = !!localStorage['dissmissed-warning'];
-        dissmissWarning.onclick = () => {
-            warningPopup.hidden = true;
-            cover.hidden = true;
-            localStorage['dissmissed-warning'] = 'true';
-        }
-    </script>
     <!-- profile link orbit controller -->
     <script event="DOMContentLoaded">
         const links = [
@@ -104,7 +94,7 @@
                 const y = Math.sin(dir);
 
                 hyperlink.style.transform = `
-                translateX(${(x * width) + 230}px)
+                translateX(${(x * width) + 220}px)
                 translateY(${(y * height) - 50}px)
                 scale(${hyperlink.scale})`;
             }
@@ -114,11 +104,6 @@
     </script>
 </head>
 <body style="margin: 0; height: 100%;">
-    <div class="popup" id="warning-modal" hidden>
-        <p style="color: #FF0F0F">WARNING: im still in the process of re-building the api framework to compile on github and push to serv00. i am also still in the process of building the website, so be warned NOT EVERYTHING MAY BE IMPLEMENTED/INTENDED FOR USE</p>
-        <button id="dissmissWarning">dissmiss warning</button>
-    </div>
-    <div id="cover" class="over-shadow" hidden></div>
     <div class="card" id="main"><br>
         <div style="
             display: flex;
@@ -126,7 +111,7 @@
             margin-top: 20px;
             margin-bottom: 20px;
         ">
-            <img src="/my-pfp.png" height="50">
+            <img src="/my-pfp.png" height="50" onclick="pushAchievment('clickPfp')">
         </div>
         <div id="orbital"></div></br>
         <?php

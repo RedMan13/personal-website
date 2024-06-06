@@ -2,8 +2,7 @@ body {
     background: linear-gradient(to bottom, rgb(48, 127, 201) 0px, #0195FA 100vh);
     display: flex;
     justify-content: center;
-    margin-top: 20px;
-    margin-bottom: 20px;
+    align-items: center;
 }
 .card {
     background-color: white;

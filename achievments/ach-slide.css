@@ -1,13 +1,30 @@
 @keyframes slideIn {
     from {
-        right: calc(100vw + 100%);
+        right: -500%;
     }
     to {
-        right: 100vw;
+        right: 8px;
+    }
+}
+@keyframes slideOut {
+    from {
+        right: 8px;
+    }
+    to {
+        right: -500px;
     }
 }
 .ach-card {
-    animation: slideIn 1s;
+    animation: slideIn 0.8s;
     position: absolute;
-    right: 100vw;
+    z-index: 4;
+    top: 8px;
+    right: 8px;
+    padding: 6px;
+    background-color: white;
+    border-color: darkgrey;
+    border-style: solid;
+    border-width: 1px;
+    border-radius: 4px;
+    box-shadow: 0px 0px 20px black;
 }

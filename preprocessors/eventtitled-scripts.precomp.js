@@ -9,7 +9,7 @@ module.exports = async function(util) {
         scriptSrc: '\\s+src="[^"]+"', // this only exists to cause exclusion via the filter group
         endAttrs: '>',
         close: '/>|</script>'
-    }, ['open', 'eventName', 'endAttrs', '*', 'close'])
+    }, ['open', 'eventName', 'endAttrs', '*', 'close']);
     for (const tokens of util.tokens) {
         const event = tokens[1].event
         
@@ -21,6 +21,5 @@ module.exports = async function(util) {
         util.replace(codeStart, codeEnd, `window.addEventListener("${event}", async (ev) => {${code}})`)
         didThings = true
     }
-    
     return !didThings
 }
