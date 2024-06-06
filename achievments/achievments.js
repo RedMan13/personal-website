@@ -1,7 +1,6 @@
 const achievments = {
     'unlockAchievments': ['Find an Achievment!', 'You have found your first achievment! now you must find the rest.'],
-    'clickPfp': ['Click my Pfp!', 'Why? What gain does this get you?'],
-    'findJoe': ['Find JoeSite!', 'Find joe\'s webpage!']
+    'clickPfp': ['Click my Pfp!', 'Why? What gain does this get you?']
 };
 
 let unlockedAchievments = localStorage.achievments?.includes?.('unlockAchievments');

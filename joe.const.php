@@ -9,10 +9,6 @@
     <meta name="theme-color" content="grey">
     <meta name="color-scheme" content="dark">
     <meta name="robots" content="nosnippet">
-
-    <link rel="stylesheet" href="/achievments/ach-slide.css">
-    <script src="/achievments/achievments.js"></script>
-    <script onload>pushAchievment('findJoe')</script>
   
     <style>
         body {
