@@ -62,22 +62,22 @@
         <div class="accounts">
             <?php
             $accounts = [
-                ['', 'www.twitch.tv', '/puzzlingishere'],
-                ['', 'www.youtube.com', '/@PuzzlingGGG/featured'],
-                ['', 'twitter.com', '/PuzzlingGGG'],
-                ['', 'www.tiktok.com', '/@puzzlingggg'],
-                ['', 'discord.gg', '/KgVGtvqJKB'],
-                ['puzzlingggg.', 'newgrounds.com', '/audio'],
-                ['', 'github.com', 'puzzlingggg'],
-                ['', 'itch.io', '/profile/puzzlingggg'],
-                ['', 'cocrea.world', '/@PuzzlingGGG'],
-                ['', 'steamcommunity.com', '/id/puzzlingGGG/']
+                'https://www.twitch.tv/puzzlingishere',
+                'https://www.youtube.com/@PuzzlingGGG/featured',
+                'https://twitter.com/PuzzlingGGG',
+                'https://www.tiktok.com/@puzzlingggg',
+                'https://discord.gg/KgVGtvqJKB',
+                'https://puzzlingggg.newgrounds.com', '/audio',
+                'https://github.compuzzlingggg',
+                'https://itch.io/profile/puzzlingggg',
+                'https://cocrea.world/@PuzzlingGGG',
+                'https://steamcommunity.com/id/puzzlingGGG/'
             ];
     
-            foreach ($accounts as [$subpage, $site, $link]) {
+            foreach ($accounts as $url) {
                 echo <<<END
-                    <a style="margin-left: 2px; margin-right: 2px;" href="https://$subpage$site$link">
-                        <img style="width: 2rem; height: 2rem;" src="https://www.google.com/s2/favicons?sz=64&domain=$site" />
+                    <a style="margin-left: 2px; margin-right: 2px;" href="$url">
+                        <img style="width: 2rem; height: 2rem;" src="https://www.google.com/s2/favicons?sz=64&domain={parse_url($url, PHP_URL_HOST)}" />
                     </a>
                 END;
             }
