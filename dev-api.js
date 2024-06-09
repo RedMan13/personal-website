@@ -1,4 +1,5 @@
 const express = require('express');
+const cors = require('cors')
 const app = express();
 const fs = require('fs/promises');
 const path = require('path');
@@ -6,6 +7,7 @@ const runPhp = require('./builder/php-runner');
 const PrecompUtils = require('./builder/precomp-utils');
 const mime = require('mime');
 
+app.use(cors())
 app.get('/index.json', async (req, res) => {
     const dirs = await fs.readdir('./', { recursive: true });
     const index = {};

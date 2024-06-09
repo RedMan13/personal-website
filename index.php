@@ -131,10 +131,8 @@
             ["CC:T Discord", "https://github.com/RedMan13/cc-discord", "/../../favicon.ico"],
             ["Clamp Coding", "https://clamp-coding.vercel.app", "/favicon.png"]
         ]) ?><br>
-        <h3>my well of knowledge (everything i know)</h3>
-        <?php renderSlideDiv([
-            ["uhhhhh idk", "/alarm.gif", null]
-        ]) ?><br>
+        <p>btw check out my discord! i will be sending like updates and shizz there</p>
+        <iframe src="https://discord.com/widget?id=1248818317364301967&theme=dark" width="350" height="500" allowtransparency="true" frameborder="0" sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"></iframe>
         <!-- btw, theres gona be a bunch of secrets on this site. try and find them all <em>WITHOUT CHEATING</em> -->
     </div>
 </body>
