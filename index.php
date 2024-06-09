@@ -131,9 +131,11 @@
             ["CC:T Discord", "https://github.com/RedMan13/cc-discord", "/../../favicon.ico"],
             ["Clamp Coding", "https://clamp-coding.vercel.app", "/favicon.png"]
         ]) ?><br>
-        <p>btw check out my discord! i will be sending like updates and shizz there</p>
-        <iframe src="https://discord.com/widget?id=1248818317364301967&theme=dark" width="350" height="500" allowtransparency="true" frameborder="0" sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"></iframe>
-        <!-- btw, theres gona be a bunch of secrets on this site. try and find them all <em>WITHOUT CHEATING</em> -->
+        
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr);">
+            <iframe style="margin: 8px; margin-right: 4px; grid-row: 1;" src="https://discord.com/widget?id=1248818317364301967&theme=dark" width="234" height="343.75" allowtransparency="true" frameborder="0" sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"></iframe>
+            <p style="margin: 8px; margin-left: 4px; grid-row: 1;">btw check out my discord! i will be sending like updates and shizz there</p>
+        </div>
     </div>
 </body>
 </html>
