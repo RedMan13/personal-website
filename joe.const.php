@@ -76,7 +76,7 @@
     
             foreach ($accounts as [$subpage, $site, $link]) {
                 echo <<<END
-                    <a style="margin-left: 2px; margin-right: 2px;" href="https://$subpage.$site$link">
+                    <a style="margin-left: 2px; margin-right: 2px;" href="https://$subpage$site$link">
                         <img style="width: 2rem; height: 2rem;" src="https://www.google.com/s2/favicons?sz=64&domain=$site" />
                     </a>
                 END;
