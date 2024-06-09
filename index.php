@@ -131,6 +131,12 @@
             ["CC:T Discord", "https://github.com/RedMan13/cc-discord", "/../../favicon.ico"],
             ["Clamp Coding", "https://clamp-coding.vercel.app", "/favicon.png"]
         ]) ?><br>
+        <h3>here are some other cool sites you should check out!</h3>
+        <ul>
+            <li><a href="https://gen1x.is-a.dev/">Gen1x's Website (works in XP-era Internet Explorer!)</a></li>
+            <li><a href="https://theshovel.rocks/">JodieTheShovel's website! dont forget to check out penguinfunk if you like fnf</a></li>
+            <li><a href="https://jeremygamer13.vercel.app/">JeremyGamer13's site</a></li>
+        </ul>
         
         <div style="display: grid; grid-template-columns: repeat(2, 1fr);">
             <iframe style="margin: 8px; margin-right: 4px; grid-row: 1;" src="https://discord.com/widget?id=1248818317364301967&theme=dark" width="234" height="343.75" allowtransparency="true" frameborder="0" sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"></iframe>
