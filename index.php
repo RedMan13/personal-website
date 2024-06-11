@@ -43,11 +43,16 @@
             ['Replit', new URL('https://replit.com/@RedMan13')],
             ['YouTube', new URL('https://www.youtube.com/channel/UC0NsyMcDBHFWXro1sRHRqMw')]
         ];
+        const prevIdx = Math.floor(links.length / 2);
+        links.splice(prevIdx, 0, ['Previous Person', new URL('https://steve0greatness.github.io/webring/sites/godslayerakp/prev.xhtml')]);
+        const nextIdx = 0;
+        links.splice(nextIdx, 0, ['Next Person', new URL('https://steve0greatness.github.io/webring/sites/godslayerakp/next.xhtml')]);
 
         const orbital = document.getElementById('orbital');
         let mouseHovering = null;
         for (const [idx, [name, link]] of Object.entries(links)) {
             // use googles favicon service for it is much more convinient then trying to extract it ourselves
+            // only exception is the first and last element, as these are part of the webrings
             const favicon = new URL('https://www.google.com/s2/favicons');
             favicon.searchParams.set('sz', 64);
             favicon.searchParams.set('domain', link.hostname);
@@ -55,6 +60,8 @@
             const img = new Image();
             img.width = 20;
             img.src = favicon;
+            if (idx == (prevIdx +1)) img.src = '/webring-prev.png';
+            if (idx == nextIdx) img.src = '/webring-next.png';
             img.title = name;
 
             const hyperlink = document.createElement('a');
@@ -62,9 +69,10 @@
             hyperlink.appendChild(img);
             hyperlink.idx = idx;
             hyperlink.scale = 1;
+            hyperlink.biasedX = 0;
+            hyperlink.biasedY = 0;
             hyperlink.style.position = 'absolute';
             hyperlink.onmouseover = () => mouseHovering = idx;
-            hyperlink.onmouseleave = () => mouseHovering = null;
             links[idx] = hyperlink;
 
             orbital.appendChild(hyperlink);
@@ -79,23 +87,47 @@
         const height = 50;
         const dist = 360 / links.length;
         const deg180 = 180 * Math.PI / 180;
+        let mouseX = 0;
+        let mouseY = 0;
+        document.onmousemove = e => {
+            const bodyScale = +document.getElementById('main').getAttribute('scale');
+            const width = window.innerWidth / 2;
+            const height = window.innerHeight / 2;
+            const bodyWidth = 240 * bodyScale;
+            const bodyHeight = 180 * bodyScale;
+            const centerX = (width - bodyWidth) + ((orbital.clientWidth / 2) * bodyScale);
+            const centerY = (height - bodyHeight) + ((orbital.offsetTop + 30) * bodyScale);
+            
+            mouseX = ((e.x - centerX) / bodyScale);
+            mouseY = ((e.y - centerY) / bodyScale) + 8;
+        }
         const step = t => {
             for (const hyperlink of links) {
-                const isHovered = mouseHovering === hyperlink.idx;
+                const { idx, scale } = hyperlink
+                const isHovered = mouseHovering === idx;
                 const noneHovered = mouseHovering === null;
                 const target = !isHovered && !noneHovered
                     ? 0.68
                     : 1;
-                hyperlink.scale = interpol(hyperlink.scale, target, 0.1);
-                hyperlink.style.filter = `brightness(${hyperlink.scale})`;
+                hyperlink.scale = interpol(scale, target, 0.1);
+                hyperlink.style.filter = `brightness(${scale})`;
                 
-                const dir = ((t / speed) + (dist * hyperlink.idx)) * Math.PI / 180;
-                const x = Math.cos(dir);
-                const y = Math.sin(dir);
+                const dir = ((t / speed) + (dist * idx)) * Math.PI / 180;
+                hyperlink.biasedX = interpol(hyperlink.biasedX, Math.cos(dir) * width, 0.2);
+                hyperlink.biasedY = interpol(hyperlink.biasedY, (Math.sin(dir) * height) + 5, 0.2);
+                if (isHovered) {
+                    hyperlink.biasedX = interpol(hyperlink.biasedX, mouseX, 0.3);
+                    hyperlink.biasedY = interpol(hyperlink.biasedY, mouseY, 0.3);
+                }
+                const mouseXDist = (hyperlink.biasedX - mouseX);
+                const mouseYDist = (hyperlink.biasedY - mouseY);
+                const mouseDist = Math.sqrt(Math.abs((mouseXDist * mouseXDist) - (mouseYDist * mouseYDist)));
+                if (isHovered) console.log(mouseDist, mouseXDist, mouseYDist)
+                if (mouseDist > 10 && isHovered) mouseHovering = null;
 
                 hyperlink.style.transform = `
-                translateX(${(x * width) + 220}px)
-                translateY(${(y * height) - 50}px)
+                translateX(${hyperlink.biasedX}px)
+                translateY(${hyperlink.biasedY}px)
                 scale(${hyperlink.scale})`;
             }
             requestAnimationFrame(step);
@@ -105,15 +137,19 @@
 </head>
 <body style="margin: 0; height: 100%;">
     <div class="card" id="main"><br>
-        <div style="
-            display: flex;
-            justify-content: center;
-            margin-top: 20px;
-            margin-bottom: 20px;
-        ">
+        <div
+            id="orbital"  
+            style="
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                margin-top: 20px;
+                margin-bottom: 40px;
+            "
+        >
             <img src="/my-pfp.png" height="50" onclick="pushAchievment('clickPfp')">
         </div>
-        <div id="orbital"></div></br>
         <?php
         $visitors = intval(file_get_contents('./visitors.txt')) +1;
         file_put_contents('./visitors.txt', strval($visitors));
@@ -124,6 +160,7 @@
         
         echo "hie $visitors$sufix visitor!";
         ?> welcome to mie site of goofy gooberness cause silly good!!!!!! <br>
+        this website is a participant of the <a href="https://steve0greatness.github.io/webring">0greatness webring!</a>
         <h3 class="horizontalCenter">all the projects i have worked on sofar</h3>
         <?php renderSlideDiv([
             ["PenguinMod", "https://penguinmod.com", "/favicon.ico"],
