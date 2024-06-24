@@ -148,7 +148,7 @@
                 margin-bottom: 40px;
             "
         >
-            <img src="/my-pfp.png" height="50" onclick="pushAchievment('clickPfp')">
+            <img style="position: absolute; z-index: 0;" src="/my-pfp.png" height="50" onclick="pushAchievment('clickPfp')">
         </div>
         <?php
         $visitors = intval(file_get_contents('./visitors.txt')) +1;
