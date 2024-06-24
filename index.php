@@ -146,6 +146,7 @@
                 justify-content: center;
                 margin-top: 20px;
                 margin-bottom: 40px;
+                height: 50px;
             "
         >
             <img style="position: absolute; z-index: 0;" src="/my-pfp.png" height="50" onclick="pushAchievment('clickPfp')">
