@@ -54,7 +54,11 @@ app.use(async (req, res) => {
     }
     // if ran as php, this will be set to text/html, so dont try to set it in that case
     if (!target.endsWith('.php')) res.header('Content-Type', mime.lookup(target));
-    if (madeChanges) return res.send(util.file);
+    if (madeChanges) {
+        // finnalize changes so we can send them out
+        util.bake();
+        return res.send(util.file);
+    }
     res.send(fileData);
 })
 

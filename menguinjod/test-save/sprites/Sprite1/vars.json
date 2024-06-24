@@ -1,0 +1,23 @@
+{
+	"name": "Sprite1",
+	"showing": true,
+	"position-X": 0,
+	"position-Y": 0,
+	"direction": 90,
+	"size": 100,
+	"stretch-X": 100,
+	"stretch-Y": 100,
+	"volume": 100,
+	"costume#": 1,
+	"rotation style": "all around",
+	"costumes": {
+		"costume1": {
+			"file": "costume1.svg",
+			"editor-offset X": 1,
+			"editor-offset Y": 1
+		}
+	},
+	"sounds": {},
+	"variables": {},
+	"lists": {}
+}

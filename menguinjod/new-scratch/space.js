@@ -1,175 +1,107 @@
-import { init } from './engine.js'
+import 'scratch-render.min.js';
+/**
+ * @typedef {import('scratch-render/src/RenderWebGL').RenderWebGL} RenderWebGL
+ */
+/** @type {RenderWebGL} */
+window.renderer = new window.ScratchRender(document.getElementById('main'));
 
-/* most of this css is copied from penguinmod */
-const styles = `
-.layer {
-    position: absolute; 
-    left: 0; 
-    top: 0;
-}
-.monitor-container {
-    background: hsla(215, 100%, 95%, 1);
-    border: 1px solid rgba(0, 0, 0, 0.15);
-    border-radius: 0.25rem;
-    font-size: 0.75rem;
-    padding: 3px;
-}
-.monitor-name {
-    margin: 0 5px;
-    text-align: center;
-    font-weight: bold;
-}
-.monitor-value {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-width: 40px;
-    text-align: center;
-    color: white;
-    margin: 0 5px;
-    border-radius: 0.25rem;
-    padding: 0 2px;
-    white-space: pre-wrap;
-    transform: translateZ(0);
+
+const stacksToTick = [];
+let intr;
+let stepTime = (1000 / 60);
+// when provided boolean true/false this controls if we are running or not
+function setStepingDelay(delay) {
+    if (intr) clearInterval(intr);
+    if (delay === false) return;
+    if (delay === true) return setSps(stepTime);
+    intr = setInterval(() => {
+        if (paused) return;
+        stacksToTick.forEach(stack => stack.step());
+    }, delay);
+    stepTime = delay;
 }
 
-.askbox {
-    margin: 0.5rem;
-    border: 1px solid hsla(0, 0%, 0%, 0.15);
-    border-radius: 0.5rem;
-    border-width: 2px;
-    padding: 1rem;
-    background: white;
-}
-.askbox-textbox {
-    height: 2rem;
-    padding: 0 0.75rem;
-    font-size: 0.625rem;
-    font-weight: bold;
-    color: var(--text-primary, hsla(225, 15%, 40%, 1));
-    border-width: 1px;
-    border-style: solid;
-    border-color: var(--ui-black-transparent, hsla(0, 0%, 0%, 0.15));
-    border-radius: 2rem;
-    outline: none;
-    cursor: text;
-    transition: 0.25s ease-out;
-    box-shadow: none;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    min-width: 0;
-    padding: 0 2rem 0 .75rem;
-}
-.askbox-confirm {
-    position: absolute;
-    top: calc(0.5rem / 2);
-    width: calc(2rem - 0.5rem);
-    height: calc(2rem - 0.5rem);
-    border: none;
-    border-radius: 100%;
-    color: white;
-    background: hsla(194, 100%, 50%, 1);
-}
-.askbox-question {
-    font-size: 0.75rem;
-    font-weight: bold;
-    color: hsla(225, 15%, 40%, 1);
-    padding-bottom: 0.5rem;
-}`
-
-const frameRender = document.createElement('canvas').getContext('2d')
-
-export class Monitor extends HTMLElement {
-    static observedAttributes = ['name', 'color', 'type']
-    constructor() {
-        super()
-
-        const renderDom = this.attachShadow({ mode: "open" });
-    }
-
-    connectedCallback() {}
-    disconnectedCallback() {}
-    attributeChangedCallback(name,, newValue) {
-        
-    }
-}
-customElements.define("stage-monitor", Monitor);
-
-export class Stage extends HTMLElement {
-    static observedAttributes = ['width', 'height', 'compiled', 'interpreted']
-    construtor() {
-        super()
-
-        const renderDom = this.attachShadow({ mode: 'open' })
-        const stylizer = document.createElement('style')
-        stylizer.innerText = styles
-        renderDom.appendChild(stylizer)
-        this.renderDom = renderDom
-        this.compiled = true
-    }
-    
-    attributeChangedCallback(name,, newValue) {
-        if (name === 'width') {
-            this.sprites.width = newValue
-            this.pen.width = newValue
-            this.overlays.width = newValue
-            this.wrapper.style.width = `${newValue}px`
-        }
-        if (name === 'height') {
-            this.sprites.height = newValue
-            this.pen.height = newValue
-            this.overlays.height = newValue
-            this.wrapper.style.height = `${newValue}px`
-        }
-        if (name === 'compiled') this.compiled = true
-        if (name === 'interpreted') this.compiled = falses
-    }
-    resize(width, height) {
-        this.sprites.height = newValue
-        this.pen.height = newValue
-        this.overlays.height = newValue
-        this.wrapper.style.height = `${newValue}px`
-    }
-    
-    popupOnSprite(pos, message, thinking) {
-
-    }
-    askQuestion(q) {
-        return new Promise(resolve => {
-            askbox.question.innerText = q
-            askbox.textbox.value = ""
-            askbox.confirm.onclick = () => {
-                askbox.askbox.hidden = true
-                resolve(askbox.textbox.value)
+const blockExecutors = {
+    say(txt) { window.alert(txt); },
+    if(term, thenStack) {
+        if (term) thenStack();
+    },
+    bool() { return true; }
+};
+class BlockStack {
+    constructor(blocks, runHat, runWithoutFps) {
+        this.blocks = blocks;
+        this.parentIds = [];
+        this.stepRunning = false;
+        this.frameTree = [
+            { 
+                idx: +!runHat, 
+                stack: blocks, 
+                asap: runWithoutFps, 
+                return: null 
             }
-            askbox.askbox.hidden = false
-        })
+        ];
+        if (runHat) this.step();
     }
-    setBackground(background) {
-        wrapper.style.background = background
-    }
-    setBackdrop(backdrop) {
-        this.backdrop = backdrop
-        if (this.backdrop) this.backdrop.remove()
-        if (backdrop) {
-            wrapper
+    makeStackCallback(curFrame, stack) {
+        return asap => {
+            this.frameTree.push({
+                idx: 0,
+                stack,
+                asap: asap || curFrame.asap,
+                return: null
+            });
+            // run the first block of the next stack always, this way we effectively never did make a transition
+            this.step();
         }
     }
-    getSpriteSpace() {
-        return sprites.getContext('2d')
+    // used for procedure blocks, simply mixes some other stack list into this one
+    stepTo(stack, asap) {
+        this.frameTree.push({
+            idx: 0,
+            stack,
+            asap: asap || this.frameTree.at(-1).asap,
+            return: null
+        });
+        // run the first block of the next stack always, this way we effectively never did make a transition
+        this.step();
     }
-    getPenSpace() {
-        return pen.getContext('2d')
+    executeReturn(block, curFrame) {
+        if (block[0] === 'return') {
+            curFrame.return = this.executeReturn(block[1], curFrame);
+            this.frameTree.pop();
+            return;
+        }
+        // if this is a stack (from argument) then return a callback that can be called to initiat that stack
+        if (Array.isArray(block) && (typeof block[0] !== 'string')) 
+            return this.makeStackCallback(curFrame, block);
+        // otherwise just make sure it isnt a block to be called, if it isnt then return it
+        if (!Array.isArray(block)) return block;
+
+        const [blockId, ...blockArgs] = block;
+        const args = blockArgs.map(arg => this.executeReturn(arg, curFrame));
+        return blockExecutors[blockId](...args);
     }
-    getFrame() {
-        frameRender.canvas.width = this.size[0]
-        frameRender.canvas.height = this.size[1]
-        frameRender.fillStyle = wrapper.style.background
-        frameRender.fillRect(0, 0, this.size[0], this.size[1])
-        frameRender.drawImage(0, 0, pen)
-        frameRender.drawImage(0, 0, sprites)
-        frameRender.drawImage(0, 0, monitors)
+    async step(inAsap) {
+        if (this.stepRunning) return; // if we are held on something like a promise then dont try and step
+        // intiat that we are running and no further calls should be made
+        this.stepRunning = true;
+        if (!this.frameTree.at(-1).stack[this.frameTree.at(-1).idx]) this.frameTree.pop();
+        const curFrame = this.frameTree.at(-1);
+        await this.executeReturn(curFrame.stack[curFrame.idx], curFrame); // run the block as soon as we can
+        // only after the block runs do we then try to advance forward
+        curFrame.idx++
+        // if we are supposed to run as fast as possible then continue calling step until it returns us false
+        // false meaning that the frame we have now stepped too (including steping out of all frames) isnt to be run asap
+        if (curFrame.asap && !inAsap) while (!window.paused && await this.step(true)) {}
+        // finallize the fact we have step running
+        this.stepRunning = false;
+
+        // returned for when we step into a frame that does run without fps
+        return this.frameTree.at(-1)?.asap ?? false;
     }
 }
-customElements.define("stage-box", Stage);
+
+function reformVarsObj(vars) {
+    const idk = 'idk';
+}

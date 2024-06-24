@@ -1,0 +1,9 @@
+{
+	"version": "0.1",
+	"fromServer": false,
+	"tempo": 60,
+	"video transparency": 50,
+	"video on": "on",
+	"tts language": null,
+	"monitors": []
+}

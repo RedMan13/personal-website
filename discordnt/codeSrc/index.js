@@ -88,10 +88,12 @@ const main = document.getElementById('main');
                         padding: 0;
                         margin: 0;
                     `);
-            messageWrapper.appendChild(messageList)
+            messageWrapper.appendChild(messageList);
     main.appendChild(messageWrapper);
-        const messageInput = document.createElement('input');
-            messageInput.setAttribute('type', 'text')
+        const messageInput = document.createElement('div');
+            messageInput.setAttribute('role', 'textbox');
+            messageInput.setAttribute('contenteditable', true);
+            messageInput.setAttribute('aria-multiline', true)
             main.appendChild(messageInput);
 messageInput.onkeydown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {

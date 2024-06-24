@@ -23,12 +23,13 @@ const fakeReq = {
     headers: {}
 };
 (async () => {
-    console.log('getting precomps...');
+    console.log('\ngetting precomps...');
     const precomps = fs.readdirSync('./preprocessors')
         .filter(filePath => filePath.endsWith('.precomp.js'))
         .map(filePath => {
             const precomp = require(path.resolve('preprocessors', filePath));
-            precomp.name = path.basename(filePath).replace('.precomp.js', '');
+            precomp.title = path.basename(filePath).replace('.precomp.js', '');
+            console.log('\tprecomp', precomp.title);
             return precomp;
         })
         .sort((a, b) => (a.weight ?? 0) - (b.weight ?? 0));
@@ -37,7 +38,7 @@ const fakeReq = {
     // unused atm, as there is no server to put the end points in
     const serverEndpoints = [];
 
-    console.log('getting files to build...');
+    console.log('\ngetting files to build...');
     const toAlwaysIgnore = '\nbuild\n\\.gitignore\npreprocessors\n\\.buildignore\n\\.git\nnode_modules\npackage-lock\\.json\npackage\\.json';
     const filesToIgnore = new RegExp(`^${path.resolve('.').replaceAll('\\', '\\\\')}(\\\\|/)(` + (fs.readFileSync('.buildignore', { encoding: 'utf8' }) + toAlwaysIgnore)
         .split(/\r?\n/gi)
@@ -53,39 +54,39 @@ const fakeReq = {
         switch (typePiece) {
         case 'server.js':
             serverEndpoints.push(require(truePath));
-            console.log('server endpoint', file);
+            console.log('\tserver endpoint', file);
         case 'const.php':
             constantPhps.push([truePath, file]);
-            console.log('constant php', file);
+            console.log('\tconstant php', file);
             break;
         default:
             const dest = path.resolve(buildDir, file)
             waitingCopies.push(fsp.mkdir(path.dirname(dest), { recursive: true }).then(() => fsp.copyFile(truePath, dest))); // generate copy for us to use actualy use
             staticFiles.push(path.resolve(buildDir, file));
-            console.log('static', file);
+            console.log('\tstatic', file);
         }
     }
     console.log('waiting for copy operations to finnish...');
     await Promise.all(waitingCopies);
 
-    console.log('running precomps on build files...');
+    console.log('\nrunning precomps on build files...');
     for (const file of staticFiles) {
         const fileData = fs.readFileSync(file, 'utf8');
         const utils = new PrecompUtils(file, fileData);
         let neverRan = true;
         for (const precompFunc of precomps) {
             const didntRun = await precompFunc(utils);
-            if (!didntRun) console.log(`ran precomp ${precompFunc.name} on ${path.basename(file)}`)
+            if (!didntRun) console.log(`\tran precomp ${precompFunc.title} on ${path.basename(file)}`)
             neverRan &&= didntRun;
         }
         
-        if (!neverRan) fs.writeFileSync(file, utils.file);
+        if (!neverRan && utils.bake()) fs.writeFileSync(utils.path, utils.file);
     }
 
-    console.log('building constant php\'s...');
+    console.log('\nbuilding constant php\'s...');
     for (const [phpSrc, pathName] of constantPhps) {
         fakeReq.path = pathName;
-        console.log(`building ${pathName}...`)
+        console.log(`\tbuilding ${pathName}...`)
         let destPath = path.resolve(buildDir, pathName.replace('.const.php', ''));
         if (path.extname(destPath).length < 2) destPath += '.html';
         fs.mkdirSync(path.dirname(destPath), { recursive: true });
@@ -93,7 +94,7 @@ const fakeReq = {
         staticFiles.push(destPath);
     }
 
-    console.log('forming index file for faster indexing...');
+    console.log('\nforming index file for faster indexing...');
     const index = {};
     for (const file of staticFiles) {
         const extName = path.extname(file)
@@ -102,7 +103,7 @@ const fakeReq = {
             const fileName = path.basename(file);
             let top = index;
             for (const folder of folders) top = top[folder] ??= {};
-            console.log('adding filename', fileName)
+            console.log('\tadding filename', fileName)
             top[fileName] = fileName.slice(0, -path.extname(fileName).length);
         }
     }

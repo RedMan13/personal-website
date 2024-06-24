@@ -6,6 +6,9 @@
   },
   "dependencies": {
     "cors": "^2.8.5",
-    "express": "^4.19.2"
+    "express": "^4.19.2",
+    "front-matter": "^4.0.2",
+    "marked": "^13.0.0",
+    "scratch-render": "^1.0.186"
   }
 }

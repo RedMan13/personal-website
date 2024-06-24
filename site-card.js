@@ -57,8 +57,63 @@ async function initiateSelfDestruct() {
         }
     }, 1000)
 }
+const discoColors = [
+    '#ef0a00',
+    '#efc50a',
+    '#aa0aef',
+    '#0aef00',
+    '#0a0aef'
+];
+async function discoParty() {
+    const ball = new Image(60);
+    ball.src = 'https://media1.tenor.com/m/MFDQwH-z3QoAAAAC/bullett-glitter.gif';
+    await new Promise((resolve, reject) => {
+        ball.onload = resolve;
+        ball.onerror = reject;
+    });
+    ball.style.position = 'absolute';
+    ball.style.top = '10px';
+    ball.style.zIndex = '2';
+    document.body.appendChild(ball);
 
-// i have 0 clue how the fuck im supposed to do all this with css
+    const disco = document.createElement('canvas');
+    disco.width = window.innerWidth;
+    disco.height = window.innerHeight;
+    disco.style.position = 'absolute';
+    disco.style.zIndex = '3';
+    const ctx = disco.getContext('2d');
+    ctx.fillStyle = 'rgba(0,0,0, 0.95)';
+    ctx.fillRect(0, 0, disco.width, disco.height);
+    document.body.appendChild(disco);
+
+    await waitTime(1000);
+
+    ctx.clearRect(0, 0, disco.width, disco.height)
+    ctx.fillStyle = 'rgba(0,0,0, 0.75)';
+    ctx.fillRect(0, 0, disco.width, disco.height);
+    ctx.clearRect(Math.ceil(disco.width / 2) - 30, 10, 60, 60);
+    console.log(50 * 20);
+    for (let i = 0; i < (50 * 20); i++) {
+        const x = (i % 50) + (0.5 * (i % 2)) * 600;
+        const y = Math.floor(i / 50) * 60;
+        console.log(i, x, y)
+        ctx.moveTo(x, y);
+        ctx.ellipse(
+            // at xy
+            x, y, 
+            // with width 20 and height 20 (stretched by distance)
+            20, 20 * Math.min(1, Math.sqrt((((Math.ceil(disco.width / 2) - 30) - x) ** 2) + ((10 - y) ** 2))),
+            // point towards the origin point
+            Math.atan2(((Math.ceil(disco.width / 2) - 30) - x) ** 2, (10 - y) ** 2),
+            // with start and end rotation 360 degrees apart
+            0, 2 * Math.PI
+        );
+        ctx.fillStyle = discoColors[i % discoColors.length];
+        ctx.fill();
+    }
+}
+
+// i have 0 clue how the fuck im supposed to do the scaling with css, and having it clearly saved is better anyways
 function computeSize() {
     if (exploading) return
     const width = window.innerWidth

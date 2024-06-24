@@ -10,7 +10,7 @@ function pushAchievment(key) {
     localStorage.achievments += `,${key}`;
     const [title, description] = achievments[key];
     
-    const msg = document.createElement('div')
+    const msg = document.createElement('div');
     msg.classList.add('ach-card');
     msg.innerHTML = `<h4>${title}</h4><p>${description}</p>`;
     setTimeout(() => {

@@ -730,7 +730,7 @@
         return block.id
     }
     // converts scratchblock syntax into a stream of data for us to read
-    const customBlockParser = /((?<NSPreText>.+?)\[(?<NSArgName>.+?)\]|(?<BPreText>.+?)\[(?<BArgName>.+?)\]|(?<EndText>[^:]*)::(?<ControlArgs>.*)$)/gi
+    const customBlockParser = /((?<NSPreText>.+?)\[(?<NSArgName>.+?)\]|(?<BPreText>.+?)\<(?<BArgName>.+?)\>|(?<EndText>[^:]*)::(?<ControlArgs>.*)$)/gi
     const extBlockTextParser = /((?<preText>.+?)\[(?<argName>.+?)\]|(?<endText>.+?)$)/gi
     function injectBlocksInto(blocks, procedures, comments, stackStart, code, blockOrder) {
         const stackTrace = [...stackStart, 0]

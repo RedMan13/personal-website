@@ -36,7 +36,6 @@ here is a list of all currently implemented precomp files
 | filename | file filter | purpose |
 | --- | --- | --- |
 | eventtitled-scripts | html php | allows you to set a an event that a script element should listen too |
-| ecma-for-xml | html php js | implements ECMAScript for XML ontop of the existing js |
 
 the util class can be found inside [`builder/precomp-utils.js`](https://github.com/redman13/personal-website/main/builder/precomp-utils.js) and is reused accross a single file
 every .precomp.js file is expected to export a function who when run, will first verify that the file is applicable to this precomp, to say that this precomp is not applicable you simply return a truthy value, returning a falsey value will result in the executor assuming that you did something with the util and so saving the utils data into the operating file.

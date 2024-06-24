@@ -1,2 +1,38 @@
-<script src="./space.js" type="module"></script>
-<stage-space width="480" height="360" compiled>
+<!DOCTYPE html>
+<html style="width: 100%; height: 100%;">
+<head>
+    <title>Scratch Project</title>
+    <meta name="description" content="some generic scratch/turbowarp/penguinmod project">
+    <meta name="theme-color" content="white">
+    <meta name="color-scheme" content="light">
+  
+    <link rel="stylesheet" href="/site-card.css">
+    <script src="/site-card.js"></script>
+
+    <script src="./space.js" type="module"></script>
+    <script>
+        const interface = document.getElementById('interface');
+        function setPauseState(bool) {
+            window.paused = bool;
+            interface[1].innerText = paused ? 'play' : 'pause';
+        }
+        function startClick() {
+            setPauseState(false);
+        }
+        function pauseClick() {
+            setPauseState(!paused);
+        }
+        function stopClick() {
+            setPauseState(false);
+        }
+    </script>
+</head>
+<body style="margin: 0; height: 100%;">
+    <div id="interface">
+        <button onclick="startClick()">start</button>
+        <button onclick="pauseClick()">pause</button>
+        <button onclick="stopClick()">stop</button>
+    </div>
+    <canvas class="card" id="main"></canvas>
+</body>
+</html>
