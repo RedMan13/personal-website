@@ -173,7 +173,8 @@
         <ul>
             <li><a href="https://gen1x.is-a.dev/">Gen1x's Website (works in XP-era Internet Explorer!)</a></li>
             <li><a href="https://theshovel.rocks/">JodieTheShovel's website! dont forget to check out penguinfunk if you like fnf</a></li>
-            <li><a href="https://jeremygamer13.vercel.app/">JeremyGamer13's site</a></li>
+            <li><a href="https://jeremygamer13.vercel.app/">JeremyGamer13's site! try to get every atchievment <em>without cheating</em></a></li>
+            <li><a href="https://ddededodediamante.vercel.app">ddededodediamantes website! (guys cool trust 🙏)</a></li>
         </ul><br>
         
         <div style="display: grid; grid-template-columns: repeat(2, 1fr);">
