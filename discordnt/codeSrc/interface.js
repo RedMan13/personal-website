@@ -1,5 +1,4 @@
 import './pako.js';
-import { Asset } from './asset-helper.js';
 // note: this is reversed to how it should actually be shaped
 const ZLIB_SUFFIX = new Uint8Array([255, 255, 0, 0]);
 const gateway = 'wss://gateway.discord.gg';
@@ -13,8 +12,8 @@ export default class ApiInterface {
         this.token = localStorage.token;
         this.version = 10;
         this.reqVisUpdate = () => {};
-        this.emojis = [];
-        this.stickers = [];
+        this.emojis = {};
+        this.stickers = {};
         this.savedMedia = [];
         this.messages = {};
         this.channels = {};
@@ -49,7 +48,7 @@ export default class ApiInterface {
 
     fromApi(callPath, body) {
         const [method, path] = callPath.split(' ', 2);
-        const url = new URL();
+        const url = new URL(`https://discord.com/api/v${this.version}${path}`);
         console.log(method, 'at', url.toString());
         const opts = {
             method,
@@ -100,13 +99,6 @@ export default class ApiInterface {
                     filename: attachment.filename,
                     uploaded_name: attachment.upload_name
                 });
-            }
-        }
-        if (msg.content) {
-            for (const m of msg.content.matchAll(/<a?:(?<name>[a-z_]+):(?<id>[0-9])+>/gi)) {
-                const emoji = this.emojis[m.groups.id];
-                const type = emoji.animated ? 'gif' : 'png';
-                const link = `[:${m.groups.name}:](${Asset.CustomEmoji(emoji, type, 48)})`;
             }
         }
         this.fromApi(`POST /channels/${channel}/messages`, msg);
@@ -213,11 +205,23 @@ export default class ApiInterface {
         switch (event) {
         case 'READY':
             for (const server of data.guilds) {
-                this.emojis = this.emojis.concat(server.emojis.map(emoji => (emoji.guildId = server.id, emoji)));
-                this.stickers = this.stickers.concat(server.stickers.map(sticker => (sticker.guildId = server.id, sticker)));
+                for (const emoji of server.emojis) {
+                    emoji.guild_id = server.id;
+                    this.emojis[emoji.id] = emoji;
+                }
+                for (const sticker of server.stickers) {
+                    sticker.guild_id = server.id;
+                    this.stickers[sticker.id] = sticker;
+                }
                 const channels = {};
-                for (const channel of server.channels) channels[channel.id] = channel;
-                for (const channel of server.threads) channels[channel.id] = channel;
+                for (const channel of server.channels) {
+                    channel.guild_id = server.id
+                    channels[channel.id] = channel;
+                }
+                for (const channel of server.threads) {
+                    channel.guild_id = server.id
+                    channels[channel.id] = channel;
+                };
                 Object.assign(this.channels, channels);
                 const roles = {};
                 for (const role of server.roles) roles[role.id] = role;

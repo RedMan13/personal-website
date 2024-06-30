@@ -1,5 +1,6 @@
 import ApiInterface from "./interface.js";
 import { Asset } from "./asset-helper.js";
+import { getRendered } from "./message-render.js";
 
 const permBits = [
     "CREATE_INSTANT_INVITE",
@@ -72,12 +73,16 @@ class BitMapping {
     }
 }
 const client = new ApiInterface();
+document.addEventListener('DOMContentLoaded', () => {
 const main = document.getElementById('main');
     main.setAttribute('style', `
         ${main.getAttribute('style') /** preserve scaling style */}
         overflow-y: hidden;
     `);
         const messageWrapper = document.createElement('div');
+            messageWrapper.setAttribute('style', `
+                height: 100%;
+            `)
                 const messageList = document.createElement('ul');
                     messageList.setAttribute('style', ` 
                         display: flex;
@@ -90,17 +95,6 @@ const main = document.getElementById('main');
                     `);
             messageWrapper.appendChild(messageList);
     main.appendChild(messageWrapper);
-        const messageInput = document.createElement('div');
-            messageInput.setAttribute('role', 'textbox');
-            messageInput.setAttribute('contenteditable', true);
-            messageInput.setAttribute('aria-multiline', true)
-            main.appendChild(messageInput);
-messageInput.onkeydown = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-        client.fromApi(`POST /channels/${channel}/messages`, { content: messageInput.value });
-        messageInput.value = '';
-    }
-}
 
 function lastEl(elementArray) {
     return elementArray[elementArray.length -1];
@@ -156,9 +150,10 @@ function makeMessageEl(message, compact) {
                     const content = document.createElement('div');
                         content.setAttribute('style', `
                             display: inline;
+                            overflow-x: hidden;
                         `);
                         content.setAttribute('class', 'content-wrapper');
-                            content.innerText = replied.content;
+                            content.innerText = replied.content.replaceAll('\n', '; ');
                         replyWrapper.appendChild(content);
                 })();
             }
@@ -167,8 +162,7 @@ function makeMessageEl(message, compact) {
                     content.setAttribute('style', `
                         padding-left: 2.2rem;
                     `)
-                    content.setAttribute('class', 'content-wrapper');
-                        content.innerText = message.content;
+                        content.innerHTML = getRendered(message.content, false);
                     li.appendChild(content);
                 return li;
             }
@@ -193,7 +187,7 @@ function makeMessageEl(message, compact) {
                     const content = document.createElement('div');
                         content.setAttribute('style', ``)
                         content.setAttribute('class', 'content-wrapper');
-                            content.innerText = message.content;
+                            content.innerHTML = getRendered(message.content, false);
                         textWrapper.appendChild(content);
                 li.appendChild(textWrapper);
         return li;
@@ -281,3 +275,4 @@ client.reqVisUpdate = async (event, message) => {
     }
     }
 };
+});
