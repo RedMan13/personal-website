@@ -1,7 +1,27 @@
-<!DOCTYPE html>
-<html style="height: 100%;">
+<!TEMPLATE /cardpage.html>
+<?php
+function renderSlideDiv($slides) {
+    $slideLength = max(count($slides), 5);
+    echo "<div class=\"slider\" style=\"grid-template-columns: repeat($slideLength, minmax(102px, 1fr));\">";
+    foreach ($slides as [$title, $redirect, $image]) {
+        echo <<<END
+            <a class="slideContent" href="$redirect">
+                <img src="$redirect$image" class="slideImage"></img><br>
+                <p class="slideTitle">$title</p>
+            </a>
+        END;
+    }
+    echo '</div>';
+}
+
+$visitors = intval(file_get_contents('./visitors.txt')) +1;
+file_put_contents('./visitors.txt', strval($visitors));
+
+$numSuf = ['th', 'st', 'nd', 'rd', 'th', 'th', 'th', 'th', 'th', 'th'];
+$sufix = $numSuf[substr($visitors, -1)];
+if ($visitors > 9 && $visitors < 20) $sufix = 'th';
+?>
 <head>
-    <meta http-equiv="content-type" content="text/html; charset=UTF-8">
     <title>godslayerakp</title>
     <meta name="author" content="godslayerakp">
     <meta name="description" content="the main page to my website!">
@@ -9,32 +29,62 @@
     <meta name="theme-color" content="white">
     <meta name="color-scheme" content="light">
     <meta name="robots" content="nosnippet">
-    
-    <link rel="stylesheet" href="/site-card.css">
-    <script src="/site-card.js"></script>
 
-    <link rel="stylesheet" href="/achievments/ach-slide.css">
-    <script src="/achievments/achievments.js"></script>
-
-    <link rel="stylesheet" href="/sliders.css">
-    <link rel="stylesheet" href="/popup.css">
-    <?php
-    function renderSlideDiv($slides) {
-        $slideLength = max(count($slides), 5);
-        echo "<div class=\"slider\" style=\"grid-template-columns: repeat($slideLength, minmax(102px, 1fr));\">";
-        foreach ($slides as [$title, $redirect, $image]) {
-            echo <<<END
-                <a class="slideContent" href="$redirect">
-                    <img src="$redirect$image" class="slideImage"></img><br>
-                    <p class="slideTitle">$title</p>
-                </a>
-            END;
+    <style>
+        .slideImage {
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+            margin-top: 6px;
+            width: 90px;
+            height: auto;
+            object-fit: scale-down;
         }
-        echo '</div>';
-    }
-    ?>
+        .slideTitle {
+            margin-top: 0px;
+        }
+        .slideContent {
+            width: 102px;
+            height: auto;
+            text-align: center;
+            border-width: 1px;
+            border-color: darkgrey;
+            box-shadow: 0px 0px 4px black;
+            margin-top: 8px;
+            margin-left: 6px;
+            margin-right: 6px;
+            margin-bottom: 8px;
+        }
+        .slideContent:hover {
+            box-shadow: 0px 0px 8px black;
+            cursor: pointer;
+        }
+        .slider {
+            margin-top: 12px;
+            overflow-x: scroll;
+            display: grid;
+            grid-gap: 12px;
+            box-shadow: inset 0px 0px 4px black;
+        }
+    </style>
+</head>
+<body><br>
+    <div
+        id="orbital"  
+        style="
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin-top: 20px;
+            margin-bottom: 40px;
+            height: 50px;
+        "
+    >
+        <img style="position: absolute; z-index: 0;" src="/my-pfp.png" height="50" onclick="pushAchievment('clickPfp')">
+    </div>
     <!-- profile link orbit controller -->
-    <script event="DOMContentLoaded">
+    <script>
         const links = [
             ['GitHub', new URL('https://github.com/RedMan13')],
             ['Scratch', new URL('https://scratch.mit.edu/RedMan13')],
@@ -134,53 +184,26 @@
         }
         requestAnimationFrame(step);
     </script>
-</head>
-<body style="margin: 0; height: 100%;">
-    <div class="card" id="main"><br>
-        <div
-            id="orbital"  
-            style="
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                margin-top: 20px;
-                margin-bottom: 40px;
-                height: 50px;
-            "
-        >
-            <img style="position: absolute; z-index: 0;" src="/my-pfp.png" height="50" onclick="pushAchievment('clickPfp')">
-        </div>
-        <?php
-        $visitors = intval(file_get_contents('./visitors.txt')) +1;
-        file_put_contents('./visitors.txt', strval($visitors));
-        
-        $numSuf = ['th', 'st', 'nd', 'rd', 'th', 'th', 'th', 'th', 'th', 'th'];
-        $sufix = $numSuf[substr($visitors, -1)];
-        if ($visitors > 9 && $visitors < 20) $sufix = 'th';
-        
-        echo "hie $visitors$sufix visitor!";
-        ?> welcome to mie site of goofy gooberness cause silly good!!!!!! <br>
-        this website is a participant of the <a href="https://steve0greatness.github.io/webring">0greatness webring!</a>
-        <h3 class="horizontalCenter">all the projects i have worked on sofar</h3>
-        <?php renderSlideDiv([
-            ["PenguinMod", "https://penguinmod.com", "/favicon.ico"],
-            ["Scratch For Discord", "https://s4d.discodes.xyz", "/scratch.png"],
-            ["CC:T Discord", "https://github.com/RedMan13/cc-discord", "/../../favicon.ico"],
-            ["Clamp Coding", "https://clamp-coding.vercel.app", "/favicon.png"]
-        ]) ?>
-        <h3>here are some other cool sites you should check out!</h3>
-        <ul>
-            <li><a href="https://gen1x.is-a.dev/">Gen1x's Website (works in XP-era Internet Explorer!)</a></li>
-            <li><a href="https://theshovel.rocks/">JodieTheShovel's website! dont forget to check out penguinfunk if you like fnf</a></li>
-            <li><a href="https://jeremygamer13.vercel.app/">JeremyGamer13's site! try to get every atchievment <em>without cheating</em></a></li>
-            <li><a href="https://ddededodediamante.vercel.app">ddededodediamantes website! (guys cool trust 🙏)</a></li>
-        </ul><br>
-        
-        <div style="display: grid; grid-template-columns: repeat(2, 1fr);">
-            <iframe style="margin: 8px; margin-right: 4px; grid-row: 1;" src="https://discord.com/widget?id=1248818317364301967&theme=dark" width="234" height="343.75" allowtransparency="true" frameborder="0" sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"></iframe>
-            <p style="margin: 8px; margin-left: 4px; grid-row: 1;">btw check out my discord! i will be sending like updates and shizz there</p>
-        </div>
+
+    <?= "hie $visitors$sufix visitor!" ?> welcome to mie site of goofy gooberness cause silly good!!!!!! <br>
+    this website is a participant of the <a href="https://steve0greatness.github.io/webring">0greatness webring!</a>
+    <h3 class="horizontalCenter">all the projects i have worked on sofar</h3>
+    <?php renderSlideDiv([
+        ["PenguinMod", "https://penguinmod.com", "/favicon.ico"],
+        ["Scratch For Discord", "https://s4d.discodes.xyz", "/scratch.png"],
+        ["CC:T Discord", "https://github.com/RedMan13/cc-discord", "/../../favicon.ico"],
+        ["Clamp Coding", "https://clamp-coding.vercel.app", "/favicon.png"]
+    ]) ?>
+    <h3>here are some other cool sites you should check out!</h3>
+    <ul>
+        <li><a href="https://gen1x.is-a.dev/">Gen1x's Website (works in XP-era Internet Explorer!)</a></li>
+        <li><a href="https://theshovel.rocks/">JodieTheShovel's website! dont forget to check out penguinfunk if you like fnf</a></li>
+        <li><a href="https://jeremygamer13.vercel.app/">JeremyGamer13's site! try to get every atchievment <em>without cheating</em></a></li>
+        <li><a href="https://ddededodediamante.vercel.app">ddededodediamantes website! (guys cool trust 🙏)</a></li>
+    </ul><br>
+    
+    <div style="display: grid; grid-template-columns: repeat(2, 1fr);">
+        <iframe style="margin: 8px; margin-right: 4px; grid-row: 1;" src="https://discord.com/widget?id=1248818317364301967&theme=dark" width="234" height="343.75" allowtransparency="true" frameborder="0" sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"></iframe>
+        <p style="margin: 8px; margin-left: 4px; grid-row: 1;">btw check out my discord! i will be sending like updates and shizz there</p>
     </div>
 </body>
-</html>

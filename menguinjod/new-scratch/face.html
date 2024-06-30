@@ -1,38 +1,189 @@
-<!DOCTYPE html>
-<html style="width: 100%; height: 100%;">
+<!TEMPLATE /cardpage.html>
 <head>
     <title>Scratch Project</title>
     <meta name="description" content="some generic scratch/turbowarp/penguinmod project">
     <meta name="theme-color" content="white">
     <meta name="color-scheme" content="light">
-  
-    <link rel="stylesheet" href="/site-card.css">
-    <script src="/site-card.js"></script>
 
-    <script src="./space.js" type="module"></script>
-    <script>
-        const interface = document.getElementById('interface');
-        function setPauseState(bool) {
-            window.paused = bool;
-            interface[1].innerText = paused ? 'play' : 'pause';
+    <style>
+        .card {
+            overflow-x: visible !important;
+            overflow-y: visible !important;
         }
-        function startClick() {
-            setPauseState(false);
-        }
-        function pauseClick() {
-            setPauseState(!paused);
-        }
-        function stopClick() {
-            setPauseState(false);
-        }
-    </script>
+    </style>
 </head>
-<body style="margin: 0; height: 100%;">
-    <div id="interface">
+<body>
+    <div id="interface" style="position: absolute; top: -1.5rem;">
         <button onclick="startClick()">start</button>
         <button onclick="pauseClick()">pause</button>
         <button onclick="stopClick()">stop</button>
     </div>
-    <canvas class="card" id="main"></canvas>
+    <canvas id="render"></canvas>
+    <svg id="img-load-error" style="display: none;" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="83.69324" height="96.66453" viewBox="0,0,83.69324,96.66453">
+        <g transform="translate(-198.15338,-125.18209)">
+            <g data-paper-data="{&quot;isPaintingLayer&quot;:true}" fill-rule="nonzero" stroke="none" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="10" stroke-dasharray="" stroke-dashoffset="0" style="mix-blend-mode: normal">
+                <path d="M198.15338,221.84662v-83.69324h83.69324v83.69324z" fill="#a2a2a2" stroke-width="none"/>
+                <text transform="translate(215.26012,199.78762) scale(1.71507,1.71507)" font-size="40" xml:space="preserve" fill="#fafafa" fill-rule="nonzero" stroke="none" stroke-width="1" stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="10" stroke-dasharray="" stroke-dashoffset="0" font-family="Sans Serif" font-weight="normal" text-anchor="start" style="mix-blend-mode: normal">
+                    <tspan x="0" dy="0">!?</tspan>
+                </text>
+            </g>
+        </g>
+    </svg>
+    <script src="./scratch-render.min.js"></script>
+    <script>
+        const save = location.hash.slice(1);
+        const renderer = new window.ScratchRender(document.getElementById('render'));
+        renderer.setLayerGroupOrdering(['background', 'pen', 'sprite']);
+        const penDrawable = renderer.createDrawable('pen');
+        renderer.updateDrawableSkinId(penDrawable, renderer.createPenSkin());
+
+        const stacksToTick = [];
+        let intr;
+        let stepTime = (1000 / 60);
+        // when provided boolean true/false this controls if we are running or not
+        function setStepingDelay(delay) {
+            if (intr) clearInterval(intr);
+            if (delay === false) return;
+            if (delay === true) return setSps(stepTime);
+            intr = setInterval(() => {
+                if (paused) return;
+                stacksToTick.forEach(stack => stack.step());
+            }, delay);
+            stepTime = delay;
+        }
+
+        const blockExecutors = {
+            say(txt) { window.alert(txt); },
+            if(term, thenStack) {
+                if (term) thenStack();
+            },
+            bool() { return true; }
+        };
+        class BlockStack {
+            constructor(blocks, vars, runHat, runWithoutFps) {
+                this.blocks = blocks;
+                this.parentIds = [];
+                this.stepRunning = false;
+                this.frameTree = [
+                    { 
+                        idx: +!runHat, 
+                        stack: blocks, 
+                        asap: runWithoutFps, 
+                        vars,
+                        return: null 
+                    }
+                ];
+                if (runHat) this.step();
+            }
+            makeStackCallback(curFrame, stack) {
+                return asap => {
+                    this.frameTree.push({
+                        idx: 0,
+                        stack,
+                        asap: asap || curFrame.asap,
+                        return: null
+                    });
+                    // run the first block of the next stack always, this way we effectively never did make a transition
+                    this.step();
+                }
+            }
+            // used for procedure blocks, simply mixes some other stack list into this one
+            stepTo(stack, asap) {
+                this.frameTree.push({
+                    idx: 0,
+                    stack,
+                    asap: asap || this.frameTree.at(-1).asap,
+                    return: null
+                });
+                // run the first block of the next stack always, this way we effectively never did make a transition
+                this.step();
+            }
+            executeReturn(block, curFrame) {
+                if (block[0] === 'return') {
+                    curFrame.return = this.executeReturn(block[1], curFrame);
+                    this.frameTree.pop();
+                    return;
+                }
+                // if this is a stack (from argument) then return a callback that can be called to initiat that stack
+                if (Array.isArray(block) && (typeof block[0] !== 'string')) 
+                    return this.makeStackCallback(curFrame, block);
+                // otherwise just make sure it isnt a block to be called, if it isnt then return it
+                if (!Array.isArray(block)) return block;
+
+                const [blockId, ...blockArgs] = block;
+                const args = blockArgs.map(arg => this.executeReturn(arg, curFrame));
+                return blockExecutors[blockId](...args, curFrame);
+            }
+            async step(inAsap) {
+                if (this.stepRunning) return; // if we are held on something like a promise then dont try and step
+                // intiat that we are running and no further calls should be made
+                this.stepRunning = true;
+                if (!this.frameTree.at(-1).stack[this.frameTree.at(-1).idx]) this.frameTree.pop();
+                const curFrame = this.frameTree.at(-1);
+                await this.executeReturn(curFrame.stack[curFrame.idx], curFrame); // run the block as soon as we can
+                // only after the block runs do we then try to advance forward
+                curFrame.idx++
+                // if we are supposed to run as fast as possible then continue calling step until it returns us false
+                // false meaning that the frame we have now stepped too (including steping out of all frames) isnt to be run asap
+                if (curFrame.asap && !inAsap) while (!window.paused && await this.step(true)) {}
+                // finallize the fact we have step running
+                this.stepRunning = false;
+
+                // returned for when we step into a frame that does run without fps
+                return this.frameTree.at(-1)?.asap ?? false;
+            }
+        }
+
+        class SoundContainer {
+            constructor(listing, varRoot) {
+                this.hold = {};
+                this.playing = null;
+                for (const [name, file] of Object.entries(listing)) {
+                    const sound = document.createElement('audio');
+                    sound.src = `${save}${varRoot}/sounds/${file}`;
+                    this.hold[name] = src;
+                }
+            }
+            stop() {
+                if (!this.playing) return;
+                this.playing.stop();
+                this.playing = null;
+            }
+            play(name) {
+                if (this.playing) this.playing.stop();
+                this.hold[name].play();
+                this.playing = this.hold[name];
+            }
+        }
+        function reformVarsObj(vars, varRoot) {
+            const costumes = vars.costumes ? 'costumes' : 'backgrounds';
+            const newObj = { ...vars };
+            delete newObj[costumes];
+            newObj.costumes = {};
+            for (const [name, inf] of Object.entries(vars.costumes)) {
+                const img = new Image();
+                img.src = `${save}${varRoot}/${costumes}/${inf.file}`;
+                img.onload = () => {
+                    const rotationCenter = [
+                        (img.width / 2) + inf['editor-offset X'], 
+                        (img.height / 2) + inf['editor-offset Y']
+                    ];
+                    newObj.costumes[name] = inf.file.endsWith('.svg') 
+                        ? renderer.createSVGSkin(img, rotationCenter)
+                        : renderer.createBitmapSkin(img, inf['pixel size'], rotationCenter);
+                }
+                img.onerror = () => {
+                    const errorImg = document.getElementById('img-load-error');
+                    const rotationCenter = [errorImg.width / 2, errorImg.height / 2];
+                    newObj.costumes[name] = renderer.createSVGSkin(errorImg, rotationCenter);
+                }
+            }
+            delete newObj[`${costumes.slice(0, -1)}#`];
+            newObj.curCostume = vars[`${costumes.slice(0, -1)}#`];
+            newObj.sounds = new SoundContainer(vars.sounds, varRoot);
+            newObj.drawable = renderer.createDrawable(vars.costumes ? 'sprite' : 'background');
+            
+            return newObj;
+        }
+    </script>
 </body>
-</html>

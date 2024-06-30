@@ -1,6 +1,6 @@
 const images = {};
 const map = (url, types) => {
-    let funcStr = 'return `https://cdn.discordapp.com/';
+    let funcStr = 'return `https://media.discordapp.net/';
     let lastIdx = 0;
     for (const m of url.matchAll(/\{[$_a-z][$_0-9a-z]*(\.(?<objVarPath>[$_a-z][$_0-9a-z\.]*?))?\}/gi)) {
         funcStr += url.slice(lastIdx, m.index);
@@ -15,7 +15,7 @@ const map = (url, types) => {
     return function(obj, type, size, css = '') {
         if (!types.includes(type)) type = 'png';
         const url = `${mapFunc(obj)}.${type}?size=${2 ** Math.pow(2, 1 / size)}`;
-        if (!size) return url;
+        if (!css) return url;
         const img = new Image(size, size);
         img.src = url;
         img.setAttribute('style', css);

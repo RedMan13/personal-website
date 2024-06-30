@@ -1,4 +1,5 @@
 import './pako.js';
+import { Asset } from './asset-helper.js';
 // note: this is reversed to how it should actually be shaped
 const ZLIB_SUFFIX = new Uint8Array([255, 255, 0, 0]);
 const gateway = 'wss://gateway.discord.gg';
@@ -18,6 +19,7 @@ export default class ApiInterface {
         this.messages = {};
         this.channels = {};
         this.guilds = { [dmServer]: [] };
+        this.uploadId = 0;
 
         this.msgBuf = new Uint8Array();
         this.infContext = new pako.Inflate({
@@ -47,7 +49,7 @@ export default class ApiInterface {
 
     fromApi(callPath, body) {
         const [method, path] = callPath.split(' ', 2);
-        const url = new URL('https://discord.com/api/v' + this.version + path);
+        const url = new URL();
         console.log(method, 'at', url.toString());
         const opts = {
             method,
@@ -65,6 +67,49 @@ export default class ApiInterface {
         }
 
         return fetch(url, opts).then(req => req.json()).catch(message => ({ message }));
+    }
+    uploadFile(file, meta) {
+        const req = new XMLHttpRequest();
+        return {
+            id: meta.id,
+            filename: file.name,
+            uploaded_name: meta.upload_name,
+            set onprogress(func) {
+                req.addEventListener('progress', func);
+            },
+            promise: new Promise((resolve, reject) => {
+                req.open('PUT', meta.upload_url);
+                req.onerror = req.onabort = reject;
+                req.onload = resolve;
+                req.send(file);
+            }),
+            cancel() {
+                req.abort();
+                fetch(meta.upload_url, { method: 'DELETE' });
+            }
+        };
+    }
+    async sendMessage(msg, channel) {
+        if (msg.attachments.length) {
+            const attachments = msg.attachments;
+            msg.attachments = [];
+            for (const attachment of attachments) {
+                if (await attachment.promise.catch(() => true)) continue;
+                msg.attachments.push({
+                    id: attachment.id,
+                    filename: attachment.filename,
+                    uploaded_name: attachment.upload_name
+                });
+            }
+        }
+        if (msg.content) {
+            for (const m of msg.content.matchAll(/<a?:(?<name>[a-z_]+):(?<id>[0-9])+>/gi)) {
+                const emoji = this.emojis[m.groups.id];
+                const type = emoji.animated ? 'gif' : 'png';
+                const link = `[:${m.groups.name}:](${Asset.CustomEmoji(emoji, type, 48)})`;
+            }
+        }
+        this.fromApi(`POST /channels/${channel}/messages`, msg);
     }
 
     reconnect(useGateway, message) {
@@ -168,8 +213,8 @@ export default class ApiInterface {
         switch (event) {
         case 'READY':
             for (const server of data.guilds) {
-                this.emojis = this.emojis.concat(server.emojis);
-                this.stickers = this.stickers.concat(server.stickers);
+                this.emojis = this.emojis.concat(server.emojis.map(emoji => (emoji.guildId = server.id, emoji)));
+                this.stickers = this.stickers.concat(server.stickers.map(sticker => (sticker.guildId = server.id, sticker)));
                 const channels = {};
                 for (const channel of server.channels) channels[channel.id] = channel;
                 for (const channel of server.threads) channels[channel.id] = channel;
