@@ -197,7 +197,7 @@ if ($visitors > 9 && $visitors < 20) $sufix = 'th';
     <h3>here are some other cool sites you should check out!</h3>
     <ul>
         <li><a href="https://gen1x.is-a.dev/">Gen1x's Website (works in XP-era Internet Explorer!)</a></li>
-        <li><a href="https://theshovel.rocks/">JodieTheShovel's website! dont forget to check out penguinfunk if you like fnf</a></li>
+        <li><a href="https://theshovel.rocks/">JodieTheShovel's website! dont forget to check out cofunk (previously penguinfunk) if you like fnf multiplayer!</a></li>
         <li><a href="https://jeremygamer13.vercel.app/">JeremyGamer13's site! try to get every atchievment <em>without cheating</em></a></li>
         <li><a href="https://ddededodediamante.vercel.app">ddededodediamantes website! (guys cool trust 🙏)</a></li>
     </ul><br>
