@@ -63,4 +63,14 @@ app.use(async (req, res) => {
 })
 
 const port = 8000
-app.listen(port, () => console.log(`hosted on http://localhost:${port}`))
+app.listen(port, async () => {
+    console.log(`hosted on http://localhost:${port}`);
+    console.log('');
+    const dirs = await fs.readdir('./', { recursive: true });
+    for (const file of dirs) {
+        const extName = path.extname(file)
+        if ((extName === '.php' || extName === '.html') && !file.includes('node_modules') && !file.includes('useless-history')) {
+            console.log('page', `http://localhost:${port}/${file.replaceAll('\\', '/')}`);
+        }
+    }
+})

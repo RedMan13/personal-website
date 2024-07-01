@@ -12,6 +12,7 @@ export default class ApiInterface {
         this.token = localStorage.token;
         this.version = 10;
         this.reqVisUpdate = () => {};
+        this.users = {};
         this.emojis = {};
         this.stickers = {};
         this.savedMedia = [];
@@ -65,7 +66,13 @@ export default class ApiInterface {
             opts.body = JSON.stringify(body);
         }
 
-        return fetch(url, opts).then(req => req.json()).catch(message => ({ message }));
+        return fetch(url, opts)
+            .then(req => req.json())
+            .then(res => {
+                if ('code' in res) return Promise.reject(res);
+                return res
+            })
+            .catch(message => Promise.reject({ message }));
     }
     uploadFile(file, meta) {
         const req = new XMLHttpRequest();
@@ -101,7 +108,37 @@ export default class ApiInterface {
                 });
             }
         }
-        this.fromApi(`POST /channels/${channel}/messages`, msg);
+        return this.fromApi(`POST /channels/${channel}/messages`, msg);
+    }
+    async getUser(userId, guildId) {
+        if (!guildId) {
+            if (!this.users) return this.users[userId] = await this.fromApi(`GET /users/${userId}`);
+            return this.users[userId];
+        }
+        if (!this.guilds[guildId]?.members?.[userId]) {
+            const member = await this.fromApi(`GET /guilds/${guildId}/members/${userId}`).catch(() => null);
+            if (!member) return this.getUser(userId);
+            this.users[userId] = member.user;
+            if (!this.guilds[guildId]) return member;
+            return this.guilds[guildId].members[userId] = member;
+        }
+        return this.guilds[guildId].members[userId];
+    }
+    async getUserDisplay(userId, guildId) {
+        const user = await this.getUser(userId, guildId).catch(() => null);
+        if (!user) return {
+            id: '0',
+            name: 'Invalid User',
+            avatar: null
+        };
+        return {
+            id: user.id ?? user.user.id,
+            name: user.nick ?? 
+                user.user?.global_name ?? user.user?.username ?? user.user?.discriminator ?? 
+                user.global_name ?? user.username ?? user.discriminator ?? 
+                `FATAL: ${user.id} (found with ${userId}) has no viable name`,
+            avatar: user.avatar ?? user.user?.avatar ?? ''
+        };
     }
 
     reconnect(useGateway, message) {
@@ -228,10 +265,11 @@ export default class ApiInterface {
                 this.guilds[server.id] = {
                     ...server.properties,
                     channels,
+                    members: {},
                     roles
                 };
             }
-            console.log(this);
+            this.reqVisUpdate(event, data);
             break;
         case 'MESSAGE_EDIT': 
         case 'MESSAGE_CREATE':

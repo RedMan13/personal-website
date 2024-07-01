@@ -72,7 +72,7 @@ class BitMapping {
         return this._bits;
     }
 }
-const client = new ApiInterface();
+window.client = new ApiInterface();
 document.addEventListener('DOMContentLoaded', () => {
 const main = document.getElementById('main');
     main.setAttribute('style', `
@@ -107,7 +107,8 @@ async function fetchMessage(msgId) {
         delete client.messages[Object.keys(client.messages)[0]];
     return message;
 }
-function makeMessageEl(message, compact) {
+async function makeMessageEl(message, compact) {
+    const guildId = client.channels[channel].guild_id;
     const li = document.createElement('li');
         li.setAttribute('style', `
             flex: 0 0 auto;
@@ -130,7 +131,8 @@ function makeMessageEl(message, compact) {
                 (async () => {
                     const replied = await fetchMessage(message.message_reference.message_id);
                     replyWrapper.innerHTML = '';
-                    replyWrapper.appendChild(Asset.UserAvatar(replied.author, 'png', 20, `
+                    const user = await client.getUserDisplay(replied.author.id, guildId);
+                    replyWrapper.appendChild(Asset.UserAvatar(user, 'png', 20, `
                         display: inline;
                         width: 0.8rem;
                         height: 0.8rem;
@@ -145,7 +147,7 @@ function makeMessageEl(message, compact) {
                             padding-left: 2px;
                         `);
                         name.setAttribute('class', 'name-text');
-                            name.innerText = replied.author.username;
+                            name.innerText = user.name;
                         replyWrapper.appendChild(name);
                     const content = document.createElement('div');
                         content.setAttribute('style', `
@@ -162,11 +164,12 @@ function makeMessageEl(message, compact) {
                     content.setAttribute('style', `
                         padding-left: 2.2rem;
                     `)
-                        content.innerHTML = getRendered(message.content, false);
+                        content.innerHTML = await getRendered(message.content, false);
                     li.appendChild(content);
                 return li;
             }
-            li.appendChild(Asset.UserAvatar(message.author, 'png', 70, `
+            const user = await client.getUserDisplay(message.author.id, guildId);
+            li.appendChild(Asset.UserAvatar(user, 'png', 70, `
                 display: inline;
                 width: 2rem;
                 height: 2rem;
@@ -182,12 +185,12 @@ function makeMessageEl(message, compact) {
                             font-weight: bold;
                         `);
                         name.setAttribute('class', 'name-text');
-                            name.innerText = message.author.username;
+                            name.innerText = user.name;
                         textWrapper.appendChild(name);
                     const content = document.createElement('div');
                         content.setAttribute('style', ``)
                         content.setAttribute('class', 'content-wrapper');
-                            content.innerHTML = getRendered(message.content, false);
+                            content.innerHTML = await getRendered(message.content, false);
                         textWrapper.appendChild(content);
                 li.appendChild(textWrapper);
         return li;
@@ -217,7 +220,7 @@ async function fillMessages() {
             && nextMessage.author.id === message.author.id
             && (nextMessage.timestamp - message.timestamp) < oneHour
             && !message.message_reference;
-        messageList.appendChild(makeMessageEl(message, shouldCompact));
+        messageList.appendChild(await makeMessageEl(message, shouldCompact));
     }
 }
 Object.defineProperty(window, 'channel', {
@@ -229,10 +232,13 @@ Object.defineProperty(window, 'channel', {
         fillMessages();
     } 
 });
-fillMessages();
+window.onhashchange = fillMessages;
 client.reqVisUpdate = async (event, message) => {
     const first = messageList.children[0];
     switch (event) {
+    case 'READY': 
+        fillMessages();
+        break;
     case 'MESSAGE_CREATE': {
         message.timestamp = new Date(message.timestamp);
         const lastMessage = client.messages[first.getAttribute('id')];
@@ -240,7 +246,7 @@ client.reqVisUpdate = async (event, message) => {
             && lastMessage.author.id === message.author.id
             && (lastMessage.timestamp - message.timestamp) < oneHour
             && !message.message_reference;
-        messageList.insertBefore(makeMessageEl(message, shouldCompact), first);
+        messageList.insertBefore(await makeMessageEl(message, shouldCompact), first);
         lastEl(messageList.children).remove();
         break;
     }
@@ -268,7 +274,7 @@ client.reqVisUpdate = async (event, message) => {
                 && lastMessage.author.id === message.author.id
                 && (lastMessage.timestamp - message.timestamp) < oneHour
                 && !message.message_reference;
-            messageList.appendChild(makeMessageEl(message, shouldCompact));
+            messageList.appendChild(await makeMessageEl(message, shouldCompact));
             lastMessage = message;
         }
         break;
