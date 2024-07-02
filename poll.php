@@ -1,39 +1,42 @@
 <!TEMPLATE /cardpage.html>
 <head>
-    <title>Which one is better?</title>
+    <title>Poll results!</title>
     <meta name="description" contents="Website font poll">
+
+    <style>
+        .right {
+            float: right;
+        }
+        meter {
+            position: absolute;
+            left: 50%;
+        }
+    </style>
 </head>
 <body>
-    <?php
-    $fontname = array_keys($_GET)[0];
-    if (empty($fontname)) {
-        $hide = false;
-    } else {
-        $hide = true;
-        $votes = json_decode(file_get_contents('./votes.json'), true);
-        $votes[$fontname]++;
-        file_put_contents('./votes.json', json_encode($votes));
-    }
-    ?>
-    <div <?= $hide ? '' : 'hidden'?>>
-        <h2>Thank you for voting!</h2>
-        i will be checking the vote counts later and using that to decide on a font to use accross the whole site
-    </div>
-    <form <?= $hide ? 'hidden' : ''?>>
-        <h2>Please vote on one of the following</h2>
+    <h2>Poll Results!</h2>
+    Here are the all the vote results from the poll!
+    <hr />
 
-        <input type="radio" name="proportional" id="font"></input>
-        <label for="proportional" style="font-family: proportional;">Current (proportional)</label><br>
-
-        <input type="radio" name="serif" id="font"></input>
-        <label for="serif" style="font-family: serif;">Serif</label><br>
-
-        <input type="radio" name="sans-serif" id="font"></input>
-        <label for="serif" style="font-family: sans-serif;">Sans Serif</label><br>
-
-        <input type="radio" name="monospace" id="font"></input>
-        <label for="serif" style="font-family: monospace;">Monospace</label><br>
-        <br>
-        <input type="submit"></input>
-    </form>
+    <label for="proportional">Proportional (original)</label>
+    <label for="proportional" class="right">11</label>
+    <meter id="proportional"                                                      max="26" value="11"></meter><br>
+    <label for="serif">Serif</label>
+    <label for="serif" class="right">0</label>
+    <meter id="serif"                                                             max="26" value="0"></meter><br>
+    <label for="sans-serif">Sans serif (current)</label>
+    <label for="sans-serif" class="right">11</label>
+    <meter id="sans-serif"                                                        max="26" value="11"></meter><br>
+    <label for="monospace">Monospace (invalid)</label>
+    <label for="monospace" class="right">39</label>
+    <meter id="monospace"                                      low="37" high="38" max="26" value="39"></meter><br>
+    <label for="wingdings">Wingdings (invalid)</label>
+    <label for="wingdings" class="right">1</label>
+    <meter id="wingdings"                                      low="0" high="2" max="26" value="1"></meter><br>
+    <label for="ddededodediamante">Ddededodediamante (invalid)</label>
+    <label for="ddededodediamante" class="right">3</label>
+    <meter id="ddededodediamante"                              low="0" high="5" max="26" value="3"></meter><br>
+    <label for="comic-sans ms">Comic sans MS (invalid)</label>
+    <label for="comic-sans ms" class="right">34</label>
+    <meter id="comic-sans ms"                                  low="37" high="38" max="26" value="34"></meter><br>
 </body>

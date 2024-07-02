@@ -182,7 +182,7 @@ if ($visitors > 9 && $visitors < 20) $sufix = 'th';
 
     <?= "hie $visitors$sufix visitor!" ?> welcome to mie site of goofy gooberness cause silly good!!!!!! <br>
     this website is a participant of the <a href="https://steve0greatness.github.io/webring">0greatness webring!</a><br>
-    since alot of people dont rlly like the default font, please fill out <a href="/poll.php">this poll</a> on which one you would like to see!<br>
+    the font here has changed! <a href="/poll.php">see here</a> for why!<br>
     <h3 class="horizontalCenter">all the projects i have worked on sofar</h3>
     <?php renderSlideDiv([
         ["PenguinMod", "https://penguinmod.com", "/favicon.ico"],
