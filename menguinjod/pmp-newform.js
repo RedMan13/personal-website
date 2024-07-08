@@ -146,6 +146,7 @@
             this.zip = new JSZip()
             // if we should setup the sprite encoder with the expectation to have many other sprites or only this one sprite
             this.spriteRoots = singleSprite
+            this.spriteIndex = {}
             this.zip.file('meta/input-order.json', JSON.stringify(this.orderInfo))
             this.saveMade = false
             // emit ourselves so that extensions can patch in whatever data they happen to need
@@ -372,6 +373,7 @@
                     json += colors?.[0] ?? 'custom'
                     if (proto.mutation.warp === 'true') json += ' warp'
                     if (returnType === 'end') json += ' cap'
+                    json += `@${blockText.replaceAll(/%[bns]|[^a-z]/gi, '')}`
                     
                     if (returns) json += returnType === 'boolean'
                         ? '>'
@@ -513,6 +515,7 @@
                 vars.sounds[sound.name] = fileName
             }
             
+            if (!target.isStage) this.spriteIndex[name] = target.sprite.name;
             this.zip.file(`${root}/vars.json`, JSON.stringify(vars, null, '\t'))
         }
     
@@ -535,6 +538,7 @@
             const index = {
                 'version': serializerVersion,
                 'fromServer': false,
+                'sprites': this.spriteIndex,
                 'tempo': stage.tempo,
                 'video transparency': stage.videoTransparency,
                 'video on': stage.videoState,
@@ -1067,19 +1071,19 @@
         stage.layerOrder = 0
         vm.runtime.targets.push(stage)
         vm.runtime.executableTargets.push(stage)
-        this.setFramerate(index['framerate']);
+        vm.runtime.setFramerate(index['framerate']);
         if (index['turbo mode enabled?']) {
-            this.turboMode = true;
-            this.emit(Runtime.TURBO_MODE_ON);
+            vm.runtime.turboMode = true;
+            vm.runtime.emit(Runtime.TURBO_MODE_ON);
         }
-        this.setInterpolation(index['interpolation enabled?']);
-        this.setRuntimeOptions({
+        vm.runtime.setInterpolation(index['interpolation enabled?']);
+        vm.runtime.setRuntimeOptions({
             maxClones: index['max clones'],
             fencing: index['fencing enabled?'],
             dangerousOptimizations: index['dangerous optimizations enabled?'],
             miscLimits: index['remove misc limits'],
         });
-        this.renderer.setUseHighQualityRender(index['high-quality pen enabled?']);
+        vm.renderer.setUseHighQualityRender(index['high-quality pen enabled?']);
         vm.runtime.setStageSize(index['stage width'], index['stage height'])
         
         sprites.forEach(async function(path) {

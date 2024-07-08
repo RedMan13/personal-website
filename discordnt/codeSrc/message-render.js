@@ -59,10 +59,11 @@ class HTMLTimeStamp extends HTMLElement {
     render() {
         if (!this.#display) this.#display = this.attachShadow({ mode: 'open' });
         if (!this.#intr) this.#intr = setInterval(this.render, 1000);
+        console.log(this.#display);
         this.#display.innerText = (dateStyle[this.style] ?? dateStyle['R'])(this.time);
     }
     
-    disconnectedCallback() { if (this.#intr) clearInterval(this.#intr) }
+    disconnectedCallback() { if (this.#intr) clearInterval(this.#intr); this.#intr = null; }
     conectedCallback = HTMLTimeStamp.prototype.render;
     attributeChangedCallback = HTMLTimeStamp.prototype.render;
 }
@@ -95,57 +96,69 @@ async function renderInline(chunk, keepSymbol) {
     let str = '';
     const keys = [];
     for (let i = 0, c = chunk[0]; i < chunk.length; c = chunk[++i]) {
-        // handle the discord speciality thing
-        if (c === '<') {
-            const m = chunk.slice(i).match(/<((?<type>@!?|@&|#|a?:[_a-zA-Z]+:)(?<id>[0-9]+)|t:(?<timestamp>[0-9]+)(?<style>:[tTdDfFR])?|id:(?<guildnav>[a-zA-Z]+))>|\[:[_a-zA-Z]+:\]\(https:\/\/media\.discordapp\.net\/emojis\/(?<fakeEId>[0-9]+).*?\)|\[(?<coverText>.*?)\]\((?<hyperlink><.*?>|.*?)\)|(?<url><?https?:\/\/[a-zA-Z\-\.]+[^\s]*>?)/);
-            if (m) {
-                const { type,id, fakeEId, timestamp,style, guildnav, coverText,hyperlink, url} = m.groups;
-                i += m[0].length -1
-                if (hyperlink) {
-                    str += `<a href="/redirect.php?target=${hyperlink[0] === '<' ? hyperlink.slice(1, -1) : hyperlink}">${coverText}</a>`
-                    continue;
+        // handle the discord speciality thing + urls
+        const m = chunk.slice(i).match(/<((?<type>@!?|@&|#|a?:[_a-zA-Z]+:)(?<id>[0-9]+)|t:(?<timestamp>[0-9]+)(?<style>:[tTdDfFR])?|id:(?<guildnav>[a-zA-Z]+))>|\[:[_a-zA-Z]+:\]\(https:\/\/media\.discordapp\.net\/emojis\/(?<fakeEId>[0-9]+).*?\)|\[(?<coverText>.*?)\]\((?<hyperlink><.*?>|.*?)\)|(?<url><?https?:\/\/[^\s]*>?)/);
+        if (m) {
+            const { type,id, fakeEId, timestamp,style, guildnav, coverText,hyperlink, url} = m.groups;
+            const urlString = hyperlink ?? url;
+            const realUrl = (() => {
+                try { 
+                    return new URL(urlString[0] === '<' ? urlString.slice(1, -1) : urlString);
+                } catch (err) {
+                    return null;
                 }
-                if (url) {
-                    str += `<a href="/redirect.php?target=${url}">${url}</a>`
-                    continue;
-                }
-                if (timestamp) {
-                    str += `<time-stamp t="${timestamp}" s="${style}"></time-stamp>`
-                    continue;
-                }
-                if (guildnav) {
-                    str += `<span class="mention"><em>#<em> ${guildnav}</span>`
-                    continue;
-                }
-                if (id || fakeEId) {
-                    const guildId = client.channels[channel].guild_id;
-                    switch (type) {
-                    case '@':
-                    case '@!':
-                        const user = await client.getUserDisplay(id, guildId);
-                        str += `<span class="mention"><em>@</em> ${user.name}</span>`;
-                        break;
-                    case '@&':
-                        const role = client.guilds[guildId].roles[id];
-                        if (!role) {
-                            str += '<span class="mention"><em>@</em> Invalid Role</span>';
-                            break;
-                        }
-                        str += `<span class="mention" style="color: ${role.color}; opacity: 0.3;"><em>@</em> ${role.name}</span>`;
-                        break;
-                    case '#':
-                        str += `<span class="mention"><em>#</em> ${client.channels[channel].name}</span>`;
-                        break;
-                    default:
-                        const emoji = { id };
-                        const gifPng = type[0] === 'a' ? 'gif' : 'png';
-                        str += `<img title="${id}" class="emoji" src="${Asset.CustomEmoji(emoji, gifPng, 48)}"></img>`;
+            })();
+            let valid = false;
+            if (realUrl && coverText) {
+                str += `<a href="/redirect.php?target=${realUrl}">${coverText}</a>`;
+                valid = true;
+            }
+            if (realUrl) {
+                str += `<a href="/redirect.php?target=${realUrl}">${realUrl}</a>`;
+                valid = true;
+            }
+            if (timestamp) {
+                str += `<time-stamp t="${timestamp}" s="${style}"></time-stamp>`;
+                valid = true;
+            }
+            if (guildnav) {
+                str += `<span class="mention"><em>#<em> ${guildnav}</span>`;
+                valid = true;
+            }
+            if (id || fakeEId) {
+                const guildId = client.channels[channel].guild_id;
+                switch (type) {
+                case '@':
+                case '@!':
+                    const user = await client.getUserDisplay(id, guildId);
+                    str += `<span class="mention"><em>@</em> ${user.name}</span>`;
+                    break;
+                case '@&':
+                    const role = client.guilds[guildId].roles[id];
+                    if (!role) {
+                        str += '<span class="mention"><em>@</em> Invalid Role</span>';
                         break;
                     }
-                    continue;
+                    str += `<span class="mention" style="color: ${role.color}; opacity: 0.3;"><em>@</em> ${role.name}</span>`;
+                    break;
+                case '#':
+                    const channelName = client.channels[id].name;
+                    if (!channelName) {
+                        str += `<span class="mention"><em>#</em> Invalid Channel</span>`;
+                    }
+                    str += `<span class="mention"><em>#</em> ${channelName}</span>`;
+                    break;
+                default:
+                    const emoji = { id };
+                    const gifPng = type[0] === 'a' ? 'gif' : 'png';
+                    str += `<img title="${id}" class="emoji" src="${Asset.CustomEmoji(emoji, gifPng, 48)}"></img>`;
+                    break;
                 }
+                valid = true;
             }
+            if (valid) i += m[0].length -1;
         }
+        
         const mark = formatMarks.find(mark => mark[0] === c && chunk.slice(i).startsWith(mark));
         if (!mark) {
             str += c;

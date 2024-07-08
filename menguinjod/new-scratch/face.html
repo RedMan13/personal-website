@@ -30,13 +30,13 @@
         </g>
     </svg>
     <script src="./scratch-render.min.js"></script>
+    <script src="./jszip.min.js"></script>
     <script>
-        const save = location.hash.slice(1);
-        const renderer = new window.ScratchRender(document.getElementById('render'));
-        renderer.setLayerGroupOrdering(['background', 'pen', 'sprite']);
-        const penDrawable = renderer.createDrawable('pen');
-        renderer.updateDrawableSkinId(penDrawable, renderer.createPenSkin());
-
+        const canvas = document.getElementById('render');
+        const save = location.hash.endsWith('/') ? location.hash.slice(1, -1) : location.hash.slice(1);
+        const vars = {};
+        const scripts = {};
+        let stage = null;
         const stacksToTick = [];
         let intr;
         let stepTime = (1000 / 60);
@@ -44,13 +44,118 @@
         function setStepingDelay(delay) {
             if (intr) clearInterval(intr);
             if (delay === false) return;
-            if (delay === true) return setSps(stepTime);
+            if (delay === true) return setStepingDelay(stepTime);
             intr = setInterval(() => {
                 if (paused) return;
                 stacksToTick.forEach(stack => stack.step());
             }, delay);
             stepTime = delay;
         }
+
+        function getWithIdx(obj, idx) {
+            return obj[Object.keys(obj)[idx]];
+        }
+        class SoundContainer {
+            constructor(listing, varRoot) {
+                this.hold = {};
+                this.playing = null;
+                for (const [name, file] of Object.entries(listing)) {
+                    const sound = document.createElement('audio');
+                    sound.src = `${save}/${varRoot}/sounds/${file}`;
+                    this.hold[name] = src;
+                }
+            }
+            stop() {
+                if (!this.playing) return;
+                this.playing.stop();
+                this.playing = null;
+            }
+            play(name) {
+                if (this.playing) this.playing.stop();
+                this.hold[name].play();
+                this.playing = this.hold[name];
+            }
+        }
+        function reformVarsObj(vars, varRoot, isStage) {
+            const costumes = isStage ? 'costumes' : 'backgrounds';
+            const newObj = { ...vars };
+            delete newObj[costumes];
+            newObj.costumes = {};
+            for (const [name, inf] of Object.entries(vars.costumes)) {
+                const img = new Image();
+                img.src = `${save}/${varRoot}/${costumes}/${inf.file}`;
+                img.onload = () => {
+                    const rotationCenter = [
+                        (img.width / 2) + inf['editor-offset X'], 
+                        (img.height / 2) + inf['editor-offset Y']
+                    ];
+                    newObj.costumes[name] = inf.file.endsWith('.svg') 
+                        ? renderer.createSVGSkin(img, rotationCenter)
+                        : renderer.createBitmapSkin(img, inf['pixel size'], rotationCenter);
+                }
+                img.onerror = () => {
+                    const errorImg = document.getElementById('img-load-error');
+                    const rotationCenter = [errorImg.width / 2, errorImg.height / 2];
+                    newObj.costumes[name] = renderer.createSVGSkin(errorImg, rotationCenter);
+                }
+            }
+            delete newObj[`${costumes.slice(0, -1)}#`];
+            newObj.curCostume = vars[`${costumes.slice(0, -1)}#`];
+            newObj.sounds = new SoundContainer(vars.sounds, varRoot);
+            newObj.drawable = renderer.createDrawable(!isStage ? 'sprite' : 'background');
+            renderer.updateDrawableProperties(newObj.drawable, {
+                skinId: getWithIdx(newObj.costumes, newObj.curCostume),
+                position: [vars['postion-X'], vars['position-Y']],
+                direction: vars['direction'],
+                scale: [vars['size'] * vars['stretch-X'], vars['size'] * vars['stretch-Y']],
+                visible: vars['showing']
+            });
+            
+            return newObj;
+        }
+
+        const index = await fetch(`${save}/index.json`).then(req => req.json());
+        setStepingDelay(index['turbo mode'] ? 60 : index['framerate']);
+        canvas.parentElement.width = index['stage width'];
+        canvas.parentElement.height = index['stage height'];
+        const stageVars = await fetch(`${save}/sprites/Stage/vars.json`).then(req => req.json())
+        stage = reformVarsObj(stageVars, 'sprites/Stage', true);
+        stage.tempo = index['tempo'];
+        stage.videoTransparency = index['video transparency'];
+        stage.videoState = index['video on'];
+        stage.textToSpeechLanguage = index['tts language'];
+        const stageCode = await fetch(`${save}/sprites/Stage/code.json`);
+        for (const generic of stageCode.scripts) {
+            scripts[`stage,${generic[2][0][0]},${generic[0]}:${generic[1]}`] = generic[2];
+        }
+        for (const custom of stageCode['custom-blocks']) {
+            const [content, args] = custom[2].split(/\s*::\s*/)
+            const id = args.match(/@(?<id>[a-z]+)/i)?.groups?.id || 
+                        content.replaceAll(/\(.*?\)|<.*?>|[^a-z]+/gi);
+            scripts[`procedure:${id}`] = custom[3];
+        }
+
+        for (const [folderName, name] of index['sprites']) {
+            const folderPath = `sprites/${folderName}`;
+            const folder = fs.folder(folderPath);
+            vars[name] = reformVarsObj(folder.file('vars.json').async('file'), folderPath, false);
+            
+            const code = folder.file('code.json').async('file');
+            for (const generic of code.scripts) {
+                scripts[`${name},${generic[2][0][0]},${generic[0]}:${generic[1]}`] = generic[2];
+            }
+            for (const custom of code['custom-blocks']) {
+                const [content, args] = custom[2].split(/\s*::\s*/)
+                const id = args.match(/@(?<id>[a-z]+)/i)?.groups?.id || 
+                            content.replaceAll(/\(.*?\)|<.*?>|[^a-z]+/gi);
+                scripts[`procedure:${id}`] = custom[3];
+            }
+        }
+
+        const renderer = new window.ScratchRender(canvas);
+        renderer.setLayerGroupOrdering(['background', 'pen', 'sprite']);
+        const penDrawable = renderer.createDrawable('pen');
+        renderer.updateDrawableSkinId(penDrawable, renderer.createPenSkin());
 
         const blockExecutors = {
             say(txt) { window.alert(txt); },
@@ -121,6 +226,7 @@
                 if (!this.frameTree.at(-1).stack[this.frameTree.at(-1).idx]) this.frameTree.pop();
                 const curFrame = this.frameTree.at(-1);
                 await this.executeReturn(curFrame.stack[curFrame.idx], curFrame); // run the block as soon as we can
+                if (curFrame.return) return false; // script returned, stop execution
                 // only after the block runs do we then try to advance forward
                 curFrame.idx++
                 // if we are supposed to run as fast as possible then continue calling step until it returns us false
@@ -132,58 +238,6 @@
                 // returned for when we step into a frame that does run without fps
                 return this.frameTree.at(-1)?.asap ?? false;
             }
-        }
-
-        class SoundContainer {
-            constructor(listing, varRoot) {
-                this.hold = {};
-                this.playing = null;
-                for (const [name, file] of Object.entries(listing)) {
-                    const sound = document.createElement('audio');
-                    sound.src = `${save}${varRoot}/sounds/${file}`;
-                    this.hold[name] = src;
-                }
-            }
-            stop() {
-                if (!this.playing) return;
-                this.playing.stop();
-                this.playing = null;
-            }
-            play(name) {
-                if (this.playing) this.playing.stop();
-                this.hold[name].play();
-                this.playing = this.hold[name];
-            }
-        }
-        function reformVarsObj(vars, varRoot) {
-            const costumes = vars.costumes ? 'costumes' : 'backgrounds';
-            const newObj = { ...vars };
-            delete newObj[costumes];
-            newObj.costumes = {};
-            for (const [name, inf] of Object.entries(vars.costumes)) {
-                const img = new Image();
-                img.src = `${save}${varRoot}/${costumes}/${inf.file}`;
-                img.onload = () => {
-                    const rotationCenter = [
-                        (img.width / 2) + inf['editor-offset X'], 
-                        (img.height / 2) + inf['editor-offset Y']
-                    ];
-                    newObj.costumes[name] = inf.file.endsWith('.svg') 
-                        ? renderer.createSVGSkin(img, rotationCenter)
-                        : renderer.createBitmapSkin(img, inf['pixel size'], rotationCenter);
-                }
-                img.onerror = () => {
-                    const errorImg = document.getElementById('img-load-error');
-                    const rotationCenter = [errorImg.width / 2, errorImg.height / 2];
-                    newObj.costumes[name] = renderer.createSVGSkin(errorImg, rotationCenter);
-                }
-            }
-            delete newObj[`${costumes.slice(0, -1)}#`];
-            newObj.curCostume = vars[`${costumes.slice(0, -1)}#`];
-            newObj.sounds = new SoundContainer(vars.sounds, varRoot);
-            newObj.drawable = renderer.createDrawable(vars.costumes ? 'sprite' : 'background');
-            
-            return newObj;
         }
     </script>
 </body>
