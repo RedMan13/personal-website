@@ -1,6 +1,7 @@
 {
 	"version": "0.1",
 	"fromServer": false,
+	"autorun": true,
 	"sprites": {
 		"Sprite1": "main"
 	},
