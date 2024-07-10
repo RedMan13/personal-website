@@ -30,15 +30,16 @@
         </g>
     </svg>
     <script src="./scratch-render.min.js"></script>
-    <script src="./jszip.min.js"></script>
     <script>
     (async () => {
         const canvas = document.getElementById('render');
-        const renderer = new window.ScratchRender(canvas);
+        const renderer = new window.ScratchRender(canvas, -240, 240, -180, 180);
+        window.renderer = renderer;
         renderer.setLayerGroupOrdering(['background', 'pen', 'sprite']);
         const penDrawable = renderer.createDrawable('pen');
         const penSkin = renderer.createPenSkin();
         renderer.updateDrawableSkinId(penDrawable, penSkin);
+        renderer.draw();
         const save = (location.hash.endsWith('/') ? location.hash.slice(1, -1) : location.hash.slice(1)) ||
                     '../test-save';
         const vars = {};
@@ -49,15 +50,22 @@
         let stepTime = (1000 / 60);
         let paused = false;
         // update all drawables according to there vars
-        async function batchUpdate() {
-            Object.entries(vars)
-                .forEach(([name, vars]) => renderer.updateDrawableProperties(vars.drawable, {
-                    skinId: getWithIdx(vars.costumes, vars.curCostume),
-                    position: [vars.x, vars.y],
-                    direction: vars.direction,
-                    scale: [vars.size * vars.stretchX, vars.size * vars.stretchY],
-                    visible: vars.showing
-                }, console.log(vars.x, vars.y)));
+        function updateDrawable(vars) {
+            const drawable = renderer._allDrawables[vars.drawable];
+            if (vars.x !== drawable._position[0] || vars.y !== drawable._position[1] && vars.penDown) {
+                renderer.penLine(
+                    penSkin, vars.penInf, 
+                    drawable._position[0], drawable._position[1], 
+                    vars.x, vars.y
+                );
+            }
+            renderer.updateDrawableProperties(vars.drawable, {
+                skinId: getWithIdx(vars.costumes, vars.curCostume -1),
+                position: [vars.x, vars.y],
+                direction: vars.direction,
+                scale: [vars.size * vars.stretchX, vars.size * vars.stretchY],
+                visible: vars.showing
+            })
         }
         // when provided boolean true/false this controls if we are running or not
         function setStepingDelay(delay) {
@@ -67,13 +75,13 @@
             intr = setInterval(() => {
                 if (paused) return;
                 stacksToTick.forEach(stack => stack.step());
-                batchUpdate();
+                renderer.draw(); // attempt draw every frame
             }, delay);
             stepTime = delay;
         }
 
         function getWithIdx(obj, idx) {
-            return obj[Object.keys(obj)[idx]];
+            return Object.values(obj)[idx];
         }
         class SoundContainer {
             constructor(listing, varRoot) {
@@ -134,7 +142,7 @@
             newObj.sounds = new SoundContainer(vars.sounds, varRoot);
             newObj.drawable = renderer.createDrawable(!isStage ? 'sprite' : 'background');
             renderer.updateDrawableProperties(newObj.drawable, {
-                skinId: getWithIdx(newObj.costumes, newObj.curCostume),
+                skinId: getWithIdx(newObj.costumes, newObj.curCostume -1),
                 position: [vars['position-X'], vars['position-Y']],
                 direction: vars['direction'],
                 scale: [vars['size'] * vars['stretch-X'], vars['size'] * vars['stretch-Y']],
@@ -194,7 +202,7 @@
         const timerStart = Date.now();
         const blockExecutors = {
             'event:whenflagclicked': () => null,
-            'motion:gotoxy': (x, y, { vars }) => (vars.x = x, vars.y = y),
+            'motion:gotoxy': (x, y, { vars }) => (vars.x = x, vars.y = y, updateDrawable(vars)),
             'pen:penUp': ({ vars }) => vars.penDown = false,
             'pen:penDown': ({ vars }) => {
                 vars.penDown = true;
