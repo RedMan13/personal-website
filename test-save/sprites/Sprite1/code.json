@@ -8,8 +8,8 @@
 			["pen:penDown"],
 			["control:forever", [
 				["motion:gotoxy", 
-						["operator:advMath", ["operator:mathop", "cos", ["sensing:timer"]], "^", "4"], 
-						["operator:mathop", "sin", ["sensing:timer"]]]
+						["operator:mul", ["operator:advMath", ["operator:mathop", "cos", ["operator:mul", ["sensing:timer"], 50]], "^", 4], 40], 
+						["operator:mul", ["operator:mathop", "sin", ["operator:mul", ["sensing:timer"], 50]], 40]]
 			]]
 		]]
 	],

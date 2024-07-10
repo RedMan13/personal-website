@@ -50,6 +50,39 @@
         let stepTime = (1000 / 60);
         let paused = false;
         // update all drawables according to there vars
+        function clampLoop(n, max, min) {
+            const range = (max - min) + 1;
+            return n - (Math.floor((n - min) / range) * range);
+        }
+        function computeDirAndScale(vars) {
+            let direction = vars.direction = clampLoop(vars.direction, 180, -179);
+            let scaleX = vars.size;
+            let scaleY = vars.size;
+            scaleX *= vars.stretchX / 100;
+            scaleY *= vars.stretchY / 100
+            switch (vars.rotationStyle) {
+            case "don't rotate":
+                direction = 90;
+            case 'up-down':
+                direction = 90;
+                scaleX *= vars.direction > 0 ? -1 : 1;
+                break;
+            case 'left-right':
+                direction = 90;
+                scaleY *= Math.abs(vars.direction) > 90 ? -1 : 1;
+                break;
+            case 'look at':
+                scaleY *= vars.direction < 0 ? -1 : 1;
+                break;
+            case 'all around':
+            default:
+                break;
+            }
+            return {
+                direction,
+                scale: [scaleX, scaleY]
+            }
+        }
         function updateDrawable(vars) {
             const drawable = renderer._allDrawables[vars.drawable];
             if (vars.x !== drawable._position[0] || vars.y !== drawable._position[1] && vars.penDown) {
@@ -62,8 +95,7 @@
             renderer.updateDrawableProperties(vars.drawable, {
                 skinId: getWithIdx(vars.costumes, vars.curCostume -1),
                 position: [vars.x, vars.y],
-                direction: vars.direction,
-                scale: [vars.size * vars.stretchX, vars.size * vars.stretchY],
+                ...computeDirAndScale(vars),
                 visible: vars.showing
             })
         }
@@ -141,21 +173,21 @@
             newObj.curCostume = vars[`${costumes.slice(0, -1)}#`];
             newObj.sounds = new SoundContainer(vars.sounds, varRoot);
             newObj.drawable = renderer.createDrawable(!isStage ? 'sprite' : 'background');
+            delete newObj['stretch-X'];
+            delete newObj['stretch-Y'];
+            newObj.stretchX = vars['stretch-X'];
+            newObj.stretchY = vars['stretch-Y'];
             renderer.updateDrawableProperties(newObj.drawable, {
                 skinId: getWithIdx(newObj.costumes, newObj.curCostume -1),
                 position: [vars['position-X'], vars['position-Y']],
-                direction: vars['direction'],
-                scale: [vars['size'] * vars['stretch-X'], vars['size'] * vars['stretch-Y']],
+                ...computeDirAndScale(vars),
                 visible: vars['showing']
             });
             delete newObj['position-X'];
             delete newObj['position-Y'];
-            delete newObj['stretch-X'];
-            delete newObj['stretch-Y'];
+            newObj.size = vars.size;
             newObj.x = vars['position-X'];
             newObj.y = vars['position-Y'];
-            newObj.stretchX = vars['stretch-X'];
-            newObj.stretchY = vars['stretch-Y'];
             
             return newObj;
         }
@@ -212,7 +244,8 @@
             'control:forever': (stack) => stack(false, true),
             'operator:advMath': (a, op, b) => a ** b,
             'operator:mathop': (op, a) => Math[op](a),
-            'sensing:timer': () => (Date.now() - timerStart) / 1000
+            'operator:mul': (a, b) => a * b,
+            'sensing:timer': () => (Date.now() - timerStart) / 1000,
         };
         class BlockStack {
             constructor(blocks, vars, runHat, runWithoutFps) {
