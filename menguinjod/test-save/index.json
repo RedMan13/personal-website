@@ -1,6 +1,9 @@
 {
 	"version": "0.1",
 	"fromServer": false,
+	"sprites": {
+		"Sprite1": "main"
+	},
 	"tempo": 60,
 	"video transparency": 50,
 	"video on": "on",

@@ -32,14 +32,33 @@
     <script src="./scratch-render.min.js"></script>
     <script src="./jszip.min.js"></script>
     <script>
+    (async () => {
         const canvas = document.getElementById('render');
-        const save = location.hash.endsWith('/') ? location.hash.slice(1, -1) : location.hash.slice(1);
+        const renderer = new window.ScratchRender(canvas);
+        renderer.setLayerGroupOrdering(['background', 'pen', 'sprite']);
+        const penDrawable = renderer.createDrawable('pen');
+        const penSkin = renderer.createPenSkin();
+        renderer.updateDrawableSkinId(penDrawable, penSkin);
+        const save = (location.hash.endsWith('/') ? location.hash.slice(1, -1) : location.hash.slice(1)) ||
+                    '../test-save';
         const vars = {};
         const scripts = {};
         let stage = null;
         const stacksToTick = [];
         let intr;
         let stepTime = (1000 / 60);
+        let paused = false;
+        // update all drawables according to there vars
+        async function batchUpdate() {
+            Object.entries(vars)
+                .forEach(([name, vars]) => renderer.updateDrawableProperties(vars.drawable, {
+                    skinId: getWithIdx(vars.costumes, vars.curCostume),
+                    position: [vars.x, vars.y],
+                    direction: vars.direction,
+                    scale: [vars.size * vars.stretchX, vars.size * vars.stretchY],
+                    visible: vars.showing
+                }, console.log(vars.x, vars.y)));
+        }
         // when provided boolean true/false this controls if we are running or not
         function setStepingDelay(delay) {
             if (intr) clearInterval(intr);
@@ -48,6 +67,7 @@
             intr = setInterval(() => {
                 if (paused) return;
                 stacksToTick.forEach(stack => stack.step());
+                batchUpdate();
             }, delay);
             stepTime = delay;
         }
@@ -77,11 +97,18 @@
             }
         }
         function reformVarsObj(vars, varRoot, isStage) {
-            const costumes = isStage ? 'costumes' : 'backgrounds';
-            const newObj = { ...vars };
+            const costumes = !isStage ? 'costumes' : 'backdrops';
+            const newObj = { 
+                ...vars,
+                penDown: false,
+                penInf: {
+                    diameter: 1,
+                    color4f: [0, 0, 0, 0]
+                }
+            };
             delete newObj[costumes];
             newObj.costumes = {};
-            for (const [name, inf] of Object.entries(vars.costumes)) {
+            for (const [name, inf] of Object.entries(vars[costumes])) {
                 const img = new Image();
                 img.src = `${save}/${varRoot}/${costumes}/${inf.file}`;
                 img.onload = () => {
@@ -89,9 +116,12 @@
                         (img.width / 2) + inf['editor-offset X'], 
                         (img.height / 2) + inf['editor-offset Y']
                     ];
-                    newObj.costumes[name] = inf.file.endsWith('.svg') 
-                        ? renderer.createSVGSkin(img, rotationCenter)
-                        : renderer.createBitmapSkin(img, inf['pixel size'], rotationCenter);
+                    if (inf.file.endsWith('.svg')) {
+                        return fetch(img.src)
+                            .then(req => req.text())
+                            .then(svg => newObj.costumes[name] = renderer.createSVGSkin(svg, rotationCenter));
+                    }
+                    newObj.costumes[name] = renderer.createBitmapSkin(img, inf['pixel size'], rotationCenter);
                 }
                 img.onerror = () => {
                     const errorImg = document.getElementById('img-load-error');
@@ -105,26 +135,36 @@
             newObj.drawable = renderer.createDrawable(!isStage ? 'sprite' : 'background');
             renderer.updateDrawableProperties(newObj.drawable, {
                 skinId: getWithIdx(newObj.costumes, newObj.curCostume),
-                position: [vars['postion-X'], vars['position-Y']],
+                position: [vars['position-X'], vars['position-Y']],
                 direction: vars['direction'],
                 scale: [vars['size'] * vars['stretch-X'], vars['size'] * vars['stretch-Y']],
                 visible: vars['showing']
             });
+            delete newObj['position-X'];
+            delete newObj['position-Y'];
+            delete newObj['stretch-X'];
+            delete newObj['stretch-Y'];
+            newObj.x = vars['position-X'];
+            newObj.y = vars['position-Y'];
+            newObj.stretchX = vars['stretch-X'];
+            newObj.stretchY = vars['stretch-Y'];
             
             return newObj;
         }
 
         const index = await fetch(`${save}/index.json`).then(req => req.json());
-        setStepingDelay(index['turbo mode'] ? 60 : index['framerate']);
+        stepTime = index['turbo mode'] 
+            ? 60 
+            : index['framerate'];
         canvas.parentElement.width = index['stage width'];
         canvas.parentElement.height = index['stage height'];
-        const stageVars = await fetch(`${save}/sprites/Stage/vars.json`).then(req => req.json())
+        const stageVars = await fetch(`${save}/sprites/Stage/vars.json`).then(req => req.json());
         stage = reformVarsObj(stageVars, 'sprites/Stage', true);
         stage.tempo = index['tempo'];
         stage.videoTransparency = index['video transparency'];
         stage.videoState = index['video on'];
         stage.textToSpeechLanguage = index['tts language'];
-        const stageCode = await fetch(`${save}/sprites/Stage/code.json`);
+        const stageCode = await fetch(`${save}/sprites/Stage/code.json`).then(req => req.json());
         for (const generic of stageCode.scripts) {
             scripts[`stage,${generic[2][0][0]},${generic[0]}:${generic[1]}`] = generic[2];
         }
@@ -135,12 +175,11 @@
             scripts[`procedure:${id}`] = custom[3];
         }
 
-        for (const [folderName, name] of index['sprites']) {
-            const folderPath = `sprites/${folderName}`;
-            const folder = fs.folder(folderPath);
-            vars[name] = reformVarsObj(folder.file('vars.json').async('file'), folderPath, false);
+        for (const [folderName, name] of Object.entries(index['sprites'])) {
+            const varsJson = await fetch(`${save}/sprites/${folderName}/vars.json`).then(req => req.json());
+            vars[name] = reformVarsObj(varsJson, `${save}/sprites/${folderName}`, false);
             
-            const code = folder.file('code.json').async('file');
+            const code = await fetch(`${save}/sprites/${folderName}/code.json`).then(req => req.json());
             for (const generic of code.scripts) {
                 scripts[`${name},${generic[2][0][0]},${generic[0]}:${generic[1]}`] = generic[2];
             }
@@ -152,17 +191,20 @@
             }
         }
 
-        const renderer = new window.ScratchRender(canvas);
-        renderer.setLayerGroupOrdering(['background', 'pen', 'sprite']);
-        const penDrawable = renderer.createDrawable('pen');
-        renderer.updateDrawableSkinId(penDrawable, renderer.createPenSkin());
-
+        const timerStart = Date.now();
         const blockExecutors = {
-            say(txt) { window.alert(txt); },
-            if(term, thenStack) {
-                if (term) thenStack();
+            'event:whenflagclicked': () => null,
+            'motion:gotoxy': (x, y, { vars }) => (vars.x = x, vars.y = y),
+            'pen:penUp': ({ vars }) => vars.penDown = false,
+            'pen:penDown': ({ vars }) => {
+                vars.penDown = true;
+                renderer.penPoint(penSkin, vars.penInf, vars.x, vars.y);
             },
-            bool() { return true; }
+            'pen:clear': () => renderer.penClear(penSkin),
+            'control:forever': (stack) => stack(false, true),
+            'operator:advMath': (a, op, b) => a ** b,
+            'operator:mathop': (op, a) => Math[op](a),
+            'sensing:timer': () => (Date.now() - timerStart) / 1000
         };
         class BlockStack {
             constructor(blocks, vars, runHat, runWithoutFps) {
@@ -175,18 +217,21 @@
                         stack: blocks, 
                         asap: runWithoutFps, 
                         vars,
-                        return: null 
+                        return: null,
+                        rerun: false
                     }
                 ];
                 if (runHat) this.step();
             }
             makeStackCallback(curFrame, stack) {
-                return asap => {
+                return (asap, rerun) => {
                     this.frameTree.push({
                         idx: 0,
                         stack,
                         asap: asap || curFrame.asap,
-                        return: null
+                        vars: curFrame.vars,
+                        return: null,
+                        rerun
                     });
                     // run the first block of the next stack always, this way we effectively never did make a transition
                     this.step();
@@ -198,32 +243,40 @@
                     idx: 0,
                     stack,
                     asap: asap || this.frameTree.at(-1).asap,
-                    return: null
+                    return: null,
+                    rerun: false
                 });
                 // run the first block of the next stack always, this way we effectively never did make a transition
                 this.step();
             }
             executeReturn(block, curFrame) {
-                if (block[0] === 'return') {
-                    curFrame.return = this.executeReturn(block[1], curFrame);
-                    this.frameTree.pop();
-                    return;
-                }
-                // if this is a stack (from argument) then return a callback that can be called to initiat that stack
-                if (Array.isArray(block) && (typeof block[0] !== 'string')) 
-                    return this.makeStackCallback(curFrame, block);
-                // otherwise just make sure it isnt a block to be called, if it isnt then return it
-                if (!Array.isArray(block)) return block;
+                    try {
+                    if (block[0] === 'procedures:return') {
+                        curFrame.return = this.executeReturn(block[1], curFrame);
+                        this.frameTree.pop();
+                        return;
+                    }
+                    // if this is a stack (from argument) then return a callback that can be called to initiat that stack
+                    if (Array.isArray(block) && (typeof block[0] !== 'string')) 
+                        return this.makeStackCallback(curFrame, block);
+                    // otherwise just make sure it isnt a block to be called, if it isnt then return it
+                    if (!Array.isArray(block)) return block;
 
-                const [blockId, ...blockArgs] = block;
-                const args = blockArgs.map(arg => this.executeReturn(arg, curFrame));
-                return blockExecutors[blockId](...args, curFrame);
+                    const [blockId, ...blockArgs] = block;
+                    const args = blockArgs.map(arg => this.executeReturn(arg, curFrame));
+                    return blockExecutors[blockId](...args, curFrame);
+                } catch (err) {
+                    console.error('block id', block[0], 'has errored', err)
+                }
             }
             async step(inAsap) {
                 if (this.stepRunning) return; // if we are held on something like a promise then dont try and step
                 // intiat that we are running and no further calls should be made
                 this.stepRunning = true;
-                if (!this.frameTree.at(-1).stack[this.frameTree.at(-1).idx]) this.frameTree.pop();
+                if (!this.frameTree.at(-1).stack[this.frameTree.at(-1).idx]) {
+                    if (this.frameTree.at(-1).rerun) this.frameTree.at(-2).idx--;
+                    this.frameTree.pop();
+                }
                 const curFrame = this.frameTree.at(-1);
                 await this.executeReturn(curFrame.stack[curFrame.idx], curFrame); // run the block as soon as we can
                 if (curFrame.return) return false; // script returned, stop execution
@@ -239,5 +292,14 @@
                 return this.frameTree.at(-1)?.asap ?? false;
             }
         }
+        
+        setStepingDelay(false);
+        for (const [id, script] of Object.entries(scripts)) {
+            const [sprite, hatType, position] = id.split(',');
+            if (hatType === 'event:whenflagclicked') 
+                stacksToTick.push(new BlockStack(script, vars[sprite], false, false));
+        }
+        setStepingDelay(true);
+    })()
     </script>
 </body>

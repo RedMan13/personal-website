@@ -1,4 +1,15 @@
 {
-	"scripts": [],
+	"scripts": [
+		[0,0, [
+			["event:whenflagclicked"],
+			["pen:penUp"],
+			["pen:clear"],
+			["motion:gotoxy", 0, 0],
+			["pen:penDown"],
+			["control:forever", [
+				["motion:gotoxy", ["operator:advMath", ["operator:mathop", "cos", ["sensing:timer"]], "^", "4"], ["operator:mathop", "sin", ["sensing:timer"]]]
+			]]
+		]]
+	],
 	"custom-blocks": []
 }

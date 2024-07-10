@@ -1,5 +1,5 @@
 {
-	"name": "Sprite1",
+	"name": "main",
 	"showing": true,
 	"position-X": 0,
 	"position-Y": 0,
@@ -13,8 +13,8 @@
 	"costumes": {
 		"costume1": {
 			"file": "costume1.svg",
-			"editor-offset X": 1,
-			"editor-offset Y": 1
+			"editor-offset X": 0,
+			"editor-offset Y": 0
 		}
 	},
 	"sounds": {},

@@ -241,6 +241,7 @@ export default class ApiInterface {
     async onevent(event, data) {
         switch (event) {
         case 'READY':
+            console.log(data);
             for (const server of data.guilds) {
                 for (const emoji of server.emojis) {
                     emoji.guild_id = server.id;
