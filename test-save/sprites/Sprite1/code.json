@@ -8,7 +8,7 @@
 			["pen:penDown"],
 			["control:forever", [
 				["motion:gotoxy", 
-						["operator:advMath", ["operator:mathop", "cos", ["operator:mul", ["sensing:timer"], 1]], "^", 4], 
+						["operator:advMath", ["operator:mathop", "cos", ["operator:mul", ["sensing:timer"], 1]]], "^", 4], 
 						["operator:mathop", "sin", ["operator:mul", ["sensing:timer"]], 40]
 			]]
 		]]
