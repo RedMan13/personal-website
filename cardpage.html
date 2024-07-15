@@ -28,8 +28,6 @@
             overflow-x: hidden;
             overflow-y: auto;
             position: absolute;
-            width: 480px;
-            height: 360px;
             z-index: 1;
         }
         @keyframes popupAlarm {
@@ -193,15 +191,18 @@
             const width = window.innerWidth
             const height = window.innerHeight
             const card = document.getElementById('main');
-            const cw = ((card.width ?? +(card.style.width).slice(0, -2)) || 480) 
-            const ch = ((card.height ?? +(card.style.height).slice(0, -2)) || 360)
+            const cw = ((card.width ?? +(card.style.width).slice(0, -2)) || 480);
+            const ch = ((card.height ?? +(card.style.height).slice(0, -2)) || 360);
             const scale = Math.min(width / cw, height / ch) - scaleOffset
             if (scale <= 0) {
                 scale = 0
                 initiateSelfDestruct()
             }
             card.setAttribute('scale', scale)
-            card.style.transform = `scale(${scale})`
+            card.style.transform = `scale(${scale})`;
+            card.style.width = cw + 'px';
+            card.style.height = ch + 'px';
+            window.oncardrescale?.(scale)
         };
         computeSize();
         window.onresize = computeSize;

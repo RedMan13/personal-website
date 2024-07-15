@@ -5,6 +5,7 @@
 	"sprites": {
 		"Sprite1": "main"
 	},
+	"extensions": [],
 	"tempo": 60,
 	"video transparency": 50,
 	"video on": "on",
