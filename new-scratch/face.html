@@ -7,8 +7,8 @@
 
     <style>
         .card {
-            overflow-x: visible !important;
-            overflow-y: visible !important;
+            overflow-x: hidden !important;
+            overflow-y: hidden !important;
         }
     </style>
 </head>
@@ -53,6 +53,7 @@
         const controls = document.getElementById('interface').children;
         const canvas = document.getElementById('render');
         const renderer = new window.ScratchRender(canvas, -240, 240, -180, 180);
+        canvas.after(renderer.overlayContainer);
         window.oncardrescale = scale => {
             const [width, height] = renderer.getNativeSize();
             renderer.resize(Math.ceil(width * scale), Math.ceil(height * scale));
@@ -127,6 +128,8 @@
                 visible: vars.showing
             })
         }
+        const tpsCounter = document.createElement('span');
+        renderer.addOverlay(tpsCounter, 'scale-centered')
         // when provided boolean true/false this controls if we are running or not
         function setStepingDelay(delay) {
             if (intr) clearInterval(intr);
@@ -134,9 +137,11 @@
             if (delay === true) return setStepingDelay(stepTime);
             intr = setInterval(() => {
                 if (paused) return;
+                const start = Date.now();
                 stacksToTick.forEach((stack, idx) => !stack.frameTree.length 
                     ? stacksToTick.splice(idx, 1) 
                     : stack.step());
+                tpsCounter.innerText = `tps: ${1 / ((Date.now() - start) / 1000)}`;
                 if (!stacksToTick.length) controls[2].onclick();
                 renderer.draw(); // attempt draw every frame
             }, delay);
