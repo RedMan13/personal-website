@@ -119,6 +119,7 @@
                     vars.x, vars.y
                 );
             }
+            console.log(vars.x, vars.y)
             renderer.updateDrawableProperties(vars.drawable, {
                 skinId: getWithIdx(vars.costumes, vars.curCostume -1),
                 position: [vars.x, vars.y],
@@ -269,7 +270,7 @@
             }
             now() {
                 if (this._pausedAt) return this._pausedAt;
-                return 
+                return Date.now() - this._start;
             }
             pause(pause) {
                 if (!pause) {
