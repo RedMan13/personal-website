@@ -1,15 +1,7 @@
 {
-	"name": "Stage",
 	"showing": true,
-	"position-X": 0,
-	"position-Y": 0,
-	"direction": 90,
-	"size": 100,
-	"stretch-X": 100,
-	"stretch-Y": 100,
 	"volume": 100,
 	"backdrop#": 1,
-	"rotation style": "all around",
 	"backdrops": {
 		"backdrop1": {
 			"file": "backdrop1.svg",

@@ -1,5 +1,4 @@
 {
-	"name": "main",
 	"showing": true,
 	"position-X": 0,
 	"position-Y": 0,
@@ -7,9 +6,9 @@
 	"size": 100,
 	"stretch-X": 100,
 	"stretch-Y": 100,
+	"rotation style": "all around",
 	"volume": 100,
 	"costume#": 1,
-	"rotation style": "all around",
 	"costumes": {
 		"costume1": {
 			"file": "costume1.svg",

@@ -7,16 +7,42 @@
 
     <style>
         .card {
-            overflow-x: hidden !important;
-            overflow-y: hidden !important;
+            overflow-x: visible !important;
+            overflow-y: visible !important;
+        }
+        #interface {
+            border-color: darkgrey;
+            border-style: solid;
+            border-width: 1px;
+            background-color: white;
+            padding: 4px;
+            padding-bottom: 0;
+            border-bottom-width: 0;
+            border-top-left-radius: 4px;
+            border-top-right-radius: 4px;
+            position: absolute; 
+            top: -1.2rem;
+            left: -1px;
+            height: 1rem;
+        }
+        #interface button {
+            vertical-align: text-top;
+            cursor: pointer;
+            width: 1rem;
+            height: 1rem;
+            border-radius: 50%;
+            border: 1px solid rgba(0, 0, 0, 25%);
+        }
+        #interface button[on=false] {
+            opacity: 20%;
         }
     </style>
 </head>
 <body>
-    <div id="interface" style="position: absolute; top: -1.5rem;">
-        <button>start</button>
-        <button>pause</button>
-        <button>stop</button>
+    <div id="interface">
+        <button style="background-color: green;" title="start" on="false"></button>
+        <button style="background-color: orange;" title="pause/play" on="false"></button>
+        <button style="background-color: orangered;" title="stop" on="true"></button>
     </div>
     <canvas id="render" style="width: 100%;" width="480" height="360"></canvas>
     <svg id="img-load-error" style="display: none;" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="83.69324" height="96.66453" viewBox="0,0,83.69324,96.66453">
@@ -125,7 +151,8 @@
                 skinId: getWithIdx(vars.costumes, vars.curCostume -1),
                 position: [vars.x, vars.y],
                 ...computeDirAndScale(vars),
-                visible: vars.showing
+                visible: vars.showing,
+                ...vars.effects
             })
         }
         const tpsCounter = document.createElement('span');
@@ -173,57 +200,82 @@
             }
         }
         function reformVarsObj(vars, varRoot, isStage) {
-            const costumes = !isStage ? 'costumes' : 'backdrops';
             const newObj = { 
                 ...vars,
+                nextCloneId: 0,
+                effects: {
+                    color: 0,
+                    fisheye: 0,
+                    whirl: 0,
+                    pixelate: 0,
+                    mosaic: 0,
+                    brightness: 0,
+                    ghost: 0,
+                    red: 0,
+                    green: 0,
+                    blue: 0,
+                    opaque: 0,
+                    saturation: 0,
+                    // we add 1 since 0x000000 = 0, effects set to 0 will not even be enabled in the shader 
+                    // (so we can never tint to black if we didnt add 1)
+                    tintColor: 0xffffff + 1 
+                },
                 penDown: false,
                 penInf: {
                     diameter: 1,
                     color4f: [0, 0, 0, 0]
-                }
+                },
+                fromSelf: true,
+                clone: !!vars.fromSelf && !varRoot
             };
-            delete newObj[costumes];
-            newObj.costumes = {};
-            const errorImg = document.getElementById('img-load-error');
-            const errCenter = [errorImg.width / 2, errorImg.height / 2];
-            for (const [name, inf] of Object.entries(vars[costumes])) {
-                fetch(`${save}/${varRoot}/${costumes}/${inf.file}`)
-                    .then(req => req.blob())
-                    .then(img => new Promise((resolve, reject) => {
-                        const imgLoader = new Image();
-                        imgLoader.onerror = () => reject();
-                        imgLoader.onload = () => resolve([img, [
-                            (imgLoader.width / 2) + inf['editor-offset X'], 
-                            (imgLoader.height / 2) + inf['editor-offset Y']
-                        ]]);
-                        imgLoader.src = URL.createObjectURL(img);
-                    }))
-                    .then(async ([img, rotationCenter]) => {
-                        newObj.costumes[name] = inf.file.endsWith('.svg')
-                            ? renderer.createSVGSkin(await img.text(), rotationCenter)
-                            : renderer.createBitmapSkin(img, inf['pixel size'], rotationCenter);
-                    })
-                    .catch(() => newObj.costumes[name] = renderer.createSVGSkin(errorImg.outerHTML, errCenter));
+            // this funcion may at times be used to form a clone of a target
+            // so keeping this in mind, we put a value inside the json that says 
+            // we are already setup with assets and have no necessity to remake
+            // costumes and sounds (everything else however will need remade)
+            if (!vars.fromSelf && varRoot) {
+                const costumes = !isStage ? 'costumes' : 'backdrops';
+                delete newObj[costumes];
+                newObj.costumes = {};
+                const errorImg = document.getElementById('img-load-error');
+                const errCenter = [errorImg.width / 2, errorImg.height / 2];
+                for (const [name, inf] of Object.entries(vars[costumes])) {
+                    fetch(`${save}/${varRoot}/${costumes}/${inf.file}`)
+                        .then(req => req.blob())
+                        .then(img => new Promise((resolve, reject) => {
+                            const imgLoader = new Image();
+                            imgLoader.onerror = () => reject();
+                            imgLoader.onload = () => resolve([img, [
+                                (imgLoader.width / 2) + inf['editor-offset X'], 
+                                (imgLoader.height / 2) + inf['editor-offset Y']
+                            ]]);
+                            imgLoader.src = URL.createObjectURL(img);
+                        }))
+                        .then(async ([img, rotationCenter]) => {
+                            newObj.costumes[name] = inf.file.endsWith('.svg')
+                                ? renderer.createSVGSkin(await img.text(), rotationCenter)
+                                : renderer.createBitmapSkin(img, inf['pixel size'], rotationCenter);
+                        })
+                        .catch(() => newObj.costumes[name] = renderer.createSVGSkin(errorImg.outerHTML, errCenter));
+                }
+                delete newObj[`${costumes.slice(0, -1)}#`];
+                newObj.curCostume = vars[`${costumes.slice(0, -1)}#`];
+                newObj.sounds = new SoundContainer(vars.sounds, varRoot);
+                delete newObj['stretch-X'];
+                delete newObj['stretch-Y'];
+                newObj.stretchX = vars['stretch-X'];
+                newObj.stretchY = vars['stretch-Y'];
+                delete newObj['position-X'];
+                delete newObj['position-Y'];
+                newObj.x = vars['position-X'];
+                newObj.y = vars['position-Y'];
             }
-            delete newObj[`${costumes.slice(0, -1)}#`];
-            newObj.curCostume = vars[`${costumes.slice(0, -1)}#`];
-            newObj.sounds = new SoundContainer(vars.sounds, varRoot);
             newObj.drawable = renderer.createDrawable(!isStage ? 'sprite' : 'background');
-            delete newObj['stretch-X'];
-            delete newObj['stretch-Y'];
-            newObj.stretchX = vars['stretch-X'];
-            newObj.stretchY = vars['stretch-Y'];
             renderer.updateDrawableProperties(newObj.drawable, {
                 skinId: getWithIdx(newObj.costumes, newObj.curCostume -1),
                 position: [vars['position-X'], vars['position-Y']],
                 ...computeDirAndScale(vars),
                 visible: vars['showing']
             });
-            delete newObj['position-X'];
-            delete newObj['position-Y'];
-            newObj.size = vars.size;
-            newObj.x = vars['position-X'];
-            newObj.y = vars['position-Y'];
             
             return newObj;
         }
@@ -235,6 +287,7 @@
         canvas.parentElement.height = index['stage height'];
         const stageVars = await fetch(`${save}/sprites/Stage/vars.json`).then(req => req.json());
         stage = reformVarsObj(stageVars, 'sprites/Stage', true);
+        stage.name = 'stage'
         vars['stage'] = stage;
         stage.tempo = index['tempo'];
         stage.videoTransparency = index['video transparency'];
@@ -254,6 +307,7 @@
         for (const [folderName, name] of Object.entries(index['sprites'])) {
             const varsJson = await fetch(`${save}/sprites/${folderName}/vars.json`).then(req => req.json());
             const spriteVars = reformVarsObj(varsJson, `${save}/sprites/${folderName}`, false);
+            spriteVars.name = name;
             vars[name] = spriteVars;
             
             const code = await fetch(`${save}/sprites/${folderName}/code.json`).then(req => req.json());
@@ -292,19 +346,33 @@
         }
         const globalTimer = new Timer();
         const blockExecutors = {
-            'event:whenflagclicked': () => null,
-            'motion:gotoxy': (x, y, { vars }) => (vars.x = x, vars.y = y, updateDrawable(vars)),
-            'pen:penUp': ({ vars }) => vars.penDown = false,
-            'pen:penDown': ({ vars }) => {
-                vars.penDown = true;
-                renderer.penPoint(penSkin, vars.penInf, vars.x, vars.y);
+            'whenflagclicked': () => null,
+            'whenNewClone': () => null,
+            'gotoRandom': ({ vars }) => {
+                vars.x = (Math.random() * 200) - 100;
+                vars.y = (Math.random() * 200) - 100;
             },
-            'pen:clear': () => renderer.penClear(penSkin),
-            'control:forever': (stack) => stack(false, true),
-            'operator:advMath': (a, op, b) => a ** b,
-            'operator:mathop': (op, a) => Math[op](a),
-            'operator:mul': (a, b) => a * b,
-            'sensing:timer': () => globalTimer.now() / 1000,
+            'createClone': ({ vars: myVars }) => {
+                const cloneName = myVars.name + myVars.nextCloneId++;
+                const cloneVars = vars[cloneName] = reformVarsObj(myVars);
+                cloneVars.name = cloneName;
+                cloneVars.parent = myVars.clone ? myVars.parent : myVars.name;
+                console.log('jorge')
+                for (const [id, script] of Object.entries(scripts)) {
+                    const [sprite, hatType, position] = id.split(',');
+                    if (hatType === 'whenNewClone' && (sprite === myVars.name || sprite === myVars.parent)) 
+                        stacksToTick.push(new BlockStack(script, cloneVars, false, true));
+                }
+            },
+            'deleteThisClone': ({ vars: myVars }) => {
+                if (!myVars.clone) return;
+                delete vars[myVars.name];
+                for (let idx = 0; idx < stacksToTick.length;) {
+                    const stack = stacksToTick[idx];
+                    if (stack.frameTree[0].vars.name === myVars.name) stacksToTick.splice(idx, 1);
+                    else idx++
+                }
+            }
         };
         class BlockStack {
             constructor(blocks, vars, runHat, runWithoutFps) {
@@ -399,7 +467,7 @@
                 const oldProps = Object.getOwnPropertyDescriptor(obj, key);
                 Object.defineProperty(obj, key, {
                     ...oldProps,
-                    get() { listner('get', this, oldProps.get) },
+                    get() { listner('get', null, this, oldProps.get) },
                     set(val) { listner('set', val, this, oldProps.set) }
                 });
                 return () => Object.defineProperty(obj, key, oldProps);
@@ -447,19 +515,18 @@
             // create starts
             for (const [id, script] of Object.entries(scripts)) {
                 const [sprite, hatType, position] = id.split(',');
-                if (hatType === 'event:whenflagclicked') 
+                if (hatType === 'whenflagclicked') 
                     stacksToTick.push(new BlockStack(script, vars[sprite], false, false));
             }
             paused = false;
             setStepingDelay(true);
-            controls[0].style.backgroundColor = 'green';
-            controls[1].style.backgroundColor = '';
-            controls[2].style.backgroundColor = '';
+            controls[0].setAttribute('on', 'true');
+            controls[1].setAttribute('on', 'false');
+            controls[2].setAttribute('on', 'false');
         }
         controls[1].onclick = (button) => {
             paused = !paused;
-            controls[1].innerText = paused ? 'unpause' : 'pause';
-            controls[1].style.backgroundColor = paused ? 'orange' : '';
+            controls[1].setAttribute('on', paused);
         }
         controls[2].onclick = () => {
             paused = true; // ensure all asap stacks get stopped
@@ -470,12 +537,12 @@
             // undo pause since its nolonger required 
             // as even if a stack was still stepping it will now be forced to return with no frames left to run
             paused = false; 
-            controls[0].style.backgroundColor = '';
-            controls[1].style.backgroundColor = '';
-            controls[2].style.backgroundColor = 'orangered';
+            controls[0].setAttribute('on', 'false');
+            controls[1].setAttribute('on', 'false');
+            controls[2].setAttribute('on', 'true');
         }
         if (index.autorun) controls[0].onclick();
-        else controls[2].style.backgroundColor = 'orangered';
+        else controls[2].setAttribute('on', 'true');
     })()
     </script>
 </body>
