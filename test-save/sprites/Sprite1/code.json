@@ -6,8 +6,8 @@
 		]],
 		[30,0, [
 			["whenNewClone"],
-			["gotoRandom"],
 			["createClone"],
+			["gotoRandom"],
 			["deleteThisClone"]
 		]]
 	],

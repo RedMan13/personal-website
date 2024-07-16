@@ -37,6 +37,9 @@
         #interface button[on=false] {
             opacity: 20%;
         }
+        .scratch-render-overlays {
+            z-index: 5;
+        }
     </style>
 </head>
 <body>
@@ -80,15 +83,18 @@
         const controls = document.getElementById('interface').children;
         const canvas = document.getElementById('render');
         const renderer = new window.ScratchRender(canvas, -240, 240, -180, 180);
-        canvas.after(renderer.overlayContainer);
+        canvas.parentElement.after(renderer.overlayContainer);
         window.oncardrescale = scale => {
             const [width, height] = renderer.getNativeSize();
             renderer.resize(Math.ceil(width * scale), Math.ceil(height * scale));
+            const overlayStyle = renderer.overlayContainer.style;
+            overlayStyle.left = ((window.innerWidth - +overlayStyle.width.slice(0, -2)) / 2) + 'px'
+            overlayStyle.top = ((window.innerHeight - +overlayStyle.height.slice(0, -2)) / 2) + 'px'
         }
-        oncardrescale(+canvas.parentElement.getAttribute('scale') || 1);
         renderer.on('NativeSizeChanged', ({ newSize }) => {
             canvas.parentElement.setAttribute('width', newSize[0]);
             canvas.parentElement.setAttribute('height', newSize[1]);
+
         });
         window.renderer = renderer;
         renderer.setLayerGroupOrdering(['background', 'pen', 'sprite']);
@@ -358,11 +364,10 @@
                 const cloneVars = vars[cloneName] = reformVarsObj(myVars);
                 cloneVars.name = cloneName;
                 cloneVars.parent = myVars.clone ? myVars.parent : myVars.name;
-                console.log('jorge')
                 for (const [id, script] of Object.entries(scripts)) {
                     const [sprite, hatType, position] = id.split(',');
                     if (hatType === 'whenNewClone' && (sprite === myVars.name || sprite === myVars.parent)) 
-                        stacksToTick.push(new BlockStack(script, cloneVars, false, true));
+                        stacksToTick.push(new BlockStack(script, cloneVars, false, false));
                 }
             },
             'deleteThisClone': ({ vars: myVars }) => {
