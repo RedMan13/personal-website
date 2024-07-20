@@ -29,6 +29,8 @@
             overflow-y: auto;
             position: absolute;
             z-index: 1;
+            width: 480px;
+            height: 360px;
         }
         @keyframes popupAlarm {
             from {
@@ -67,8 +69,10 @@
     <script src="/achievments/achievments.js"></script>
 </head>
 <body style="margin: 0; height: 100%;">
-    <noscript>Dont be allarmed! it looks like you have scripts dissabled, this site uses scripts to make certain renders (like scaling this card) work and display correctly</noscript>
-    <div class="card" id="main">{body}</div>
+    <div class="card" id="main">
+        <noscript>Dont be allarmed! it looks like you have scripts dissabled, this site uses scripts to make certain renders (like scaling this card) work and display correctly</noscript>
+        {body}
+    </div>
     <script>
         const scaleOffset = 0.20
 
@@ -191,8 +195,8 @@
             const width = window.innerWidth
             const height = window.innerHeight
             const card = document.getElementById('main');
-            const cw = ((card.width ?? +(card.style.width).slice(0, -2)) || 480);
-            const ch = ((card.height ?? +(card.style.height).slice(0, -2)) || 360);
+            const cw = card.offsetWidth;
+            const ch = card.offsetHeight;
             const scale = Math.min(width / cw, height / ch) - scaleOffset
             if (scale <= 0) {
                 scale = 0
@@ -200,18 +204,10 @@
             }
             card.setAttribute('scale', scale)
             card.style.transform = `scale(${scale})`;
-            card.style.width = cw + 'px';
-            card.style.height = ch + 'px';
             window.oncardrescale?.(scale)
         };
         computeSize();
         window.onresize = computeSize;
-        const sizeChange = new MutationObserver((mutations) => {
-            const mutation = mutations[0];
-            if (mutation.type !== 'attribute') return;
-            computeSize();
-        })
-        sizeChange.observe(document.getElementById('main'), { attributes: true })
     </script>
 </body>
 </html>

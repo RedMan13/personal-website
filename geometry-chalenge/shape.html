@@ -1,0 +1,119 @@
+<!TEMPLATE /cardpage.html>
+<head>
+    <title class="needsShape">Draw a {shape}!</title>
+    <meta class="needsShape" name="description" content="attempt to draw your best {shape}!">
+    <style>
+        canvas {
+            width: 200px;
+            height: 200px;
+            border: 1px solid gray;
+            border-radius: 4px;
+            cursor: crosshair;
+        }
+    </style>
+</head>
+<body>
+    <h2 class="needsShape">Draw your best {shape}</h2>
+    <canvas id="pins" width="200" height="200"></canvas> 
+    <script>
+        const shape = location.hash.slice(1);
+        for (const el of document.getElementsByClassName('needsShape')) {
+            switch (el.tagName) {
+            case 'meta':
+                el.setAttribute('content', el.getAttribute('content').replaceAll('{shape}', shape))
+                break;
+            case 'title':
+            case 'h2':
+            default:
+                el.innerText = el.innerText.replaceAll('{shape}', shape);
+            }
+        }
+        const canvas = document.getElementById('pins');
+        const ctx = canvas.getContext('2d');
+        const nodes = [];
+        const points = {
+            'triangle': 3,
+            'square': 4,
+            'pentagon': 5,
+            'hexagon': 6,
+            'heptagon': 7,
+            'octagon': 8,
+            'nonagon': 9,
+            'decagon': 10
+        }[shape];
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        window.oncardrescale = function(scale) {
+            canvas.width = 200 * scale;
+            canvas.height = 200 * scale;
+            ctx.resetTransform();
+            ctx.scale(scale, scale);
+        }
+        canvas.onmousemove = function(ev) {
+            if (!nodes.length) return;
+            if (nodes.length === points) return;
+            const realX = ev.offsetX;
+            const realY = ev.offsetY;
+            ctx.clearRect(0, 0, 200, 200);
+            ctx.beginPath();
+            ctx.moveTo(...nodes[0]);
+            for (const pos of nodes) ctx.lineTo(...pos);
+            ctx.lineTo(realX, realY);
+            ctx.closePath();
+            ctx.strokeStyle = 'black';
+            ctx.stroke();
+        }
+        canvas.onmousedown = function(ev) {
+            // empty out the nodes list
+            if (nodes.length === points) while (nodes.shift());
+            const realX = ev.offsetX;
+            const realY = ev.offsetY;
+            nodes.push([realX, realY]);
+            if (nodes.length === points) {
+                const origin = nodes[0];
+                const neighbor = nodes[1] ?? [realX, realY];
+                const dx = origin[0] - neighbor[0];
+                const dy = origin[1] - neighbor[1];
+                // detirmin our distance and angle to neighbor (second node) to use as reference inside 
+                // the perfect shape
+                const sideLength = Math.sqrt((dx * dx) + (dy * dy));
+                // get the angle of the third node to detirmin the sign of the side angle
+                const angleSign = Math.sign(Math.atan2(neighbor[0] - nodes[2][0], neighbor[1] - nodes[2][0]) - (Math.PI / 2));
+                console.log(angleSign);
+                const sideAngle = Math.abs(Math.atan2(dy, dx)) * angleSign;
+                // compute the angle between all points
+                const distance = (360 / points) * Math.PI / 180;
+                const xMult = Math.cos(distance);
+                const yMult = Math.sin(distance);
+                const jointAngle = Math.atan2(yMult, 1 - xMult) * 2;
+                // compute the postions of all points
+                const perfect = [origin, neighbor];
+                ctx.beginPath();
+                ctx.moveTo(...origin);
+                ctx.lineTo(...neighbor);
+                for (let i = 1; i <= points -2; i++) {
+                    const pos = [
+                        (sideLength * Math.cos((jointAngle * i) + sideAngle)) + perfect.at(-1)[0],
+                        (sideLength * Math.sin((jointAngle * i) + sideAngle)) + perfect.at(-1)[1]
+                    ];
+                    ctx.lineTo(...pos);
+                    perfect.push(pos);
+                }
+                ctx.closePath();
+                ctx.strokeStyle = 'red';
+                ctx.stroke();
+                
+                let avgDiff = 0;
+                // we slice two because the first two nodes will *always* be correct
+                for (const [idx, pos] of Object.entries(nodes.slice(2))) {
+                    const dx = perfect[idx][0] - pos[0];
+                    const dy = perfect[idx][1] - pos[1];
+                    avgDiff += Math.sqrt((dx * dx) + (dy * dy));
+                }
+                avgDiff /= nodes.length;
+                const percentage = avgDiff / Math.sqrt((origin[]) + ());
+                console.log(percentage);
+            }
+        }
+    </script>
+</body>

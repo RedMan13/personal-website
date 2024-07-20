@@ -1,0 +1,44 @@
+<!TEMPLATE /cardpage.html>
+<head>
+    <title>Questions on makng a personal site?</title>
+    <meta name="description" value="This document is meant to help you develop your own site without requiring a paid service for a bespoke editor">
+
+    <style>
+        code {
+            border: 1px solid rgba(0, 0, 0, 0.20);
+            border-radius: 2px;
+            background-color: rgba(0, 0, 0, 0.20);
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <h1>Well where would i host it?</h1>
+    there are hundreds if not millions of places you can host a webpage <em>for free</em>,<br>
+    great examples are <a href="https://vercel.com">Vercel</a> and <a href="https://github.io">GitHub.io</a> (both pull from <a href="https://github.com">GitHub</a>)
+    <h1>This is looking a bit big...</h1>
+    it really isnt, especially GitHub.io where the guide to do it fits purely inside the page making reference to it
+    <h1>Well then what do i do now?</h1>
+    i dont use vercel so i cant help you there :trollhands:, but! github.io is incredibly basic, first make a github account then follow the first step of the guide at <a href="https://github.io">GitHub.io</a> (i want you to only do the first cause the rest requires backing in other programing things, but using github pages has no requirement of such)
+    now that you actually have the github page, we can talk about making an actual page
+    <h1>How do i make the content on the page?</h1>
+    lets start with making text and modifying its basic looks
+    first, for every page you ever make, put <code>&lt;!DOCTYPE html&gt;<br>&lt;html&gt;<br>&lt;head&gt;&lt;/head&gt;<br>&lt;body&gt;&lt;/body&gt;<br>&lt;/html&gt;</code>
+    in the a file of any name (readme.html), the editor you use is unimportant, hell even the built in editor from github is perfectly acceptable to be doing this
+    all that matters is that you can write text into the body element of the page and page meta into the head element
+    <h1>Whats an element?</h1>
+    an element is <code>&lt;tagName&gt;&lt;/tagName&gt;</code> (some elements, meta and br specifically of note, can be expressed with <code>&lt;tagName/&gt;</code> or <code>&lt;tagName&gt;</code> instead)
+    common tag names to use are <code>h#</code> (# being any number) for headers and <code>a href="#url"</code> for hyperlinks (#url being the url to goto when clicked, the href="#url" should NOT go in the second half of the element)
+    <h1>I have a page now... but its kinda ugly</h1>
+    no need to worry! this is just how your browser defaults the display for your content (very bland, very untextured)
+    to edit the looks of the content in the body element, you will need css! (normally inside the head, but not explicitly required that it is)
+    to write css simply put a <code>&lt;style&gt;&lt;/style&gt;</code> and the inside of the style element will be your css <br>
+    css works by matching some set of elements and then defining what visual properties those matched elements should have, for now we will be handling basic element matching, where you match by tag and nothing else<br>
+    to start, getting any styling done at all, inside the style element you added put <code>body {<br>    font: sans-serif;<br>}</code>, this will make your webpages font change to the browsers sans-serif selection, rather then purely being default only<br>
+    from here you can say, center the text, or change the background color, for now i will only list some bare minimums but dont be worried about understanding css, as 99% of any webdev is just "google how i do this, copy there implementation" and nothing further in thought, so for the most part just do that<br>
+    to change text color simply set the color attribute in the css to what ever color you want (just google "color picker" if you dont have any that will give hex colors) (if you confused on what "setting a css attribute is", its the same thng as the "font: sans-serif;" thing we just added, just with font replaced with attribute name and sans-serif replaced with the attribute value, the attributes can be placed anywhere inside the curly braces and even be duplicated multiple times, with the last one being the only one to take efect)<br>
+    to set the background color then, much like text color, set the background-color attribute to a color, but theres more! gradiants are also valid colors, being defined like <code>linear-gradient(to bottom, #colorone 0px, #colortwo 100vh)</code> with #colorone replaced with the color you want at the top and #colortwo as the bottom color<br>
+    to make all text centered simply set the text-align attribute to center<br>
+    dont be worried about it looking bad to others as the point is to share yourself safely in a way you enjoy, not explicitly to give pleasure or content to others<br>
+    for more again just google answers, but also <a href="https://www.w3schools.com/">W3Schools</a> for extra extra extra on the development of webpages
+</body>
