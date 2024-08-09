@@ -1,30 +1,92 @@
-@keyframes slideIn {
-    from {
-        right: -500%;
-    }
-    to {
-        right: 8px;
-    }
-}
-@keyframes slideOut {
-    from {
-        right: 8px;
-    }
-    to {
-        right: -500px;
-    }
-}
-.ach-card {
-    animation: slideIn 0.8s;
+.achievments {
     position: absolute;
-    z-index: 4;
-    top: 8px;
-    right: 8px;
-    padding: 6px;
+    margin-right: 10px;
+    padding-top: 3px;
+    padding-bottom: 3px;
+    right: 0px;
+    top: 0px;
+    height: 100px;
+    z-index: 2;
+    overflow-y: scroll;
+    scroll-behavior: smooth;
+    scroll-snap-stop: normal;
+    scroll-snap-type: y mandatory;
+    scrollbar-width: thin;
+    scrollbar-color: grey rgba(0, 0, 0, 0);
+}
+.achievment.selected {
+    overflow-x: visible;
+    overflow-y: hidden;
     background-color: white;
-    border-color: darkgrey;
-    border-style: solid;
-    border-width: 1px;
+    border: 1px solid darkgrey;
     border-radius: 4px;
     box-shadow: 0px 0px 20px black;
+    width: auto;
+}
+.achievment.unowned {
+    filter: brightness(25%);
+}
+.achievment {
+    display: grid;
+    scroll-snap-align: center;
+    grid-template-columns: repeat(3, 30px);
+    grid-template-rows: repeat(2, 30px);
+    padding: 4px;
+    margin-top: 3px;
+    margin-bottom: 3px;
+    height: 60px;
+    overflow-x: hidden;
+    overflow-y: hidden;
+    white-space: nowrap;
+    text-align: right;
+    transform-origin: right;
+}
+.achievment::before {
+    width: 60px;
+    height: 60px;
+    overflow-x: hidden;
+    overflow-y: hidden;
+}
+.achievment img {
+    grid-column: 2 / 3;
+    grid-row: 1 / 3;
+    width: 60px;
+    height: 60px;
+    object-fit: scale-down;
+    padding-left: 4px;
+    float: right;
+}
+.achievment .info {
+    display: none;
+}
+.achievment.selected .info {
+    grid-column: 1;
+    grid-row: 1 / 3;
+    display: grid;
+    grid-template-columns: repeat(1, 30px);
+    grid-template-rows: repeat(2, 30px);
+    justify-self: right;
+    justify-items: right;
+    text-align: right;
+}
+.achievment .info h4 {
+    margin: 0;
+    padding: 0;
+    grid-column: 1;
+    grid-row: 1;
+}
+.achievment .info span {
+    margin: 0;
+    padding: 0;
+    grid-column: 1;
+    grid-row: 2;
+}
+
+.open-button {
+    position: absolute;
+    margin-right: 10px;
+    margin-top: 10px;
+    right: 0px;
+    top: 0px;
+    width: 32px;
 }

@@ -167,7 +167,6 @@ if ($visitors > 9 && $visitors < 20) $sufix = 'th';
                 const mouseXDist = (hyperlink.biasedX - mouseX);
                 const mouseYDist = (hyperlink.biasedY - mouseY);
                 const mouseDist = Math.sqrt(Math.abs((mouseXDist * mouseXDist) - (mouseYDist * mouseYDist)));
-                if (isHovered) console.log(mouseDist, mouseXDist, mouseYDist)
                 if (mouseDist > 10 && isHovered) mouseHovering = null;
 
                 hyperlink.style.transform = `

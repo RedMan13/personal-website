@@ -30,7 +30,7 @@ app.use(async (req, res) => {
     let target = path.resolve('.' + (req.path !== '/' ? req.path : index));
     const status = await fs.stat(target).catch(() => null);
     if (!status) {
-        const possibleAlt = target.replace('.html', '.const.php')
+        const possibleAlt = target.replace('.html', '') + '.const.php';
         const constPhp = await fs.stat(possibleAlt).catch(() => null);
         if (!constPhp) return res.status(404).send();
         target = possibleAlt;

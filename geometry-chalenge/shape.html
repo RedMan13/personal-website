@@ -33,6 +33,7 @@
             }
         }
         const result = document.getElementById('result');
+        /** @type {HTMLCanvasElement} */
         const canvas = document.getElementById('pins');
         const ctx = canvas.getContext('2d');
         const nodes = [];
@@ -85,6 +86,8 @@
             if (nodes.length === points) {
                 while (nodes.shift());
                 result.hidden = true;
+                // fix all the translating we just did
+                oncardrescale(+document.getElementById('main').getAttribute('scale'));
             }
             const realX = ev.offsetX;
             const realY = ev.offsetY;
@@ -109,34 +112,33 @@
                 const sideAngle = Math.atan2(...diff);
                 const sideFlipped = (Math.atan2(...flipDiff) - sideAngle) > Math.PI / 2;
                 const matrixed = nodes.map(pos => [
-                    (pos[0] * Math.cos(-sideAngle)) / (sideLength * (sideFlipped ? -1 : 1)),
-                    (pos[1] * Math.sin(-sideAngle)) / sideLength
+                    ((pos[0] * Math.cos(-sideAngle)) - longestPoints[0][0]) / sideLength,
+                    ((pos[1] * Math.sin(-sideAngle)) - longestPoints[0][1]) / (sideLength * (sideFlipped ? -1 : 1))
                 ]);
 
-                console.log(sideLength, sideAngle, sideFlipped);
+                console.log(sideLength, sideAngle * 180 / Math.PI, sideFlipped);
                 console.log(matrixed, perfect);
                 console.log(longestPoints);
                 ctx.clearRect(0, 0, 200, 200);
-                ctx.translate(...longestPoints[0])
+                ctx.translate(...longestPoints[0]);
                 ctx.scale(sideLength, sideLength);
-                ctx.rotate(sideAngle);
+                //ctx.rotate(sideAngle);
                 if (sideFlipped) ctx.scale(0, -1);
+                ctx.lineWidth = sideLength / canvas.width;
 
                 ctx.beginPath();
                 ctx.moveTo(...matrixed[0]);
-                for (const pos of [...matrixed.slice(1), matrixed[0]]) ctx.lineTo(...pos);
+                for (const pos of matrixed.slice(1)) ctx.lineTo(...pos);
                 ctx.closePath();
                 ctx.strokeStyle = 'black';
                 ctx.stroke();
 
                 ctx.beginPath();
                 ctx.moveTo(...perfect[0]);
-                for (const pos of [...perfect.slice(1), perfect[0]]) ctx.lineTo(...pos);
+                for (const pos of perfect.slice(1)) ctx.lineTo(...pos);
                 ctx.closePath();
                 ctx.strokeStyle = 'red';
                 ctx.stroke();
-                // fix all the translating we just did
-                oncardrescale(+document.getElementById('main').getAttribute('scale'));
             }
         }
     </script>

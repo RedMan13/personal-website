@@ -47,7 +47,7 @@ const fakeReq = {
     const files = fs.readdirSync('.', { recursive: true });
     const waitingCopies = [];
     for (const file of files) {
-        const typePiece = file.split(/\\|\//g).at(-1).split('.').slice(1).join('.');
+        const typePiece = file.split(/\\|\//g).at(-1).split('.').slice(-2).join('.');
         const truePath = path.resolve(file);
         const stat = fs.statSync(truePath);
         if (filesToIgnore.test(truePath) || stat.isDirectory()) continue;
