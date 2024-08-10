@@ -3,7 +3,7 @@ const cors = require('cors')
 const app = express();
 const fs = require('fs/promises');
 const path = require('path');
-const runPhp = require('./builder/php-runner');
+const {runPHP} = require('./preprocessors/constant-php.precomp');
 const PrecompUtils = require('./builder/precomp-utils');
 const mime = require('mime');
 
@@ -56,7 +56,7 @@ app.use(async (req, res) => {
     if (!target.endsWith('.php')) res.header('Content-Type', mime.lookup(target));
     if (madeChanges) {
         // finnalize changes so we can send them out
-        util.bake();
+        await util.bake();
         return res.send(util.file);
     }
     res.send(fileData);

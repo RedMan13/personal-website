@@ -1,7 +1,6 @@
 const fs = require('fs');
 const fsp = require('fs/promises');
 const path = require('path');
-const runPHP =  require('./php-runner');
 const PrecompUtils = require('./precomp-utils');
 
 const buildDir = path.resolve('./public_html');
@@ -11,17 +10,6 @@ if (fs.existsSync(buildDir)) {
 }
 fs.mkdirSync(buildDir);
 
-const fakeReq = {
-    pause() {},
-    pipe() {},
-    resume() {},
-    originalUrl: '',
-    protocol: 'http',
-    method: 'GET',
-    hostname: 'localhost:8080',
-    get() { return ''; },
-    headers: {}
-};
 (async () => {
     console.log('\ngetting precomps...');
     const precomps = fs.readdirSync('./preprocessors')
@@ -33,10 +21,9 @@ const fakeReq = {
             return precomp;
         })
         .sort((a, b) => (a.weight ?? 0) - (b.weight ?? 0));
-    const constantPhps = [];
+    const needsPreprocessed = [];
     const staticFiles = [];
     // unused atm, as there is no server to put the end points in
-    const serverEndpoints = [];
 
     console.log('\ngetting files to build...');
     const toAlwaysIgnore = '\nbuild\n\\.gitignore\npreprocessors\n\\.buildignore\n\\.git\nnode_modules\npackage-lock\\.json\npackage\\.json';
@@ -47,63 +34,47 @@ const fakeReq = {
     const files = fs.readdirSync('.', { recursive: true });
     const waitingCopies = [];
     for (const file of files) {
-        const typePiece = file.split(/\\|\//g).at(-1).split('.').slice(-2).join('.');
         const truePath = path.resolve(file);
         const stat = fs.statSync(truePath);
         if (filesToIgnore.test(truePath) || stat.isDirectory()) continue;
-        switch (typePiece) {
-        case 'server.js':
-            serverEndpoints.push(require(truePath));
-            console.log('\tserver endpoint', file);
-        case 'const.php':
-            constantPhps.push([truePath, file]);
-            console.log('\tconstant php', file);
-            break;
-        default:
-            const dest = path.resolve(buildDir, file)
-            waitingCopies.push(fsp.mkdir(path.dirname(dest), { recursive: true }).then(() => fsp.copyFile(truePath, dest))); // generate copy for us to use actualy use
-            staticFiles.push(path.resolve(buildDir, file));
-            console.log('\tstatic', file);
+        const utils = new PrecompUtils(truePath, await fsp.readFile(truePath, 'utf8'));
+        if (precomps.find(precomp => precomp.matchFile(utils))) {
+            needsPreprocessed.push(utils);
+            continue;
         }
+        waitingCopies.push(utils.bake(buildDir)); // generate a copy for us to use actualy use
+        staticFiles.push(utils);
+        console.log('\tstatic', file);
     }
     console.log('waiting for copy operations to finnish...');
     await Promise.all(waitingCopies);
 
     console.log('\nrunning precomps on build files...');
-    for (const file of staticFiles) {
-        const fileData = fs.readFileSync(file, 'utf8');
-        const utils = new PrecompUtils(file, fileData);
-        let neverRan = true;
-        for (const precompFunc of precomps) {
-            const didntRun = await precompFunc(utils);
-            if (!didntRun) console.log(`\tran precomp ${precompFunc.title} on ${path.basename(file)}`)
-            neverRan &&= didntRun;
-        }
-        
-        if (!neverRan && utils.bake()) fs.writeFileSync(utils.path, utils.file);
-    }
-
-    console.log('\nbuilding constant php\'s...');
-    for (const [phpSrc, pathName] of constantPhps) {
-        fakeReq.path = pathName;
-        console.log(`\tbuilding ${pathName}...`)
-        let destPath = path.resolve(buildDir, pathName.replace('.const.php', ''));
-        if (path.extname(destPath).length < 2) destPath += '.html';
-        fs.mkdirSync(path.dirname(destPath), { recursive: true });
-        fs.writeFileSync(destPath, (await runPHP(fakeReq, phpSrc)).html);
-        staticFiles.push(destPath);
+    for (const util of needsPreprocessed) {
+        console.log('\trunning precomps for', path.basename(util.path))
+        await Promise.all(precomps.map(precomp => precomp.matchFile(util) && (console.log('\t\trunning precomp', precomp.title), precomp(util))));
+        await util.bake(buildDir)
     }
 
     console.log('\nforming index file for faster indexing...');
     const index = {};
-    for (const file of staticFiles) {
-        const extName = path.extname(file)
-        if (extName === '.php' || extName === '.html') {
+    for (const util of staticFiles) {
+        const file = util.path;
+        const baseName = path.basename(file);
+        const extName = path.extname(baseName);
+        if ((extName === '.php' || extName === '.html') && !baseName.startsWith('.')) {
             const folders = path.dirname(file.slice(__dirname.length)).split('/');
             const fileName = path.basename(file);
             let top = index;
-            for (const folder of folders) top = top[folder] ??= {};
-            console.log('\tadding filename', fileName)
+            for (const folder of folders) {
+                top = top[folder] ??= {};
+                if (folder.startsWith('.')) {
+                    top = null;
+                    break
+                };
+            }
+            if (!top[fileName]) continue;
+            console.log('\tadding filename', fileName);
             top[fileName] = fileName.slice(0, -path.extname(fileName).length);
         }
     }

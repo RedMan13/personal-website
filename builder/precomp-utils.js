@@ -1,11 +1,17 @@
+const fs = require('fs/promises');
+const path = require('path');
+const rootDir = path.resolve('.');
 // note: i will be adding things to this as *i* need them, not as they may be needed
 class PrecompUtils {
-    constructor(path, opt_data) {
-        this.path = path
-        this.file = opt_data;
+    constructor(path, file) {
+        this.path = path;
+        this.file = file;
+        this.makeLines();
         this.insertions = [];
+    }
+    makeLines() {
         let idx = 0;
-        this.lines = opt_data
+        this.lines = this.file
             .split(/\r?\n\r?/gi)
             .map(line => {
                 const lineIdx = idx;
@@ -93,13 +99,10 @@ class PrecompUtils {
     matchType(types) {
         const typeList = types
             .split(',')
-            .map(type => type[0] === '.' ? type.slice(1) : type)
-        const myType = this.path
-            .split('.')
-            .at(-1)
-        return typeList.includes(myType)
+            .map(type => type[0] === '.' ? type : `.${type}`)
+        return typeList.find(type => this.path.endsWith(type));
     }
-    bake() {
+    async bake(outputDir) {
         let offset = 0;
         for (const { start, end, text } of this.insertions) {
             const left = this.file.slice(0, start + offset);
@@ -108,6 +111,14 @@ class PrecompUtils {
             offset += text.length - (end - start);
         }
 
+        if (outputDir) {
+            const name = this.path.replace(rootDir, '').slice(1);
+            const baseName = path.basename(name);
+            const endPath = path.resolve(outputDir, name);
+            const folderPath = endPath.slice(0, -baseName.length);
+            await fs.mkdir(folderPath, { recursive: true });
+            await fs.writeFile(endPath, this.file);
+        }
         return !!this.insertions.length
     }
 }

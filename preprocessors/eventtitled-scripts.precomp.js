@@ -1,6 +1,4 @@
 module.exports = async function(util) {
-    if (!util.matchType('php,html')) return true
-
     let didThings = false
     util.tokenize({
         open: '<script',
@@ -23,3 +21,4 @@ module.exports = async function(util) {
     }
     return !didThings
 }
+module.exports.matchFile = util => util.matchType('php,html');

@@ -2,8 +2,6 @@ const path = require('path');
 const fs = require('fs/promises');
 
 module.exports = async function(util) {
-    if (!util.matchType('.php,.html')) return true;
-    if (!util.file.startsWith('<!TEMPLATE')) return true;
     const depPath = util.file.split(/<!TEMPLATE |>\r?\n\r?/, 3)[1];
     const templatePath = depPath.startsWith('/') 
         ? path.resolve(`.${depPath}`)
@@ -19,3 +17,4 @@ module.exports = async function(util) {
     util.replace(headClose,  bodyLoc +6,   headBody[1]);
     util.replace(bodyClose,  bodyClose +6, headBody[2]);
 }
+module.exports.matchFile = util => util.matchType('.php,.html') && util.file.startsWith('<!TEMPLATE');

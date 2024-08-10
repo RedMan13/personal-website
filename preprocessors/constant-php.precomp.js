@@ -1,4 +1,5 @@
 const child = require('child_process');
+const path = require('path')
 const phpEnvDefualts = {
     // The name and version of the information server software answering the request (and running the gateway). Format: name/version
     SERVER_SOFTWARE: 'gsa-website-builder/V1.0',
@@ -23,7 +24,7 @@ const phpEnvDefualts = {
     REDIRECT_STATUS: ''
 };
 
-module.exports = (req, file, opt_args = []) => new Promise(resolve => {
+function runPHP(req, file, opt_args = []) {return new Promise(resolve => {
     // we need time to give all the info to php
     req.pause();
     
@@ -131,4 +132,27 @@ module.exports = (req, file, opt_args = []) => new Promise(resolve => {
             err
         });
     });
-})
+})};
+
+
+const fakeReq = {
+    pause() {},
+    pipe() {},
+    resume() {},
+    originalUrl: '',
+    protocol: 'http',
+    method: 'GET',
+    hostname: 'localhost:8080',
+    get() { return ''; },
+    headers: {}
+};
+module.exports = async function(util) {
+    fakeReq.path = util.path;
+    let destPath = util.path.replace('.const.php', '');
+    if (path.extname(destPath).length <= 1) destPath += '.html';
+    util.bake();
+    util.file = (await runPHP(fakeReq, util.file)).html;
+    util.path = destPath;
+};
+module.exports.matchFile = util => util.matchType('.const.php');
+module.exports.runPHP = runPHP;
