@@ -17,10 +17,10 @@ fs.mkdirSync(buildDir);
         .map(filePath => {
             const precomp = require(path.resolve('preprocessors', filePath));
             precomp.title = path.basename(filePath).replace('.precomp.js', '');
-            console.log('\tprecomp', precomp.title);
             return precomp;
         })
-        .sort((a, b) => (a.weight ?? 0) - (b.weight ?? 0));
+        .sort((a, b) => (b.weight ?? 0) - (a.weight ?? 0))
+        .map(precomp => (console.log('\tprecomp', precomp.title), precomp));
     const needsPreprocessed = [];
     const staticFiles = [];
     // unused atm, as there is no server to put the end points in
@@ -28,7 +28,7 @@ fs.mkdirSync(buildDir);
     console.log('\ngetting files to build...');
     const toAlwaysIgnore = '\nbuild\n\\.gitignore\npreprocessors\n\\.buildignore\n\\.git\nnode_modules\npackage-lock\\.json\npackage\\.json';
     const filesToIgnore = new RegExp(`^${path.resolve('.').replaceAll('\\', '\\\\')}(\\\\|/)(` + (fs.readFileSync('.buildignore', { encoding: 'utf8' }) + toAlwaysIgnore)
-        .split(/\r?\n/gi)
+        .split(/\r?\n\r?/gi)
         .map(match => match.replace('/', '\\/'))
         .join('|') + ')', 'i');
     const files = fs.readdirSync('.', { recursive: true });
@@ -52,7 +52,13 @@ fs.mkdirSync(buildDir);
     console.log('\nrunning precomps on build files...');
     for (const util of needsPreprocessed) {
         console.log('\trunning precomps for', path.basename(util.path))
-        await Promise.all(precomps.map(precomp => precomp.matchFile(util) && (console.log('\t\trunning precomp', precomp.title), precomp(util))));
+        for (const precomp of precomps) {
+            if (precomp.matchFile(util)) {
+                console.log('\t\trunning precomp', precomp.title);
+                await util.bake();
+                await precomp(util);
+            }
+        }
         await util.bake(buildDir)
     }
 

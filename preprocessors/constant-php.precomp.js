@@ -111,7 +111,7 @@ function runPHP(req, file, opt_args = []) {return new Promise(resolve => {
         const headers = [];
         let status = 200;
 
-        for (const [m, name, value] of headerStrings.matchAll(/\r?\n([a-z]+(-[a-z])?): ([^\r\n]+)/gi)) {
+        for (const [m, name, value] of headerStrings.matchAll(/\r?\n\r?([a-z]+(-[a-z])?): ([^\r\n]+)/gi)) {
             console.log(m);
             if (name === 'Status') {
                 status = parseInt(value);
@@ -150,7 +150,6 @@ module.exports = async function(util) {
     fakeReq.path = util.path;
     let destPath = util.path.replace('.const.php', '');
     if (path.extname(destPath).length <= 1) destPath += '.html';
-    util.bake();
     util.file = (await runPHP(fakeReq, util.file)).html;
     util.path = destPath;
 };

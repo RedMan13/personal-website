@@ -1,14 +1,19 @@
 {
   "scripts": {
     "build": "node ./builder",
-    "dev": "node ./dev-api.js",
-    "start": "node ./dev-api.js"
+    "dev": "node ./builder/dev-api.js",
+    "start": "node ./builder/dev-api.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
     "express": "^4.19.2",
     "front-matter": "^4.0.2",
     "marked": "^13.0.0",
+    "marked-footnote": "^1.2.2",
+    "marked-gfm-heading-id": "^4.0.1",
+    "marked-hook-frontmatter": "^1.4.4",
+    "marked-sequential-hooks": "^1.2.2",
+    "nearley": "^2.20.1",
     "scratch-render": "^1.0.186"
   }
 }

@@ -3,6 +3,7 @@ const fs = require('fs/promises');
 
 module.exports = async function(util) {
     const depPath = util.file.split(/<!TEMPLATE |>\r?\n\r?/, 3)[1];
+    if (!depPath) return;
     const templatePath = depPath.startsWith('/') 
         ? path.resolve(`.${depPath}`)
         : path.resolve(util.path, '..', depPath);

@@ -6,6 +6,9 @@ class PrecompUtils {
     constructor(path, file) {
         this.path = path;
         this.file = file;
+        this.binnary = /[\x00\x1F]/gi.test(file);
+        if (!this.binnary)
+            this.file = this.file.replaceAll(/\r?\n\r?/gi, '\n');
         this.makeLines();
         this.insertions = [];
     }
@@ -100,7 +103,7 @@ class PrecompUtils {
         const typeList = types
             .split(',')
             .map(type => type[0] === '.' ? type : `.${type}`)
-        return typeList.find(type => this.path.endsWith(type));
+        return !!typeList.find(type => this.path.endsWith(type));
     }
     async bake(outputDir) {
         let offset = 0;
@@ -110,6 +113,7 @@ class PrecompUtils {
             this.file = left + text + right;
             offset += text.length - (end - start);
         }
+        this.insertions = [];
 
         if (outputDir) {
             const name = this.path.replace(rootDir, '').slice(1);
@@ -119,7 +123,6 @@ class PrecompUtils {
             await fs.mkdir(folderPath, { recursive: true });
             await fs.writeFile(endPath, this.file);
         }
-        return !!this.insertions.length
     }
 }
 
