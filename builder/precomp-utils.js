@@ -5,17 +5,18 @@ const rootDir = path.resolve('.');
 class PrecompUtils {
     constructor(path, file) {
         this.path = path;
-        this.file = file;
+        this.file = file.toString('utf8');
         this.binnary = /[\x00\x1F]/gi.test(file);
-        if (!this.binnary)
+        if (!this.binnary) {
             this.file = this.file.replaceAll(/\r?\n\r?/gi, '\n');
-        this.makeLines();
+            this.makeLines();
+        } else this.file = file;
         this.insertions = [];
     }
     makeLines() {
         let idx = 0;
         this.lines = this.file
-            .split(/\r?\n\r?/gi)
+            .split('\n')
             .map(line => {
                 const lineIdx = idx;
                 idx += line.length;

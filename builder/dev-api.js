@@ -39,7 +39,7 @@ app.use(async (req, res) => {
     console.log('resolved req to', target);
     const fileData = await fs.readFile(target).catch(() => null);
     if (!fileData) return res.status(404).send();
-    const util = new PrecompUtils(target, fileData.toString('utf8'));
+    const util = new PrecompUtils(target, fileData);
     if (util.path.endsWith('.php') && !util.path.endsWith('.precomp.php')) {
         console.log('running php');
         const { headers, status, html } = await runPHP(req, target)
@@ -66,7 +66,7 @@ app.use(async (req, res) => {
     res.header('Content-Type', mime.lookup(util.path.replace('.php', '.html'), 'text/plain'));
     console.log('done building, sending file');
     console.log('');
-    return res.send(precomps.length ? util.file : fileData);
+    return res.send(util.file);
 })
 
 const port = 8000

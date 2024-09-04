@@ -37,7 +37,7 @@ fs.mkdirSync(buildDir);
         const truePath = path.resolve(file);
         const stat = fs.statSync(truePath);
         if (filesToIgnore.test(truePath) || stat.isDirectory()) continue;
-        const utils = new PrecompUtils(truePath, await fsp.readFile(truePath, 'utf8'));
+        const utils = new PrecompUtils(truePath, await fsp.readFile(truePath));
         if (precomps.find(precomp => precomp.matchFile(utils))) {
             needsPreprocessed.push(utils);
             continue;
