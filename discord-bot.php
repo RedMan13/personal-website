@@ -29,8 +29,9 @@ function DCHTTP($method, $endpoint, $body) {
 }
 
 $data = json_decode(file_get_contents('php://input'), true);
+file_put_contents('/what.json', json_encode($data));
 if ($data['type'] == PING) {
-    echo '{"type": '.PONG.'}';
+    echo json_encode([ 'type' => PONG ]);
     exit;
 }
 $appId = $data['application_id'];
