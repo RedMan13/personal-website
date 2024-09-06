@@ -1,10 +1,10 @@
 <?php
 // Interaction Type
-const PING = 0;
-const APPLICATION_COMMAND = 1;
-const MESSAGE_COMPONENT = 2;
-const APPLICATION_COMMAND_AUTOCOMPLETE = 3;
-const MODAL_SUBMIT = 4;
+const PING = 1;
+const APPLICATION_COMMAND = 2;
+const MESSAGE_COMPONENT = 3;
+const APPLICATION_COMMAND_AUTOCOMPLETE = 4;
+const MODAL_SUBMIT = 5;
 // Interaction Context Types
 const GUILD = 0;
 const BOT_DM = 1;
@@ -29,7 +29,6 @@ function DCHTTP($method, $endpoint, $body) {
 }
 
 $data = json_decode(file_get_contents('php://input'), true);
-file_put_contents('./what.json', json_encode($data));
 if ($data['type'] == PING) {
     echo json_encode([ 'type' => PONG ]);
     exit;
