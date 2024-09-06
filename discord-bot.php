@@ -29,11 +29,11 @@ function DCHTTP($method, $endpoint, $body) {
 }
 
 $data = json_decode(file_get_contents('php://input'), true);
-$appId = $data['application_id'];
-$token = $data['token'];
 if ($data['type'] == PING) {
     echo '{"type": '.PONG.'}';
     exit;
 }
+$appId = $data['application_id'];
+$token = $data['token'];
 
 ?>
