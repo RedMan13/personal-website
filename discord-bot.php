@@ -28,7 +28,7 @@ function DCHTTP($method, $endpoint, $body) {
     ] ]));
 }
 
-header('Content-type: application/json; charset=utf-8');
+header('Content-Type: application/json; charset=UTF-8');
 $dispatch = json_decode(file_get_contents('php://input'), true);
 if (!$dispatch or $dispatch['type'] == PING) {
     echo json_encode([ 'type' => PONG ]);
