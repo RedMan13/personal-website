@@ -48,13 +48,20 @@ $dispatch = json_decode($body, true);
 if (!$dispatch or $dispatch['type'] == PING) {
     echo json_encode([ 'type' => PONG ]);
 } else {
+    $data = $dispatch['data'];
     $appId = $dispatch['application_id'];
     $token = $dispatch['token'];
+    $commands = [
+        'ping' => '1282107268761911482'
+    ];
     if ($dispatch['type'] == APPLICATION_COMMAND) {
-        echo json_encode([
-            'type' => CHANNEL_MESSAGE_WITH_SOURCE,
-            'data' => [ 'content' => 'pong!!!!!' ]
-        ]);
+        switch ($data['id']) {
+        case $commands['ping']:
+            echo json_encode([
+                'type' => CHANNEL_MESSAGE_WITH_SOURCE,
+                'data' => [ 'content' => 'pong!!!!!' ]
+            ]); break;
+        }
     }
 }
 
