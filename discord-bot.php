@@ -32,7 +32,7 @@ header('Content-type: application/json; charset=us-ascii');
 $data = json_decode(file_get_contents('php://input'), true);
 $appId = $data['application_id'];
 $token = $data['token'];
-if ($data['type'] == PING) {
+if ($data['type'] == PING or !$data) {
     echo json_encode([ 'type' => PONG ]);
 } else {
 }
