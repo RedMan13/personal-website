@@ -29,7 +29,16 @@ function DCHTTP($method, $endpoint, $body) {
 }
 
 header('Content-Type: application/json; charset=UTF-8');
-$dispatch = json_decode(file_get_contents('php://input'), true);
+$body = file_get_contents('php://input');
+$signiture = $_SERVER['HTTP_X_SIGNATURE-ED25519'];
+$messageBody = $_SERVER['HTTP_X_SIGNATURE_TIMESTAMP'] . $body;
+if (!sodium_crypto_sign_verify_detached($signiture, $messageBody, '125c2976a408f07dbc4863ae504832664e209545902453ee464855eaa4758010')) {
+    http_response_code(401);
+    echo '{"error": "Invalid signiture body"}';
+    exit;
+}
+
+$dispatch = json_decode($body, true);
 if (!$dispatch or $dispatch['type'] == PING) {
     echo json_encode([ 'type' => PONG ]);
 } else {
