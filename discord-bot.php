@@ -31,7 +31,7 @@ function DCHTTP($method, $endpoint, $body) {
 header('Content-Type: application/json; charset=UTF-8');
 $body = file_get_contents('php://input');
 $publickey = hex2bin('125c2976a408f07dbc4863ae504832664e209545902453ee464855eaa4758010');
-$signiture = hex2bin($_SERVER['HTTP_X_SIGNATURE-ED25519']);
+$signiture = hex2bin($_SERVER['HTTP_X_SIGNATURE_ED25519']);
 $messageBody = $_SERVER['HTTP_X_SIGNATURE_TIMESTAMP'] . $body;
 file_put_contents('./debug.json', json_encode($_SERVER) . strlen($publickey) . ' ' . strlen($signiture));
 if (strlen($publickey) != 32 or strlen($signiture) != 64) {
