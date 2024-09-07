@@ -34,6 +34,11 @@ $publickey = hex2bin('125c2976a408f07dbc4863ae504832664e209545902453ee464855eaa4
 $signiture = hex2bin($_SERVER['HTTP_X_SIGNATURE-ED25519']);
 $messageBody = $_SERVER['HTTP_X_SIGNATURE_TIMESTAMP'] . $body;
 file_put_contents('./debug.txt', json_encode($_SERVER));
+if (sizeof($publickey) != 32 or sizeof($signiture) != 64) {
+    http_response_code(401);
+    echo '{"error": "Invalid signiture body"}';
+    exit;
+}
 if (!sodium_crypto_sign_verify_detached($signiture, $messageBody, $publickey)) {
     http_response_code(401);
     echo '{"error": "Invalid signiture body"}';
