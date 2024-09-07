@@ -28,13 +28,19 @@ function DCHTTP($method, $endpoint, $body) {
     ] ]));
 }
 
-header('Content-type: application/json; charset=us-ascii');
-$data = json_decode(file_get_contents('php://input'), true);
-$appId = $data['application_id'];
-$token = $data['token'];
-if ($data['type'] == PING or !$data) {
+header('Content-type: application/json; charset=utf-8');
+$dispatch = json_decode(file_get_contents('php://input'), true);
+if (!$dispatch or $dispatch['type'] == PING) {
     echo json_encode([ 'type' => PONG ]);
 } else {
+    $appId = $dispatch['application_id'];
+    $token = $dispatch['token'];
+    if ($dispatch['type'] == APPLICATION_COMMAND) {
+        echo json_encode([
+            'type' => CHANNEL_MESSAGE_WITH_SOURCE,
+            'data' => [ 'content' => 'pong!!!!!' ]
+        ]);
+    }
 }
 
 ?>
