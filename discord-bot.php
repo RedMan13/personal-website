@@ -30,6 +30,7 @@ function DCHTTP($method, $endpoint, $body) {
 
 header('Content-type: application/json');
 $data = json_decode(file_get_contents('php://input'), true);
+file_put_contents('./debug.txt', $data['type'] == PING);
 $appId = $data['application_id'];
 $token = $data['token'];
 if ($data['type'] == PING) {
