@@ -51,15 +51,17 @@ if (!$dispatch or $dispatch['type'] == PING) {
     $data = $dispatch['data'];
     $appId = $dispatch['application_id'];
     $token = $dispatch['token'];
-    $commands = [
-        'ping' => '1282107268761911482'
-    ];
     if ($dispatch['type'] == APPLICATION_COMMAND) {
-        switch ($data['id']) {
-        case $commands['ping']:
+        switch ($data['name']) {
+        case 'ping':
             echo json_encode([
                 'type' => CHANNEL_MESSAGE_WITH_SOURCE,
                 'data' => [ 'content' => 'pong!!!!!' ]
+            ]); break;
+        case 'fart':
+            echo json_encode([
+                'type' => CHANNEL_MESSAGE_WITH_SOURCE,
+                'data' => [ 'content' => 'i farted on your mom 😎' ]
             ]); break;
         }
     }
