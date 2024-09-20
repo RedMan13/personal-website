@@ -1,4 +1,5 @@
 <?php
+$start = time();
 // Interaction Type
 const PING                             = 1;
 const APPLICATION_COMMAND              = 2;
@@ -54,9 +55,15 @@ if (!$dispatch or $dispatch['type'] == PING) {
     if ($dispatch['type'] == APPLICATION_COMMAND) {
         switch ($data['name']) {
         case 'ping':
+            $timeToProcess =  time() - $start;
             echo json_encode([
                 'type' => CHANNEL_MESSAGE_WITH_SOURCE,
-                'data' => [ 'content' => 'pong!!!!!' ]
+                'data' => [ 
+                    'content' => <<<END
+                        pong!!!!!!!!!
+                        took `$timeToProcess` seconds to process
+                        END 
+                ]
             ]); break;
         case 'fart':
             echo json_encode([
