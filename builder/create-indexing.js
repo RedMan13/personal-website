@@ -40,14 +40,15 @@ module.exports = async function recursiveRead(dir = './', root, isChild) {
             const content = await fs.readFile(target, 'utf8');
             const title = content.match(/<title>(.*?)<\/title>/i)?.[1] ?? file;
             const icon = content.match(/<link\s+rel="icon"\s*href="(.*?)"\s*type=".*?"\s*\/?>/)?.[1] ?? '/favicon.ico';
+            const depPath = content.split(/<!TEMPLATE |>\r?\n\r?/, 3)[1];
             const resolve = target.replace(root, '')
-            console.log('\tadding file', resolve, 'to index.json');
+            if (depPath === '/cardpage.html') folder.pages++;
+            console.log('\tadding', (depPath === '/cardpage.html' ? 'page' : 'file'), resolve, 'to index.json');
             folder.members.push({
                 name: title,
                 icon,
                 resolve
             });
-            folder.pages++;
         }
     }
     return folder;

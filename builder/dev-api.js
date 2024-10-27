@@ -11,9 +11,6 @@ const makeIndexJSON = require('./create-indexing');
 app.use(cors())
 app.get('/index.json', async (req, res) => {
     const listing = await makeIndexJSON();
-    // for ease of use, development dissables needing to get a certain number of pages
-    // to use the page browser
-    listing.pages = 0;
     res.json(listing);
 });
 const index = '/index.php';

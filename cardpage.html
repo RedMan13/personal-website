@@ -368,7 +368,9 @@
         fetch('/index.json')
             .then(res => res.json())
             .then(pages => {
-                if (pages.pages > localStorage.pages.split(',').length)
+                // for ease of use, development dissables needing to get a certain number
+                // of pages to use the page browser
+                if (pages.pages > localStorage.pages.split(',').length && (location.hash === 'ignoredev' || !location.hostname.includes('localhost')))
                     // if the user has not yet visited all the pages, do not show them this tool
                     return;
                 const browser = document.getElementById('browser');
