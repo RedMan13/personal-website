@@ -6,24 +6,15 @@ const path = require('path');
 const {runPHP} = require('../preprocessors/constant-php.precomp');
 const PrecompUtils = require('./precomp-utils');
 const mime = require('mime');
+const makeIndexJSON = require('./create-indexing');
 
 app.use(cors())
 app.get('/index.json', async (req, res) => {
-    const dirs = await fs.readdir('./', { recursive: true });
-    const index = {};
-    for (const file of dirs) {
-        const extName = path.extname(file)
-        if (extName === '.php' || extName === '.html') {
-            const folders = path.dirname(file.slice(__dirname.length)).split('/');
-            const fileName = path.basename(file);
-            let top = index;
-            for (const folder of folders) top = top[folder] ??= {};
-            console.log('adding filename', fileName)
-            top[fileName] = fileName.slice(0, -path.extname(fileName).length);
-        }
-    }
-
-    res.json(index);
+    const listing = await makeIndexJSON();
+    // for ease of use, development dissables needing to get a certain number of pages
+    // to use the page browser
+    listing.pages = 0;
+    res.json(listing);
 });
 const index = '/index.php';
 app.use(async (req, res) => {
@@ -40,7 +31,7 @@ app.use(async (req, res) => {
     const fileData = await fs.readFile(target).catch(() => null);
     if (!fileData) return res.status(404).send();
     const util = new PrecompUtils(target, fileData);
-    if (util.path.endsWith('.php') && !util.path.endsWith('.precomp.php')) {
+    if (util.path.endsWith('.php') && !util.path.endsWith('.const.php')) {
         console.log('running php');
         const { headers, status, html } = await runPHP(req, target)
         for (const header of Object.entries(headers))

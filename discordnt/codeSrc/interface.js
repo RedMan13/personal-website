@@ -27,6 +27,7 @@ export default class ApiInterface {
             chunkSize: 0xFFFFFF
         });
         this.infContext.onData = txt => {
+            console.log(txt.includes('Something So Specific It can onl'));
             let json;
             try {
                 json = JSON.parse(txt);
@@ -183,9 +184,9 @@ export default class ApiInterface {
         }
     }
     onpacket({ op: opcode, d: data, s: seq, t: event }) {
+        console.log('gateway op:', opcode, 'd:', data, 's:', seq, 't:', event);
         if (seq) this.seq = seq;
         if (event) return this.onevent(event, data);
-        console.log('gateway op:', opcode, 'd:', data, 's:', seq, 't:', event);
         switch (opcode) {
         case 1:
             this.send(11);
@@ -241,7 +242,6 @@ export default class ApiInterface {
     async onevent(event, data) {
         switch (event) {
         case 'READY':
-            console.log(data);
             for (const server of data.guilds) {
                 for (const emoji of server.emojis) {
                     emoji.guild_id = server.id;

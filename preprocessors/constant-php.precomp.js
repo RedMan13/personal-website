@@ -150,7 +150,7 @@ module.exports = async function(util) {
     fakeReq.path = util.path;
     let destPath = util.path.replace('.const.php', '');
     if (path.extname(destPath).length <= 1) destPath += '.html';
-    util.file = (await runPHP(fakeReq, util.file)).html;
+    util.file = (await runPHP(fakeReq, util.path)).html;
     util.path = destPath;
 };
 module.exports.matchFile = util => util.matchType('.const.php');

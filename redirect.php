@@ -37,8 +37,10 @@
         display: flex;
         justify-content: center;
         align-items: center;
+        transform: scale(45%);
+        height: 270px;
     ">
-        <iframe sandbox="allow-scripts" allow=""></iframe>
+        <iframe sandbox="allow-scripts allow-same-origin" allow="" width="1020" height="540" style="flex-shrink: 0;"></iframe>
         <script>
             const iframe = document.getElementsByTagName('iframe')[0];
             fetch(<?= json_encode($_GET['target'])?>)

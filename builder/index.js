@@ -2,6 +2,7 @@ const fs = require('fs');
 const fsp = require('fs/promises');
 const path = require('path');
 const PrecompUtils = require('./precomp-utils');
+const makeIndexJSON = require('./create-indexing');
 
 const buildDir = path.resolve('./public_html');
 if (fs.existsSync(buildDir)) {
@@ -62,27 +63,7 @@ fs.mkdirSync(buildDir);
         await util.bake(buildDir)
     }
 
-    console.log('\nforming index file for faster indexing...');
-    const index = {};
-    for (const util of staticFiles) {
-        const file = util.path;
-        const baseName = path.basename(file);
-        const extName = path.extname(baseName);
-        if ((extName === '.php' || extName === '.html') && !baseName.startsWith('.')) {
-            const folders = path.dirname(file.slice(__dirname.length)).split('/');
-            const fileName = path.basename(file);
-            let top = index;
-            for (const folder of folders) {
-                top = top[folder] ??= {};
-                if (folder.startsWith('.')) {
-                    top = null;
-                    break
-                };
-            }
-            if (!top[fileName]) continue;
-            console.log('\tadding filename', fileName);
-            top[fileName] = fileName.slice(0, -path.extname(fileName).length);
-        }
-    }
-    fs.writeFileSync(path.resolve(buildDir, 'index.json'), JSON.stringify(index));
+    console.log('\nforming index file for page browsing...');
+    const indexJSON = JSON.stringify(await makeIndexJSON(buildDir));
+    fs.writeFileSync(path.resolve(buildDir, 'index.json'), indexJSON);
 })();
