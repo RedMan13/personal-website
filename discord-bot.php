@@ -20,6 +20,22 @@ const APPLICATION_COMMAND_AUTOCOMPLETE_RESULT = 8;
 const MODAL                                   = 9;
 const PREMIUM_REQUIRED                       = 10;
 const LAUNCH_ACTIVITY                        = 12;
+// Component Types
+const ActionRow = 1;
+const Button = 2;
+const StringSelect = 3;
+const TextInput = 4;
+const UserSelect = 5;
+const RoleSelect = 6;
+const MentionableSelect = 7;
+const ChannelSelect = 8;
+// Button Styles
+const Primary = 1;
+const Secondary = 2;
+const Success = 3;
+const Danger = 4;
+const Link = 5;
+const Premium = 6;
 
 function DCHTTP($method, $endpoint, $body) {
     return file_get_contents("https://discord.com/api/v10$endpoint", false, stream_context_create([ 'http' => [
@@ -70,6 +86,59 @@ if (!$dispatch or $dispatch['type'] == PING) {
                 'type' => CHANNEL_MESSAGE_WITH_SOURCE,
                 'data' => [ 'content' => 'i farted on your mom 😎' ]
             ]); break;
+        case 'rps':
+            echo json_encode([
+                'embeds' => [
+                    [
+                        'title' => 'Rock Paper Scissors',
+                        'description' => <<<END
+                            RPS game started!
+                            Please select an option.
+                            END
+                    ]
+                ],
+                'components' => [
+                    ['type' => ActionRow, 'components' => [
+                        ['type' => Button, 'style' => Secondary, 'label' => 'Rock', 'custom_id' => 'rps_rock'],
+                        ['type' => Button, 'style' => Secondary, 'label' => 'Paper', 'custom_id' => 'rps_paper'],
+                        ['type' => Button, 'style' => Secondary, 'label' => 'Scissor', 'custom_id' => 'rps_scissor']
+                    ]]
+                ]
+            ]); break;
+        }
+    } else if ($dispatch['type'] == MESSAGE_COMPONENT) {
+        switch ($data['custom_id']) {
+        case 'rps_rock':
+        case 'rps_paper':
+        case 'rps_scissor':
+            $com = ['rps_rock', 'rps_paper', 'rps_scissor'][rand(1, 3)];
+            $res = '';
+            switch ($data['custom_id'] + ' vs ' + $com) {
+            case 'rps_rock vs rps_paper':
+                $res = <<<END
+                Computer wins against You!
+                END; break;
+            case 'rps_paper vs rps_scissor':
+                $res = <<<END
+                Computer wins against You!
+                END; break;
+            case 'rps_scissor vs rps_rock':
+                $res = <<<END
+                Computer wins against You!
+                END; break;
+            case 'rps_paper vs rps_rock':
+                $res = <<<END
+                You win against Computer!
+                END; break;
+            case 'rps_scissor vs rps_paper':
+                $res = <<<END
+                You win against Computer!
+                END; break;
+            case 'rps_rock vs rps_scissor':
+                $res = <<<END
+                You win against Computer!
+                END; break;
+            }
         }
     }
 }
