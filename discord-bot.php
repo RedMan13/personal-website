@@ -88,21 +88,24 @@ if (!$dispatch or $dispatch['type'] == PING) {
             ]); break;
         case 'rps':
             echo json_encode([
-                'embeds' => [
-                    [
-                        'title' => 'Rock Paper Scissors',
-                        'description' => <<<END
-                            RPS game started!
-                            Please select an option.
-                            END
+                'type' => CHANNEL_MESSAGE_WITH_SOURCE,
+                'data' => [
+                    'embeds' => [
+                        [
+                            'title' => 'Rock Paper Scissors',
+                            'description' => <<<END
+                                RPS game started!
+                                Please select an option.
+                                END
+                        ]
+                    ],
+                    'components' => [
+                        ['type' => ActionRow, 'components' => [
+                            ['type' => Button, 'style' => Secondary, 'label' => 'Rock', 'custom_id' => 'rps_rock'],
+                            ['type' => Button, 'style' => Secondary, 'label' => 'Paper', 'custom_id' => 'rps_paper'],
+                            ['type' => Button, 'style' => Secondary, 'label' => 'Scissor', 'custom_id' => 'rps_scissor']
+                        ]]
                     ]
-                ],
-                'components' => [
-                    ['type' => ActionRow, 'components' => [
-                        ['type' => Button, 'style' => Secondary, 'label' => 'Rock', 'custom_id' => 'rps_rock'],
-                        ['type' => Button, 'style' => Secondary, 'label' => 'Paper', 'custom_id' => 'rps_paper'],
-                        ['type' => Button, 'style' => Secondary, 'label' => 'Scissor', 'custom_id' => 'rps_scissor']
-                    ]]
                 ]
             ]); break;
         }
@@ -139,6 +142,20 @@ if (!$dispatch or $dispatch['type'] == PING) {
                 You win against Computer!
                 END; break;
             }
+            echo json_encode([
+                'type' => UPDATE_MESSAGE,
+                'data' => [
+                    'embeds' => [
+                        [
+                            'title' => 'Rock Paper Scissors',
+                            'description' => <<<END
+                                RPS game ended!
+                                $res.
+                                END
+                        ]
+                    ]
+                ]
+            ]);
         }
     }
 }
