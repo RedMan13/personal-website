@@ -77,7 +77,6 @@ const formatMarks = [
     '***',
     '**',
     '*',
-    '\n',
     '`',
     '~~',
     '__'
@@ -85,14 +84,13 @@ const formatMarks = [
 const markInfs = {
     '**': [['**'], '<strong>', '</strong>'],
     '*': [['*'], '<em>', '</em>'],
-    '\n': [[], '<br>'],
     '```': [['```'], '<code class="external ', '</code>'],
     '`': [['`'], '<code>', '</code>'],
     '~~': [['~~'], '<s>', '</s>'],
     '__': [['__'], '<u>', '</u>']
 }
 async function renderInline(chunk, keepSymbol) {
-    if (chunk.startsWith('\n')) chunk = chunk.slice(1);
+    chunk = chunk.replaceAll('\n', '<br>')
     let str = '';
     const keys = [];
     for (let i = 0, c = chunk[0]; i < chunk.length; c = chunk[++i]) {
@@ -109,12 +107,8 @@ async function renderInline(chunk, keepSymbol) {
                 }
             })();
             let valid = false;
-            if (realUrl && coverText) {
-                str += `<a href="/redirect.php?target=${realUrl}">${coverText}</a>`;
-                valid = true;
-            }
             if (realUrl) {
-                str += `<a href="/redirect.php?target=${realUrl}">${realUrl}</a>`;
+                str += `<a href="/redirect.php?target=${realUrl}">${coverText ?? realUrl}</a>`;
                 valid = true;
             }
             if (timestamp) {
@@ -134,7 +128,7 @@ async function renderInline(chunk, keepSymbol) {
                     str += `<span class="mention"><em>@</em> ${user.name}</span>`;
                     break;
                 case '@&':
-                    const role = client.guilds[guildId].roles[id];
+                    const role = client.guilds[guildId]?.roles?.[id];
                     if (!role) {
                         str += '<span class="mention"><em>@</em> Invalid Role</span>';
                         break;
@@ -142,7 +136,7 @@ async function renderInline(chunk, keepSymbol) {
                     str += `<span class="mention" style="color: ${role.color}; opacity: 0.3;"><em>@</em> ${role.name}</span>`;
                     break;
                 case '#':
-                    const channelName = client.channels[id].name;
+                    const channelName = client.channels[id]?.name;
                     if (!channelName) {
                         str += `<span class="mention"><em>#</em> Invalid Channel</span>`;
                     }
@@ -156,7 +150,9 @@ async function renderInline(chunk, keepSymbol) {
                 }
                 valid = true;
             }
+            console.log(valid, m[0].length, m[0])
             if (valid) i += m[0].length -1;
+            continue;
         }
         
         const mark = formatMarks.find(mark => mark[0] === c && chunk.slice(i).startsWith(mark));

@@ -189,7 +189,7 @@
             padding-left: 0.1em;
         }
         .browser .file.noicon {
-            padding-left: 2em;
+            padding-left: 1em;
         }
         .browser .file.selected {
             background-color: rgb(192, 192, 192);
@@ -209,11 +209,11 @@
     </style>
 </head>
 <body style="margin: 0; height: 100%;">
-    <div class="card" id="main">
+    <div class="card">
         <noscript>Dont be allarmed! it looks like you have scripts dissabled, this site uses scripts to make certain renders (like scaling this card) work and display correctly</noscript>
         <div class="browser close" id="browser" hidden></div>
         <button id="close-browser" class="close" hidden>&gt;</button>
-        <div style="width: 100%; height: 100%; overflow-wrap: break-word; overflow-x: hidden; overflow-y: auto; position: absolute;"><div>{body}</div></div>
+        <div id="main" style="width: 100%; height: 100%; overflow-wrap: break-word; overflow-x: hidden; overflow-y: auto; position: absolute;"><div>{body}</div></div>
     </div>
     <script>
         const scaleOffset = 0.20
@@ -281,7 +281,7 @@
             if (exploading) return
             const width = window.innerWidth
             const height = window.innerHeight
-            const card = document.getElementById('main');
+            const card = document.getElementsByClassName('card')[0];
             const cw = card.offsetWidth;
             const ch = card.offsetHeight;
             window.scale = Math.min(width / cw, height / ch) - scaleOffset
@@ -296,14 +296,43 @@
         computeSize();
         window.onresize = computeSize;
 
-        function makeBrowser(json, makeTop) {
+        /**
+         * @typedef {object} BrowserFile - a file in the browser menu
+         * @property {string} name - the name of this file
+         * @property {string?} icon - the url to the image to use as an icon for this file
+         * @property {number?} sort - the sorting order of this element
+         * @property {boolean?} selected - if this file in particular is selected
+         * @property {string} resolve - the url to redirect to once this file is selected
+         */
+        /**
+         * @typedef {object} BrowserFolder - a folder in the browser menu
+         * @property {string} name - the name of this file
+         * @property {string?} icon - the url to the image to use as an icon for this folder, defaults to open-close arrows when unset
+         * @property {number?} sort - the sorting order of this element
+         * @property {Array<BrowserFolder|BrowserFile>} members - the files and folders underneith this folder
+         */
+        /**
+         * makes a browser
+         * @param {BrowserFolder} json - the filesystem-shape to be displayed in the browser
+         * @param {boolean} makeTop - if or if not to return only the inner members of the folder or the raw folder
+         * @return {HTMLDivElement} - the browser
+         */   
+        function makeBrowser(json, makeTop = true) {
             /** @type {HTMLDivElement} */
             const folder = document.createElement('div');
-                folder.setAttribute('class', 'folder closed ' + (!json.icon ? 'noicon' : ''));
-                folder.onclick = e => {
-                    e.stopPropagation();
-                    folder.classList.toggle('closed');
-                    folder.classList.toggle('opened');
+                // force always open on folders that also have a resolve
+                folder.setAttribute('class', 'folder ' + (json.resolve ? 'open ' : 'closed ') + (!json.icon ? 'noicon' : ''));
+                if (!json.resolve) {
+                    folder.onclick = e => {
+                        e.stopPropagation();
+                        folder.classList.toggle('closed');
+                        folder.classList.toggle('opened');
+                    }
+                } else {
+                    folder.onclick = e => {
+                        e.stopPropagation();
+                        window.open(folder.resolve, '_self');
+                    }
                 }
                 if (json.icon) {
                     const icon = new Image();
@@ -316,20 +345,21 @@
                     const files = document.createElement('div');
                         folder.appendChild(files);
 
-
             const sortOrder = 'abcdefghijklmnopqrstuvwxyz';
             json.members.sort((a,b) => {
                 const aHasSort = typeof a.sort !== 'undefined';
                 const bHasSort = typeof b.sort !== 'undefined'; 
+                const aHasName = typeof a.name !== 'undefined';
+                const bHasName = typeof b.name !== 'undefined'; 
                 if (a.members && b.resolve && !aHasSort) return -1;
                 if (a.resolve && b.members && !bHasSort) return 1;
-                const aName = aHasSort 
+                const aName = (!aHasSort && aHasName)
                     ? [...a.name.toLowerCase()]
                         .reverse()
                         .map((char, idx) => sortOrder.indexOf(char) * idx)
                         .reduce((pre, cur) => pre + cur, 0)
                     : a.sort;
-                const bName = bHasSort 
+                const bName = (!bHasSort && bHasName)
                     ? [...b.name.toLowerCase()]
                         .reverse()
                         .map((char, idx) => sortOrder.indexOf(char) * idx)
@@ -339,7 +369,7 @@
             });
             for (const file of json.members) {
                 if (file.members) {
-                    files.appendChild(makeBrowser(file));
+                    files.appendChild(makeBrowser(file, false));
                     continue;
                 }
                 const isSelected = file.selected ?? (location.pathname === '/' ? '/index.php' : location.pathname) === file.resolve;
@@ -362,31 +392,44 @@
             }
             return makeTop ? folder.getElementsByTagName('div')[0] : folder;
         }
-        if (!localStorage.pages) localStorage.pages = '/index.php';
+
+        if (!localStorage.pages) localStorage.pages = location.pathname;
         if (!localStorage.pages.includes(location.pathname)) 
             localStorage.pages += `,${location.pathname}`;
+        const browser = document.getElementById('browser');
+        const close = document.getElementById('close-browser');
+        close.onclick = e => {
+            browser.classList.toggle('open');
+            browser.classList.toggle('close');
+            close.classList.toggle('open');
+            close.classList.toggle('close');
+            close.innerText = close.classList.contains('open') ? '<' : '>'
+        }
+        function enableBrowser() {
+            browser.hidden = false;
+            close.hidden = false;
+        }
+        function clearBrowser() {
+            browser.innerHTML = '';
+        }
+        function updateBrowser(pages) {
+            // implicitly enable to browser when it is updated
+            if (browser.hidden) enableBrowser();
+            const html = makeBrowser(pages);
+            html.style.width = 'max-content';
+            clearBrowser();
+            browser.appendChild(html);
+        }
+
         fetch('/index.json')
             .then(res => res.json())
             .then(pages => {
                 // for ease of use, development dissables needing to get a certain number
                 // of pages to use the page browser
-                if (pages.pages > localStorage.pages.split(',').length && (location.hash === 'ignoredev' || !location.hostname.includes('localhost')))
+                if (pages.pages > localStorage.pages.split(',').length && (location.hash === 'ignoredev' || !location.hostname.includes('localhost')) || !browser.hidden)
                     // if the user has not yet visited all the pages, do not show them this tool
                     return;
-                const browser = document.getElementById('browser');
-                const close = document.getElementById('close-browser');
-                browser.hidden = false;
-                close.hidden = false;
-                const html = makeBrowser(pages, true);
-                html.style.width = 'max-content';
-                browser.appendChild(html);
-                close.onclick = e => {
-                    browser.classList.toggle('open');
-                    browser.classList.toggle('close');
-                    close.classList.toggle('open');
-                    close.classList.toggle('close');
-                    close.innerText = close.classList.contains('open') ? '<' : '>'
-                }
+                updateBrowser(pages);
             })
             .catch(err => console.log(err));
     </script>

@@ -8,6 +8,7 @@ const PrecompUtils = require('./precomp-utils');
 const mime = require('mime');
 const makeIndexJSON = require('./create-indexing');
 
+globalThis.isBuild = true;
 app.use(cors())
 app.get('/index.json', async (req, res) => {
     const listing = await makeIndexJSON();
@@ -51,13 +52,14 @@ app.use(async (req, res) => {
         await util.bake();
     }
     // always explicitly set the mime type to the *output* of runing the precomps
-    res.header('Content-Type', mime.lookup(util.path.replace('.php', '.html'), 'text/plain'));
-    console.log('done building, sending file');
+    const mimeType = mime.lookup(util.path.replace('.php', '.html'), 'text/plain');
+    res.header('Content-Type', mimeType);
+    console.log('done building, sending file as mime', mimeType, 'because', path.extname(util.path));
     console.log('');
     return res.send(util.file);
 })
 
-const port = 8000
+const port = 3000
 app.listen(port, async () => {
     console.log(`hosted on http://localhost:${port}`);
     console.log('');

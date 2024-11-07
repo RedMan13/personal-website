@@ -27,7 +27,7 @@ fs.mkdirSync(buildDir);
     // unused atm, as there is no server to put the end points in
 
     console.log('\ngetting files to build...');
-    const toAlwaysIgnore = '\nbuild\n\\.gitignore\npreprocessors\n\\.buildignore\n\\.git\nnode_modules\npackage-lock\\.json\npackage\\.json';
+    const toAlwaysIgnore = '\npublic_html\n\\.gitignore\npreprocessors\n\\.buildignore\n\\.git\nnode_modules(\\\\|/)[^\\\\/)]*?(\\\\|/)(?!dist)\npackage-lock\\.json\npackage\\.json';
     const filesToIgnore = new RegExp(`^${path.resolve('.').replaceAll('\\', '\\\\')}(\\\\|/)(` + (fs.readFileSync('.buildignore', { encoding: 'utf8' }) + toAlwaysIgnore)
         .split(/\r?\n\r?/gi)
         .map(match => match.replace('/', '\\/'))

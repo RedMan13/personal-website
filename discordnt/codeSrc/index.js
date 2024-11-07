@@ -1,6 +1,7 @@
 import ApiInterface from "./interface.js";
 import { Asset } from "./asset-helper.js";
 import { getRendered } from "./message-render.js";
+import { sendNewListing } from "./channels.js";
 
 const permBits = [
     "CREATE_INSTANT_INVITE",
@@ -238,6 +239,7 @@ client.reqVisUpdate = async (event, message) => {
     switch (event) {
     case 'READY': 
         fillMessages();
+        sendNewListing();
         break;
     case 'MESSAGE_CREATE': {
         message.timestamp = new Date(message.timestamp);

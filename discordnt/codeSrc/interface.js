@@ -1,4 +1,6 @@
-import './pako.js';
+import { Inflate } from 'pako';
+import { PreloadedUserSettings } from './setting-protos/user-settings.proto';
+import { Base64Binary } from './b64-binnary.js';
 // note: this is reversed to how it should actually be shaped
 const ZLIB_SUFFIX = new Uint8Array([255, 255, 0, 0]);
 const gateway = 'wss://gateway.discord.gg';
@@ -10,7 +12,7 @@ export default class ApiInterface {
         this.reconUrl = gateway;
         this.sessionId = null;
         this.token = localStorage.token;
-        this.version = 10;
+        this.version = 9;
         this.reqVisUpdate = () => {};
         this.users = {};
         this.emojis = {};
@@ -18,16 +20,16 @@ export default class ApiInterface {
         this.savedMedia = [];
         this.messages = {};
         this.channels = {};
+        this.settings = null;
         this.guilds = { [dmServer]: [] };
         this.uploadId = 0;
 
         this.msgBuf = new Uint8Array();
-        this.infContext = new pako.Inflate({
+        this.infContext = new Inflate({
             to: 'string',
             chunkSize: 0xFFFFFF
         });
         this.infContext.onData = txt => {
-            console.log(txt.includes('Something So Specific It can onl'));
             let json;
             try {
                 json = JSON.parse(txt);
@@ -184,9 +186,9 @@ export default class ApiInterface {
         }
     }
     onpacket({ op: opcode, d: data, s: seq, t: event }) {
-        console.log('gateway op:', opcode, 'd:', data, 's:', seq, 't:', event);
         if (seq) this.seq = seq;
         if (event) return this.onevent(event, data);
+        console.log('gateway op:', opcode, 'd:', data, 's:', seq, 't:', event);
         switch (opcode) {
         case 1:
             this.send(11);
@@ -270,6 +272,9 @@ export default class ApiInterface {
                     roles
                 };
             }
+            const { settings } = await this.fromApi('GET /users/@me/settings-proto/1');
+            const rawBin = Base64Binary.decode(settings);
+            this.settings = PreloadedUserSettings.decode(rawBin);
             this.reqVisUpdate(event, data);
             break;
         case 'MESSAGE_EDIT': 
