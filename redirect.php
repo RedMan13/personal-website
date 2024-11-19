@@ -51,7 +51,7 @@
                         transform: scale(45%);
                         height: 270px;
                     ">
-                        <iframe src="data:text/html;base64,$pageContent" sandbox="allow-scripts" allow="" width="1020" height="540" style="flex-shrink: 0;"></iframe>
+                        <iframe src="data:text/html;base64,$pageContent" allow="" width="1020" height="540" style="flex-shrink: 0;"></iframe>
                     </div><br>
                     END;
                 }
