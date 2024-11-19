@@ -39,29 +39,27 @@
     "><?= htmlspecialchars($target)?></code>.</p>
     <p>Please review the site <strong><em>CAREFULLY</em></strong> if you dont recognise it as safe already.</p>
     <?php 
-        $hidePre = false;
-        $pageContent = '';
-        if (empty($_GET['target']))
-            $hidePre = true;
-        else {
+        if (!empty($_GET['target'])) {
             try {
                 $pageContent = file_get_contents($target);
-            } catch (err) {
-                $hidePre = true;
-            }
+                if ($pageContent != '') {
+                    echo <<<END
+                    <div style="
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
+                        transform: scale(45%);
+                        height: 270px;
+                    ">
+                        <iframe sandbox="allow-scripts allow-same-origin" allow="" width="1020" height="540" style="flex-shrink: 0;">
+                            $pageContent
+                        </iframe>
+                    </div><br>
+                    END;
+                }
+            } catch (err) {}
         }
     ?>
-    <div style="
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        transform: scale(45%);
-        height: 270px;
-    " <?= $hidePre ? 'hidden' : ''?>>
-        <iframe sandbox="allow-scripts allow-same-origin" allow="" width="1020" height="540" style="flex-shrink: 0;">
-            <?= $pageContent ?>
-        </iframe>
-    </div><br>
     if you intend to go to this site regardless of safety, <a href="<?= htmlspecialchars($_GET['target'])?>">Click here</a><br>
     if this site is safe and you do intended to open it because of that (and therfor always open it without this menu) then<br> 
     set memory expiry <input min="<?= date('Y-m-d') ?>" <?= empty($_GET['expiry']) ? '' : date('Y-m-d', intval($_GET['expiry'])) ?> type="date" id="expiry"></input> and <button onclick="targetRemember()">Click here</button><br>
