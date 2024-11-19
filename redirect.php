@@ -41,7 +41,7 @@
     <?php 
         if (!empty($_GET['target'])) {
             try {
-                $pageContent = htmlspecialchars(file_get_contents($target));
+                $pageContent = base64_encode(file_get_contents($target));
                 if ($pageContent != '') {
                     echo <<<END
                     <div style="
@@ -51,9 +51,7 @@
                         transform: scale(45%);
                         height: 270px;
                     ">
-                        <iframe sandbox="allow-scripts" allow="" width="1020" height="540" style="flex-shrink: 0;">
-                            $pageContent
-                        </iframe>
+                        <iframe src="data:text/html;base64,$pageContent" sandbox="allow-scripts" allow="" width="1020" height="540" style="flex-shrink: 0;"></iframe>
                     </div><br>
                     END;
                 }
