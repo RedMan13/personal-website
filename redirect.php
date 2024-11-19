@@ -51,7 +51,7 @@
                         transform: scale(45%);
                         height: 270px;
                     ">
-                        <iframe sandbox="allow-scripts allow-same-origin" allow="" width="1020" height="540" style="flex-shrink: 0;">
+                        <iframe sandbox="allow-scripts" allow="" width="1020" height="540" style="flex-shrink: 0;">
                             $pageContent
                         </iframe>
                     </div><br>
