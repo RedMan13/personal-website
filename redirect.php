@@ -41,7 +41,7 @@
     <?php 
         if (!empty($_GET['target'])) {
             try {
-                $pageContent = file_get_contents($target);
+                $pageContent = htmlspecialchars(file_get_contents($target));
                 if ($pageContent != '') {
                     echo <<<END
                     <div style="
