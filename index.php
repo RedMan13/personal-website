@@ -145,6 +145,7 @@ if ($visitors > 9 && $visitors < 20) $sufix = 'th';
             
             mouseX = ((e.x - centerX) / bodyScale);
             mouseY = ((e.y - centerY) / bodyScale) + 8;
+            console.log(mouseX, mouseY)
         }
         const step = t => {
             for (const hyperlink of links) {
@@ -156,6 +157,8 @@ if ($visitors > 9 && $visitors < 20) $sufix = 'th';
                     : 1;
                 hyperlink.scale = interpol(scale, target, 0.1);
                 hyperlink.style.filter = `brightness(${scale})`;
+                hyperlink.biasedX ||= 0;
+                hyperlink.biasedY ||= 0;
                 
                 const dir = ((t / speed) + (dist * idx)) * Math.PI / 180;
                 hyperlink.biasedX = interpol(hyperlink.biasedX, Math.cos(dir) * width, 0.2);
