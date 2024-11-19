@@ -21,7 +21,7 @@
             'youtu.be',
             'www.youtube.com',
             'www.youtu.be'
-        ].includes(target.baseneame)) {
+        ].includes(target.hostname)) {
             window.open(target, '_self');
         } else {
             localStorage.removeItem(`safesite:${target}`);
