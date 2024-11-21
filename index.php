@@ -135,16 +135,15 @@ if ($visitors > 9 && $visitors < 20) $sufix = 'th';
         let mouseX = 0;
         let mouseY = 0;
         document.onmousemove = e => {
-            const bodyScale = +document.getElementById('main').getAttribute('scale');
             const width = window.innerWidth / 2;
             const height = window.innerHeight / 2;
-            const bodyWidth = 240 * bodyScale;
-            const bodyHeight = 180 * bodyScale;
-            const centerX = (width - bodyWidth) + ((orbital.clientWidth / 2) * bodyScale);
-            const centerY = (height - bodyHeight) + ((orbital.offsetTop + 30) * bodyScale);
+            const bodyWidth = 240 * scale;
+            const bodyHeight = 180 * scale;
+            const centerX = (width - bodyWidth) + ((orbital.clientWidth / 2) * scale);
+            const centerY = (height - bodyHeight) + ((orbital.offsetTop + 30) * scale);
             
-            mouseX = ((e.x - centerX) / bodyScale);
-            mouseY = ((e.y - centerY) / bodyScale) + 8;
+            mouseX = ((e.x - centerX) / scale);
+            mouseY = ((e.y - centerY) / scale) + 8;
         }
         const step = t => {
             for (const hyperlink of links) {
@@ -156,6 +155,8 @@ if ($visitors > 9 && $visitors < 20) $sufix = 'th';
                     : 1;
                 hyperlink.scale = interpol(scale, target, 0.1);
                 hyperlink.style.filter = `brightness(${scale})`;
+                hyperlink.biasedX ||= 0;
+                hyperlink.biasedY ||= 0;
                 
                 const dir = ((t / speed) + (dist * idx)) * Math.PI / 180;
                 hyperlink.biasedX = interpol(hyperlink.biasedX, Math.cos(dir) * width, 0.2);
