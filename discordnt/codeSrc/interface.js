@@ -140,7 +140,15 @@ export default class ApiInterface {
                 user.user?.global_name ?? user.user?.username ?? user.user?.discriminator ?? 
                 user.global_name ?? user.username ?? user.discriminator ?? 
                 `FATAL: ${user.id} (found with ${userId}) has no viable name`,
-            avatar: user.avatar ?? user.user?.avatar ?? ''
+            avatar: user.avatar ?? user.user?.avatar ?? '',
+            color: user.roles 
+                ? user.roles.reduce((cur, val) => {
+                    const role = client.roles[val];
+                    if (role.position > cur[0] && role.color) 
+                        return [role.color, role.position];
+                    return cur
+                }, ['#FFF', -1])[0]
+                : '#FFF'
         };
     }
 

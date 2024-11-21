@@ -1,5 +1,7 @@
 node_modules
 package-lock.json
 public_html/
+dist/
+tmp/
 visitors.txt
 /builder/register-cmds.js

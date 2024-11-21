@@ -1,74 +1,62 @@
 const express = require('express');
 const cors = require('cors')
 const app = express();
-const fs = require('fs/promises');
+const fs = require('fs');
 const path = require('path');
 const {runPHP} = require('../preprocessors/constant-php.precomp');
-const PrecompUtils = require('./precomp-utils');
+const PrecompManager = require('./precomp-manager');
 const mime = require('mime');
-const makeIndexJSON = require('./create-indexing');
 
 globalThis.isBuild = true;
-app.use(cors())
-app.get('/index.json', async (req, res) => {
-    const listing = await makeIndexJSON();
-    res.json(listing);
-});
+const manager = new PrecompManager('dist');
+app.use(cors());
 const index = '/index.php';
 app.use(async (req, res) => {
-    console.log('got request on', req.path);
-    let target = path.resolve('.' + (req.path !== '/' ? req.path : index));
-    const status = await fs.stat(target).catch(() => null);
-    if (!status) {
-        const possibleAlt = target.replace('.html', '') + '.const.php';
-        const constPhp = await fs.stat(possibleAlt).catch(() => null);
-        if (!constPhp) return res.status(404).send();
-        target = possibleAlt;
-    }
-    console.log('resolved req to', target);
-    const fileData = await fs.readFile(target).catch(() => null);
-    if (!fileData) return res.status(404).send();
-    const util = new PrecompUtils(target, fileData);
-    if (util.path.endsWith('.php') && !util.path.endsWith('.const.php')) {
+    console.log('got request for', req.path);
+    const file = path.resolve(manager.buildDir, `.${req.path === '/' ? index : req.path}`);
+    if (file.endsWith('.php')) {
         console.log('running php');
-        const { headers, status, html } = await runPHP(req, target)
+        const { headers, status, html } = await runPHP(req, file)
         for (const header of Object.entries(headers))
             res.header(...header);
         res.status(status);
-        util.file = html;
-    }
-    const precomps = (await fs.readdir('./preprocessors'))
-        .filter(file => file.endsWith('.precomp.js'))
-        .map(file => {
-            const precomp = require(path.resolve('preprocessors', file));
-            precomp.title = path.basename(file).replace('.precomp.js', '');
-            return precomp;
-        })
-        .sort((a, b) => (b.weight ?? 0) - (a.weight ?? 0))
-        .filter(precomp => precomp.matchFile(util));
-    for (const precomp of precomps) {
-        console.log('applying precomp', precomp.title)
-        await precomp(util);
-        await util.bake();
+        data = html;
     }
     // always explicitly set the mime type to the *output* of runing the precomps
-    const mimeType = mime.lookup(util.path.replace('.php', '.html'), 'text/plain');
+    const mimeType = mime.lookup(file.replace('.php', '.html'), 'text/plain');
     res.header('Content-Type', mimeType);
-    console.log('done building, sending file as mime', mimeType, 'because', path.extname(util.path));
+    console.log('sending file as mime', mimeType, 'because', path.extname(file));
     console.log('');
-    return res.send(util.file);
+    return res.sendFile(file);
 })
 
 const port = 3000
-app.listen(port, async () => {
-    console.log(`hosted on http://localhost:${port}`);
-    console.log('');
-    const dirs = await fs.readdir('./', { recursive: true });
-    for (const file of dirs) {
-        const extName = path.extname(file)
-        if ((extName === '.php' || extName === '.html') && !file.includes('node_modules') && !file.includes('useless-history')) {
-            console.log('page', `http://localhost:${port}/${file.replaceAll('\\', '/')}`);
+manager.buildAll().then(() => {
+    fs.watch(manager.entry, { recursive: true }, (ev, file) => {
+        file = path.resolve(file);
+        if (manager.isIgnored.test(file)) return;
+        if (ev === 'rename' && !manager.exists(file)) {
+            fs.rm(manager.built[file], { recursive: true, force: true });
+            delete manager.built[file];
+            return;
         }
-    }
-    console.log('');
-})
+        if (path.basename(file) === '.buildignore') 
+            return manager.makeIgnored();
+        if (path.extname(file) === '.precomp.js')
+            return manager.getPrecomps();
+        manager.getFile(file, true);
+    })
+    app.listen(port, async () => {
+        console.log(`hosted on http://localhost:${port}`);
+        console.log('');
+        const dirs = Object.values(manager.built);
+        for (const file of dirs) {
+            const extName = path.extname(file)
+            const url = file.replaceAll('\\', '/').replace(manager.buildDir, '');
+            if ((extName === '.php' || extName === '.html') && !file.includes('node_modules') && !file.includes('useless-history')) {
+                console.log('page', `http://localhost:${port}${url}`);
+            }
+        }
+        console.log('');
+    })
+});

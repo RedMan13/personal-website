@@ -1,5 +1,6 @@
 const path = require('path');
 const fs = require('fs/promises');
+const base = path.resolve('.');
 
 module.exports = async function(util) {
     const depPath = util.file.split(/<!TEMPLATE |>\r?\n\r?/, 3)[1];
@@ -8,7 +9,8 @@ module.exports = async function(util) {
         ? path.resolve(`.${depPath}`)
         : path.resolve(util.path, '..', depPath);
 
-    const template = await fs.readFile(templatePath, 'utf8');
+        
+    const template = (await util.manager.getFile(templatePath))[1];
     const headBody = template.split(/{head}|{body}/, 3);
     const headLoc = util.file.indexOf('<head>');
     const headClose = util.file.indexOf('</head>');

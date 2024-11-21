@@ -40,7 +40,7 @@ function runPHP(req, file, opt_args = []) {return new Promise(resolve => {
         SERVER_PROTOCOL: req.protocol, // so uhhhhhh, the fuck is revision? i have never heard of that anywhere in relation to request protocol
         
         // The port number to which the request was sent.
-        SERVER_PORT: 8080, // should maby like but this in an env file to be refrenced better
+        SERVER_PORT: 3000, // should maby like but this in an env file to be refrenced better
         
         // The method with which the request was made. For HTTP, this is "GET", "HEAD", "POST", etc.
         REQUEST_METHOD: req.method,
@@ -81,7 +81,7 @@ function runPHP(req, file, opt_args = []) {return new Promise(resolve => {
 
     let res = '';
     let err = '';
-    const php = child.spawn('php-cgi', opt_args, {env});
+    const php = child.spawn('php-cgi', opt_args, { env, pwd: path.resolve('.')});
     php.stdin.on('error', function() {
         console.error("Error from server");
     });
@@ -149,9 +149,10 @@ const fakeReq = {
 module.exports = async function(util) {
     fakeReq.path = util.path;
     let destPath = util.path.replace('.const.php', '');
-    if (path.extname(destPath).length <= 1) destPath += '.html';
+    if (path.extname(destPath).length <= 1) destPath += '.html'
     util.file = (await runPHP(fakeReq, util.path)).html;
     util.path = destPath;
 };
 module.exports.matchFile = util => util.matchType('.const.php');
+module.exports.weight = Infinity;
 module.exports.runPHP = runPHP;

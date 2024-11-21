@@ -1,6 +1,6 @@
 import ApiInterface from "./interface.js";
 import { Asset } from "./asset-helper.js";
-import { getRendered } from "./message-render.js";
+import { format } from "./message-render.js";
 import { sendNewListing } from "./channels.js";
 
 const permBits = [
@@ -133,13 +133,7 @@ async function makeMessageEl(message, compact) {
                     const replied = await fetchMessage(message.message_reference.message_id);
                     replyWrapper.innerHTML = '';
                     const user = await client.getUserDisplay(replied.author.id, guildId);
-                    replyWrapper.appendChild(Asset.UserAvatar(user, 'png', 20, `
-                        display: inline;
-                        width: 0.8rem;
-                        height: 0.8rem;
-                        margin-bottom: -0.2rem;
-                        clip-path: circle();
-                    `));
+                    replyWrapper.appendChild();
                     const name = document.createElement('div');
                         name.setAttribute('style', `
                             display: inline;
@@ -165,7 +159,7 @@ async function makeMessageEl(message, compact) {
                     content.setAttribute('style', `
                         padding-left: 2.2rem;
                     `)
-                        content.innerHTML = await getRendered(message.content, false);
+                        content.innerHTML = await format(message.content);
                     li.appendChild(content);
                 return li;
             }
@@ -191,7 +185,7 @@ async function makeMessageEl(message, compact) {
                     const content = document.createElement('div');
                         content.setAttribute('style', ``)
                         content.setAttribute('class', 'content-wrapper');
-                            content.innerHTML = await getRendered(message.content, false);
+                            content.innerHTML = await format(message.content);
                         textWrapper.appendChild(content);
                 li.appendChild(textWrapper);
         return li;

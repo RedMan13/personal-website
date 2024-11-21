@@ -17,8 +17,7 @@ module.exports = async function(util) {
         cjsExport = require(util.path);
     } catch (err) {
         // oop, looks like we fucked up our check, abort loading
-        if (err.message.includes('require() of ES')) return;
-        throw err;
+        return;
     }
     const hasDefault = typeof cjsExport !== 'object' || !!cjsExport[Symbol.hasInstance];
     const safeExporters = {};
@@ -43,4 +42,5 @@ module.exports = async function(util) {
         `}
     `;
 }
-module.exports.matchFile = util => util.matchType('js,cjs');
+// this precomp really should only ever run on things i dont control
+module.exports.matchFile = util => util.path.includes('node_modules') && util.matchType('js,cjs');
