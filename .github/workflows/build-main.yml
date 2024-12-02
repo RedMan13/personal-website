@@ -21,7 +21,7 @@ jobs:
       - name: Adding commits
         uses: jsdaniell/create-json@v1.2.3
         with:
-          name: './commits.json'
+          name: 'commits.json'
           json: ${{ github.event.commits }}
       - name: Push built to Site
         uses: wlixcc/SFTP-Deploy-Action@v1.2.4
