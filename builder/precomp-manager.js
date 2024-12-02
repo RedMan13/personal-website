@@ -1,4 +1,5 @@
 const PrecompUtils = require('./precomp-utils');
+// const Client = require('ssh2-sftp-client');
 const fs = require('fs/promises');
 const path = require('path');
 /** 
@@ -30,16 +31,27 @@ class PrecompManager {
     /**
      * @param {string?} buildDir the folder to output all built data
      */
-    constructor(buildDir = 'dist') {
+    constructor(buildDir = 'dist', sftpServerIP, sftpUser, sftpLogin) {
         /** @type {Precomp[]} */
+        this.server = null;
         this.precomps = [];
         this.built = {};
         this.isIgnored = /./;
-        this.buildDir = path.resolve(buildDir);
+        this.buildDir = sftpServerIP ? buildDir : path.resolve(buildDir);
         globalThis.buildDir = this.buildDir;
         this.entry = path.resolve('.') + '/';
         this.makeIgnored();
         this.getPrecomps();
+        /*
+        if (sftpServerIP) {
+            this.server = new Client();
+            this.server.connect({
+                host: sftpServerIP,
+                username: sftpUser,
+                password: sftpLogin
+            });
+        }
+        */
     }
     async makeIgnored() {
         const ignoreList = (await fs.readFile('.buildignore', { encoding: 'utf8' }))
