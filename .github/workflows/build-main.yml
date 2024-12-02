@@ -18,7 +18,7 @@ jobs:
         with:
           node-version: 20.x
       - name: Install dependencies and build site
-        run: npm i && node ./builder
+        run: npm i && node ./builder && echo ${{ github.event.commits }} | ./commits.json
       - name: Push built to Site
         uses: wlixcc/SFTP-Deploy-Action@v1.2.4
         with:
