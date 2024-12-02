@@ -30,7 +30,7 @@ class PrecompManager {
     /**
      * @param {string?} buildDir the folder to output all built data
      */
-    constructor(buildDir) {
+    constructor(buildDir = 'dist') {
         /** @type {Precomp[]} */
         this.precomps = [];
         this.built = {};
