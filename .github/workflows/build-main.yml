@@ -20,7 +20,7 @@ jobs:
         run: |
           npm i
           node ./builder
-          echo ${{ toJSON(github.event.commits) }} > commits.json
+          echo ${{ toJSON(toJSON(github.event.commits)) }} > commits.json
       - name: Push built to Site
         uses: wlixcc/SFTP-Deploy-Action@v1.2.4
         with:
