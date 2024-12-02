@@ -17,13 +17,10 @@ jobs:
         with:
           node-version: 20.x
       - name: Install dependencies and build site
-        run: npm i && node ./builder
-      - name: Adding commits
-        id: create-json
-        uses: jsdaniell/create-json@v1.2.3
-        with:
-          name: 'commits.json'
-          json: ${{ github.event.commits }}
+        run: |
+          npm i
+          node ./builder
+          echo ${{ toJSON(github.event.commits) }} > commits.json
       - name: Push built to Site
         uses: wlixcc/SFTP-Deploy-Action@v1.2.4
         with:
