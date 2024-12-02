@@ -17,7 +17,7 @@ jobs:
         with:
           node-version: 20.x
       - name: Install dependencies and build site
-        run: npm i && node ./builder && echo ${{ JSON.stringify(github.event.commits.slice(0,5)) }}
+        run: npm i && node ./builder
       - name: Adding commits
         uses: jsdaniell/create-json@v1.2.3
         with:
