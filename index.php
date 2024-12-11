@@ -14,7 +14,9 @@ function renderSlideDiv($slides) {
     echo '</div>';
 }
 
-$visitors = intval(file_get_contents('./visitors.txt')) +1;
+$visitors = file_exists('./visitors.txt') 
+    ? intval(file_get_contents('./visitors.txt')) +1
+    : 1;
 file_put_contents('./visitors.txt', strval($visitors));
 
 $numSuf = ['th', 'st', 'nd', 'rd', 'th', 'th', 'th', 'th', 'th', 'th'];
@@ -180,7 +182,9 @@ if ($visitors > 9 && $visitors < 20) $sufix = 'th';
         requestAnimationFrame(step);
     </script>
 
-    <?= "hie $visitors$sufix visitor!" ?> welcome to mie site of goofy gooberness cause silly good!!!!!! <br>
+    <span title="Since the latest commit to the site">
+        <?= "hie $visitors$sufix visitor!" ?>
+    </span> welcome to mie site of goofy gooberness cause silly good!!!!!! <br>
     this website is a participant of the <a href="https://steve0greatness.github.io/webring">0greatness webring!</a><br>
     <h3 class="horizontalCenter">all the projects i have worked on sofar</h3>
     <?php renderSlideDiv([

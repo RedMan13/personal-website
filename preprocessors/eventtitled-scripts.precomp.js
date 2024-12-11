@@ -1,12 +1,12 @@
 module.exports = async function(util) {
     let didThings = false
     util.tokenize({
-        open: '<script',
+        open: /^<script/i,
         // use either event="evname" syntax or onevname syntax
-        eventName: '\\s+(event="|on)(?<event>[a-z]+)',
-        scriptSrc: '\\s+src="[^"]+"', // this only exists to cause exclusion via the filter group
-        endAttrs: '>',
-        close: '/>|</script>'
+        eventName: /^\s+(event="|on)(?<event>[a-z]+)/i,
+        scriptSrc: /^\s+src="[^"]+"/i, // this only exists to cause exclusion via the filter group
+        endAttrs: /^>/,
+        close: /^<\/script>/i
     }, ['open', 'eventName', 'endAttrs', '*', 'close']);
     for (const tokens of util.tokens) {
         const event = tokens[1].event

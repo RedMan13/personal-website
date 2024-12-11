@@ -1,0 +1,146 @@
+<!TEMPLATE /cardpage.html>
+<head></head>
+<body>
+    <script>
+        window.PartIDS = [
+            'AIR',
+            'TAPP',
+            'CLONE',
+            'VOID',
+            'WATER',
+            'SAND',
+            'STONE'
+        ].reduce((cur, val, idx) => (cur[val] = idx, cur[idx] = val, cur), {});
+        const parts = [
+            [PartIDS.TAPP, 0,0, 0,0]
+            ,[PartIDS.STONE, 0,20, 0,0],[PartIDS.STONE, 1,20, 0,0],[PartIDS.STONE, -1,20, 0,0],[PartIDS.STONE, 2,20, 0,0],[PartIDS.STONE, -2,20, 0,0],[PartIDS.STONE, 3,20, 0,0],[PartIDS.STONE, -3,20, 0,0],[PartIDS.STONE, 4,20, 0,0],[PartIDS.STONE, -4,20, 0,0],[PartIDS.STONE, 5,20, 0,0],[PartIDS.STONE, -5,20, 0,0],[PartIDS.STONE, 6,20, 0,0],[PartIDS.STONE, -6,20, 0,0],[PartIDS.STONE, 7,20, 0,0],[PartIDS.STONE, -7,20, 0,0],[PartIDS.STONE, 8,20, 0,0],[PartIDS.STONE, -8,20, 0,0],[PartIDS.STONE, 9,20, 0,0],[PartIDS.STONE, -9,20, 0,0],[PartIDS.STONE, 10,20, 0,0],[PartIDS.STONE, -10,20, 0,0]
+        ];
+        const dirTo = (x1, y1, x2 = 0, y2 = 0) => Math.atan2(x1 - x2, y1 - y2) * 7 / Math.PI;
+        const magTo = (x1, y1, x2 = 0, y2 = 0) => Math.sqrt(((x1 - x2) ** 2) + ((y1 - y2) ** 2));
+        const dirXOff = (dir) =>
+            (Math.min(((dir % 8) +1) % 4, 1) * Math.min(2 - Math.floor(((dir % 8) +1) / 5) *3, 1));
+        const dirYOff = (dir) => dirXOff(dir +2);
+        const Part = (type, x, y, dir) => parts.push(
+            typeof dir !== 'undefined'
+                ? [type, 
+                    x + dirXOff(dir),
+                    y + dirYOff(dir),
+                    0,
+                    0
+                ]
+                : [type, x, y, 0, 0]);
+        const at = (x, y) => (part) => part[1] == x && part[2] == y;
+        const ondir = (dir, x, y) => part => at(x + dirXOff(dir), y + dirYOff(dir))(part);
+        const inside = (x1, y1, x2, y2) => (part) => 
+            part[1] >= x1 && part[1] <= x2 && 
+            part[2] >= y1 && part[2] <= y2
+        const outside = (x1, y1, x2, y2) => {
+            const inr = inside(x1, y1, x2, y2);
+            return (part) => !inr(part);
+        }
+        const around = (x, y, ignore = PartIDS.AIR, r = 1) => {
+            const inr = inside(x -r,y -r, x +r,y +r);
+            return (part) => part[0] !== ignore && inr(part);
+        }
+
+        const clone = (type) => 
+            self => {
+                const dir = Math.floor(Math.random() * 8);
+                if (dirXOff(dir) === 0 && dirYOff(dir) === 0) throw 'FUCK';
+                if (parts.find(at(self[1] + dirXOff(dir), self[2] + dirYOff(dir))))
+                    return;
+                Part(type, self[1], self[2], dir);
+            }
+        const fluid = (part, idx, ground) => {
+            if (ground) {
+                const onLeft = parts.find(at(part[1] -1, part[2]));
+                const onRight = parts.find(at(part[1] +1, part[2]));
+                if (onLeft && onRight) return;
+                if (onLeft) part[1]++;
+                if (onRight) part[1]--;
+                if (!onLeft && !onRight) part[1] += (Math.random() * 3) -2;
+            }
+        }
+        const powder = (part, idx, ground) => {
+            if (ground) {
+                const onLeft = parts.find(at(part[1] -1, part[2] +1));
+                const onRight = parts.find(at(part[1] +1, part[2] +1));
+                if (onLeft && onRight) return;
+                if (onLeft) { part[1]++; part[2]++; }
+                if (onRight) { part[1]--; part[2]++; }
+                if (!onLeft && !onRight) part[1] += (Math.random() * 3) -2;
+            }
+        }
+        window.partInf = {
+            [PartIDS.AIR]:   ['black',  0,1,   (self, idx) => parts.splice(idx, 1)],
+            [PartIDS.TAPP]:  ['brown',  0,1,   clone(PartIDS.WATER)],
+            [PartIDS.CLONE]: ['orange', 0,1,   clone(PartIDS.SAND)],
+            [PartIDS.VOID]:  ['white',  0,1,   self => parts
+                .filter(around(self[1], self[2], PartIDS.VOID))
+                .forEach((part, idx) => parts.splice(idx, 1))],
+            [PartIDS.WATER]: ['blue',   1,0.5, fluid],
+            [PartIDS.SAND]:  ['yellow', 1,0.5, powder],
+            [PartIDS.STONE]: ['grey',   0,1]
+        }
+    </script>
+    <script>
+        const card = document.getElementsByClassName('card')[0];
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.style.width = '480px';
+        canvas.style.height = '360px';
+        canvas.width = 480;
+        canvas.height = 360;
+        window.oncardrescale = function(old) {
+            canvas.width = 480 * scale * 2;
+            canvas.height = 360 * scale * 2;
+            ctx.scale(scale * 2, scale * 2);
+        }
+        card.appendChild(canvas);
+        let last;
+        function tick(time) {
+            ctx.fillStyle = 'black';
+            ctx.fillRect(0, 0, 480, 360);
+            for (let i = 0; i < parts.length; i++) {
+                const part = parts[i];
+                const [color, velAdd, velRes, func] = partInf[part[0]];
+                if (velAdd != 0) {
+                    let under
+                    do {
+                        under = parts.filter(at(part[1], part[2]));
+                        if (under.length > 1) {
+                            part[1] += (Math.random() * 3) -2;
+                            part[2] += (Math.random() * 3) -2;
+                        }
+                    } while(under.length > 1);
+                    part[4] += velAdd;
+                    part[3] *= velRes;
+                    part[4] *= velRes;
+                    const dir = Math.floor(7 * (Math.atan2(part[3], part[4]) / Math.PI));
+                    const ground = (part[3] + part[4]) === 0 
+                        ? false
+                        : parts.find(ondir(dirTo(...part.slice(3, 5)), part[1], part[2]));
+                    if (ground) part[4] = 0;
+                    else if (part[4] === 0) part[4] = velAdd * 2;
+                    part[1] += part[3];
+                    part[2] += part[4];
+                }
+                part[1] = Math.floor(part[1]);
+                part[2] = Math.floor(part[2]);
+                if (func) func(part, i);
+            }
+            for (const toShow of parts.filter(inside(-60,-45, 60,45))) {
+                ctx.fillStyle = partInf[toShow[0]][0];
+                ctx.fillRect((toShow[1] +60) * 4, (toShow[2] +45) * 4, 4, 4);
+            }
+            for (const idx in parts)
+                if (outside(-240,-180, 240,180)(parts[idx]))
+                    parts.splice(idx, 1);
+            ctx.fillStyle = 'yellow';
+            ctx.fillText(`${Math.floor(1 / ((time - last) / 1000))}FPS ${parts.length} parts`, 5, 15);
+            last = time;
+            requestAnimationFrame(tick);
+        }
+        requestAnimationFrame(tick);
+    </script>
+</body>

@@ -1,5 +1,8 @@
 const fs = require('fs/promises');
+const { get } = require('https');
 const path = require('path');
+const { stdout } = require('process');
+const Tokenizer = require('./tokenizer');
 // note: i will be adding things to this as *i* need them, not as they may be needed
 class PrecompUtils {
     constructor(path, file, manager) {
@@ -24,70 +27,43 @@ class PrecompUtils {
             });
             
     }
-    tokenize(tokenCaptures, filterGroup) {
-        let regex = ''
-        const tokenNames = Object.keys(tokenCaptures)
-        for (const [name, tokenReg] of Object.entries(tokenCaptures)) {
-            regex += `|(?<${name}>${tokenReg.replaceAll('{o}', name)})`
+    /**
+     * Matches all js structures that have arbitrary and irrelavent contents
+     * @param {string} str The string to check (only checks from start)
+     * @returns {number} the length of the match
+     */
+    jumpArbit(str) {
+        const match = str.match(/^('([^'\n]|\\')*'|"([^"\n]|\\")*"|`([^`$]|\\`|\\\$)*`|\/\/[^\n]*|\/\*([^*]|\*.)*?\*\/|\/([^\/\n]|\\\/)*\/[a-z]*)/i);
+        if (match) return match[0].length;
+        if (str[0] !== '`') return 0;
+        let indent = 0;
+        let inJs = false;
+        for (let i = 1; i < str.length; i++) {
+            if (inJs) {
+                const jmp = this.jumpArbit(str.slice(i));
+                if (jmp) {
+                    i += jmp -1;
+                    continue;
+                }
+            }
+            if (str[i -1] === '\\') continue;
+            if (!inJs && str[i] === '`') return i +1;
+            if (str[i] === '$') inJs = true;
+            if (str[i] === '{') indent++;
+            if (str[i] === '}') {
+                indent--;
+                if (inJs && indent === 0) inJs = false;
+            }
         }
-        regex = new RegExp(regex.slice(1), 'guis');
-
-        const tokens = []
-        let groupChunk = []
-        let groupName = 0
-        for (const match of this.file.matchAll(regex)) {
-            match.groups ??= {}
-            const tokenName = tokenNames.find(name => match.groups[name])
-            const token = {
-                name: tokenName,
-                start: match.index,
-                match: match.groups[tokenName],
-                end: match[0].length + match.index,
-                idx: tokens.length,
-                ...match.groups
-            }
-            delete token[token.name];
-            for (const key in token)
-                if (typeof token[key] === 'undefined')
-                    delete token[key];
-                
-            if (!filterGroup) {
-                tokens.push(token)
-                continue
-            }
-
-            if (typeof filterGroup[groupName] === 'undefined') {
-                tokens.push(groupChunk)
-                groupChunk = []
-                groupName = 0
-            }
-            // keep eating forward until we find the end tag (assuming there is one)
-            if (filterGroup[groupName] === '*' && filterGroup[groupName +1] !== tokenName) {
-                groupChunk.push(token)
-                continue
-            }
-            // if we did find that end tag, then move forward past it
-            if (filterGroup[groupName].at(-1) === '*' && filterGroup[groupName +1] === tokenName) {
-                groupChunk.push(token)
-                groupName += 2
-                continue
-            }
-            
-            const lengthAny = filterGroup[groupName].at(-1) === '*'
-            const detaggedName = lengthAny
-                ? filterGroup[groupName].slice(0, -1)
-                : filterGroup[groupName]
-
-            if (tokenName !== detaggedName) {
-                groupChunk = []
-                groupName = 0
-                continue
-            }
-            if (tokenName === detaggedName) groupChunk.push(token)
-            if (!lengthAny) groupName++
+        return 0;
+    }
+    tokenize(tokens, filter, debug) {
+        const tok = new Tokenizer(this.file, tokens, debug);
+        if (filter) {
+            this.tokens = tok.getGroups(filter);
+            return;
         }
-
-        this.tokens = tokens
+        this.tokens = tok.getTokens();
     }
     findLine(idx) {
         const lineIdx = this.lines.findIndex(line => idx < line[0]) -1;
@@ -98,7 +74,7 @@ class PrecompUtils {
         const line = this.findLine(token.start);
         if (!line) return `${token.name} (unknown location)`;
         const col = token.start - line[0];
-        return `${token.name} "${token[token.name]}" (at L${line[2] +1}:C${col +1} of ${this.path})`
+        return `${token.name} "${token.match}" (at L${line[2] +1}:C${col +1} of ${this.path})`
     }
 
     insert(idx, str) {

@@ -57,7 +57,7 @@ const syntax = [
     [/^`(.+?)`/i, content => <code>{content}</code>],
     [/^~~(.+?)~~/i, content => <s>{content}</s>],
     [/^__(.+?)__/i, content => <u>{content}</u>],
-    [/^\|\|(.+?)\|\|/i, content => <span is="text-spoiler">{content}</span>],
+    [/^\|\|(.+?)\|\|/i, content => <TextSpoiler>{content}</TextSpoiler>],
     [/^<@!?([0-9]+)>/i, async id => {
         const guildId = client.channels[channel]?.guild_id ?? 0;
         const user = await client.getUserDisplay(id, guildId);
@@ -84,7 +84,7 @@ const syntax = [
     [/^\[(.+?)\]\(<?https?:\/\/[^\s]*>?\)/i, (title, url) => <a href={`/redirect?target=${url}`}>{title}</a>],
     [/^<t:([0-9]+)(:[tTdDfFR])?>/i, (time, style) => <TimeStamp t={time} s={style}></TimeStamp>],
     [/^<?https?:\/\/[^\s]*>?/i, url => <a href={`/redirect?target=${url}`}>{url}</a>],
-    [/^\n/i, '<br>'],
+    [/^\n/i, () => <br/>],
 ]
 /** @param {string} text */
 export async function format(text, wrap = true) {

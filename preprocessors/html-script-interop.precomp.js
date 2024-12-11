@@ -2,12 +2,12 @@ const PrecompUtils = require('../builder/precomp-utils');
 
 module.exports = async function(util) {
     util.tokenize({
-        open: '<script',
+        open: /^<script/i,
         // use file="fileType" syntax to define a script to be treated as if it was this file
-        file: '\\s+file="(?<fileType>[^"]+)',
-        scriptSrc: '\\s+src="[^"]+"', // this only exists to cause exclusion via the filter group
-        endAttrs: '>',
-        close: '</script>'
+        file: /^\s+file="(?<fileType>[^"]+)/i,
+        scriptSrc: /^\s+src="[^"]+"/i, // this only exists to cause exclusion via the filter group
+        endAttrs: /^>/,
+        close: /^<\/script>/i
     }, ['open', 'file', 'endAttrs', '*', 'close']);
     for (const tokens of util.tokens) {
         const fileType = tokens[1].fileType

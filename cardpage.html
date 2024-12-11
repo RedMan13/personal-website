@@ -7,6 +7,155 @@
     <meta name="keywords" content="gsa,godslayerakp,redman13,thyme1time23,giveminecraftstone,building-x">
     <meta name="theme-color" content="white">
     <meta name="color-scheme" content="light">
+    <script>
+        const elementClassNames = {
+            "a": 'HTMLAnchorElement',
+            "area": 'HTMLAreaElement',
+            "audio": 'HTMLAudioElement',
+            "base": 'HTMLBaseElement',
+            "blockquote": 'HTMLQuoteElement',
+            "body": 'HTMLBodyElement',
+            "br": 'HTMLBRElement',
+            "button": 'HTMLButtonElement',
+            "canvas": 'HTMLCanvasElement',
+            "caption": 'HTMLTableCaptionElement',
+            "col": 'HTMLTableColElement',
+            "colgroup": 'HTMLTableColElement',
+            "data": 'HTMLDataElement',
+            "datalist": 'HTMLDataListElement',
+            "del": 'HTMLModElement',
+            "details": 'HTMLDetailsElement',
+            "dialog": 'HTMLDialogElement',
+            "dir": 'HTMLDirectoryElement',
+            "div": 'HTMLDivElement',
+            "dl": 'HTMLDListElement',
+            "embed": 'HTMLEmbedElement',
+            "fencedframe": 'HTMLUnknownElement',
+            "fieldset": 'HTMLFieldSetElement',
+            "font": 'HTMLFontElement',
+            "form": 'HTMLFormElement',
+            "frame": 'HTMLFrameElement',
+            "frameset": 'HTMLFrameSetElement',
+            "h1": 'HTMLHeadingElement',
+            "head": 'HTMLHeadElement',
+            "hr": 'HTMLHRElement',
+            "html": 'HTMLHtmlElement',
+            "iframe": 'HTMLIFrameElement',
+            "img": 'HTMLImageElement',
+            "input": 'HTMLInputElement',
+            "ins": 'HTMLModElement',
+            "label": 'HTMLLabelElement',
+            "legend": 'HTMLLegendElement',
+            "li": 'HTMLLIElement',
+            "link": 'HTMLLinkElement',
+            "map": 'HTMLMapElement',
+            "marquee": 'HTMLMarqueeElement',
+            "menu": 'HTMLMenuElement',
+            "meta": 'HTMLMetaElement',
+            "meter": 'HTMLMeterElement',
+            "object": 'HTMLObjectElement',
+            "ol": 'HTMLOListElement',
+            "optgroup": 'HTMLOptGroupElement',
+            "option": 'HTMLOptionElement',
+            "output": 'HTMLOutputElement',
+            "p": 'HTMLParagraphElement',
+            "param": 'HTMLParamElement',
+            "picture": 'HTMLPictureElement',
+            "portal": 'HTMLUnknownElement',
+            "pre": 'HTMLPreElement',
+            "progress": 'HTMLProgressElement',
+            "q": 'HTMLQuoteElement',
+            "script": 'HTMLScriptElement',
+            "select": 'HTMLSelectElement',
+            "slot": 'HTMLSlotElement',
+            "source": 'HTMLSourceElement',
+            "span": 'HTMLSpanElement',
+            "style": 'HTMLStyleElement',
+            "table": 'HTMLTableElement',
+            "tbody": 'HTMLTableSectionElement',
+            "td": 'HTMLTableCellElement',
+            "template": 'HTMLTemplateElement',
+            "textarea": 'HTMLTextAreaElement',
+            "tfoot": 'HTMLTableSectionElement',
+            "th": 'HTMLTableCellElement',
+            "thead": 'HTMLTableSectionElement',
+            "time": 'HTMLTimeElement',
+            "title": 'HTMLTitleElement',
+            "tr": 'HTMLTableRowElement',
+            "track": 'HTMLTrackElement',
+            "ul": 'HTMLUListElement',
+            "video": 'HTMLVideoElement',
+            "xmp": 'HTMLPreElement'
+        };
+        // loose def for elements that dont require any direct manipulation
+        function defineElement(name, attributes, innerGen) {
+            /** @type {HTMLElement} */
+            const elClass = window[elementClassNames[extend]] ?? HTMLElement;
+            class newElement extends elClass {
+                static observedAttributes = Object.keys(attributes)
+                    .filter(key => !key.startsWith('on') && !['extends', 'attributes'].includes(key));
+                #display = null;
+                #priv = {};
+                constructor() {
+                    super();
+                    if (!this.#display) this.#display = this.attachShadow({ mode: 'open' });
+                    innerGen.apply(this, [this.#display]);
+                    for (const [key, val] of Object.entries(attributes)) {
+                        if (key.startsWith('on')) {
+                            this.addEventListener(key.slice(2), val);
+                            continue;
+                        }
+                        this.setAttribute(key, val);
+                    }
+                }
+            }
+            for (const key in attributes) {
+                if (key.startsWith('on')) {
+                    switch (key.slice(2)) {
+                    case 'connected':
+                        newElement.prototype.connectedCallback = attributes[key];
+                        delete attributes[key];
+                        break;children
+                    case 'disconnected':
+                        newElement.prototype.disconnectedCallback = attributes[key];
+                        delete attributes[key];
+                        break;
+                    case 'adopted':
+                        newElement.prototype.adoptedCallback = attributes[key];
+                        delete attributes[key];
+                        break;
+                    case 'attributes':
+                        newElement.prototype.attributeChangedCallback = attributes[key];
+                        delete attributes[key];
+                        break;
+                    }
+                    continue;
+                }
+            }
+            if (attributes.attributes) {
+                newElement.observedAttributes = attributes.attributes;
+                delete attributes.attributes;
+            }
+            if (attributes.this) {
+                Object.assign(newElement, attributes.this);
+                delete attributes.this;
+            }
+            delete attributes.extends;
+            customElements.define(name, newElement, { extends: attributes.extends });
+            return newElement;
+        }
+        function appendChildren(parent, children) {
+            children.forEach(child => {
+                if (!child) return;
+                if (typeof child === 'string')
+                    child = document.createTextNode(child);
+                if (Array.isArray(child))
+                    return appendChildren(parent, child);
+
+                parent.appendChild(child);
+            });
+        }
+    </script>
     
     <style>
         body {
@@ -318,10 +467,19 @@
             /** @type {Array<string>} */
             const pages = (localStorage.pages || location.pathname).split(',');
             if (!pages.includes(location.pathname)) pages.push(location.pathname);
-            if (files.pages <= pages.length) updateBrowser(files);
+            if (files.pages <= pages.length) { enableBrowser(); updateBrowser(files); }
             localStorage.pages = pages.join();
         </script>
-        <div id="main" style="width: 100%; height: 100%; overflow-wrap: break-word; overflow-x: hidden; overflow-y: auto; position: absolute;"><div>{body}</div></div>
+        <div id="main" style="
+            width: 100%; 
+            height: 100%; 
+            overflow-wrap: break-word; 
+            overflow-x: hidden; 
+            overflow-y: auto; 
+            position: absolute;
+        ">
+            <div>{body}</div>
+        </div>
     </div>
     <script>
         const scaleOffset = 0.20
@@ -392,6 +550,7 @@
             const card = document.getElementsByClassName('card')[0];
             const cw = card.offsetWidth;
             const ch = card.offsetHeight;
+            const old = scale;
             window.scale = Math.min(width / cw, height / ch) - scaleOffset
             if (scale <= 0) {
                 scale = 0
@@ -399,157 +558,19 @@
             }
             card.setAttribute('scale', scale)
             card.style.transform = `scale(${scale})`;
-            window.oncardrescale?.(scale)
+            window.oncardrescale?.(old);
         };
         computeSize();
         window.onresize = computeSize;
 
-        const elementClassNames = {
-            "a": 'HTMLAnchorElement',
-            "area": 'HTMLAreaElement',
-            "audio": 'HTMLAudioElement',
-            "base": 'HTMLBaseElement',
-            "blockquote": 'HTMLQuoteElement',
-            "body": 'HTMLBodyElement',
-            "br": 'HTMLBRElement',
-            "button": 'HTMLButtonElement',
-            "canvas": 'HTMLCanvasElement',
-            "caption": 'HTMLTableCaptionElement',
-            "col": 'HTMLTableColElement',
-            "colgroup": 'HTMLTableColElement',
-            "data": 'HTMLDataElement',
-            "datalist": 'HTMLDataListElement',
-            "del": 'HTMLModElement',
-            "details": 'HTMLDetailsElement',
-            "dialog": 'HTMLDialogElement',
-            "dir": 'HTMLDirectoryElement',
-            "div": 'HTMLDivElement',
-            "dl": 'HTMLDListElement',
-            "embed": 'HTMLEmbedElement',
-            "fencedframe": 'HTMLUnknownElement',
-            "fieldset": 'HTMLFieldSetElement',
-            "font": 'HTMLFontElement',
-            "form": 'HTMLFormElement',
-            "frame": 'HTMLFrameElement',
-            "frameset": 'HTMLFrameSetElement',
-            "h1": 'HTMLHeadingElement',
-            "head": 'HTMLHeadElement',
-            "hr": 'HTMLHRElement',
-            "html": 'HTMLHtmlElement',
-            "iframe": 'HTMLIFrameElement',
-            "img": 'HTMLImageElement',
-            "input": 'HTMLInputElement',
-            "ins": 'HTMLModElement',
-            "label": 'HTMLLabelElement',
-            "legend": 'HTMLLegendElement',
-            "li": 'HTMLLIElement',
-            "link": 'HTMLLinkElement',
-            "map": 'HTMLMapElement',
-            "marquee": 'HTMLMarqueeElement',
-            "menu": 'HTMLMenuElement',
-            "meta": 'HTMLMetaElement',
-            "meter": 'HTMLMeterElement',
-            "object": 'HTMLObjectElement',
-            "ol": 'HTMLOListElement',
-            "optgroup": 'HTMLOptGroupElement',
-            "option": 'HTMLOptionElement',
-            "output": 'HTMLOutputElement',
-            "p": 'HTMLParagraphElement',
-            "param": 'HTMLParamElement',
-            "picture": 'HTMLPictureElement',
-            "portal": 'HTMLUnknownElement',
-            "pre": 'HTMLPreElement',
-            "progress": 'HTMLProgressElement',
-            "q": 'HTMLQuoteElement',
-            "script": 'HTMLScriptElement',
-            "select": 'HTMLSelectElement',
-            "slot": 'HTMLSlotElement',
-            "source": 'HTMLSourceElement',
-            "span": 'HTMLSpanElement',
-            "style": 'HTMLStyleElement',
-            "table": 'HTMLTableElement',
-            "tbody": 'HTMLTableSectionElement',
-            "td": 'HTMLTableCellElement',
-            "template": 'HTMLTemplateElement',
-            "textarea": 'HTMLTextAreaElement',
-            "tfoot": 'HTMLTableSectionElement',
-            "th": 'HTMLTableCellElement',
-            "thead": 'HTMLTableSectionElement',
-            "time": 'HTMLTimeElement',
-            "title": 'HTMLTitleElement',
-            "tr": 'HTMLTableRowElement',
-            "track": 'HTMLTrackElement',
-            "ul": 'HTMLUListElement',
-            "video": 'HTMLVideoElement',
-            "xmp": 'HTMLPreElement'
-        };
-        // loose def for elements that dont require any direct manipulation
-        function defineElement(name, attributes, innerGen) {
-            /** @type {HTMLElement} */
-            const elClass = window[elementClassNames[extend]] ?? HTMLElement;
-            class newElement extends elClass {
-                static observedAttributes = Object.keys(attributes)
-                    .filter(key => !key.startsWith('on') && !['extends', 'attributes'].includes(key));
-                #display = null;
-                #priv = {};
-                constructor() {
-                    super();
-                    if (!this.#display) this.#display = this.attachShadow({ mode: 'open' });
-                    innerGen.apply(this, [this.#display]);
-                    for (const [key, val] of Object.entries(attributes)) {
-                        if (key.startsWith('on')) {
-                            this.addEventListener(key.slice(2), val);
-                            continue;
-                        }
-                        this.setAttribute(key, val);
-                    }
-                }
+        window.debug = false;
+        const debug = new WebSocket(`/debug${location.pathname}`);
+        debug.onopen = () => window.debug = true;
+        debug.onmessage = ev => {
+            switch (ev.message) {
+            case 'reload': location.reload(); break;
+            case 'close': close();
             }
-            for (const key in attributes) {
-                if (key.startsWith('on')) {
-                    switch (key.slice(2)) {
-                    case 'connected':
-                        newElement.prototype.connectedCallback = attributes[key];
-                        delete attributes[key];
-                        break;
-                    case 'disconnected':
-                        newElement.prototype.disconnectedCallback = attributes[key];
-                        delete attributes[key];
-                        break;
-                    case 'adopted':
-                        newElement.prototype.adoptedCallback = attributes[key];
-                        delete attributes[key];
-                        break;
-                    case 'attributes':
-                        newElement.prototype.attributeChangedCallback = attributes[key];
-                        delete attributes[key];
-                        break;
-                    }
-                    continue;
-                }
-            }
-            if (attributes.attributes) {
-                newElement.observedAttributes = attributes.attributes;
-                delete attributes.attributes;
-            }
-            if (attributes.this) {
-                Object.assign(newElement, attributes.this);
-                delete attributes.this;
-            }
-            delete attributes.extends;
-            customElements.define(name, newElement, { extends: attributes.extends });
-            return newElement;
-        }
-        function appendChildren(parent, children) {
-            children.forEach(child => {
-                if (!child) return;
-                if (typeof child === 'string')
-                    child = document.createTextNode(child);
-                if (Array.isArray(child))
-                    return appendChild(child);
-
-                parent.appendChild(child);
-            });
         }
     </script>
 </body>

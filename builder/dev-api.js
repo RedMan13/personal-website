@@ -1,17 +1,35 @@
-const express = require('express');
+const { WebSocketExpress } = require('websocket-express');
 const cors = require('cors')
-const app = express();
+const app = new WebSocketExpress();
 const fs = require('fs');
 const path = require('path');
 const {runPHP} = require('../preprocessors/constant-php.precomp');
 const PrecompManager = require('./precomp-manager');
 const mime = require('mime');
+const { EventEmitter } = require('stream');
 
 globalThis.isBuild = true;
 const manager = new PrecompManager('dist');
-app.use(cors());
+process.on('exit', () => fs.rmSync(manager.buildDir, { recursive: true, force: true }));
+const evs = new EventEmitter();
+app.ws('/debug/:file', async (req, res) => {
+    const socket = await res.accept();
+    evs.on('update', file => {
+        if (file === req.params.file) 
+            socket.send('reload');
+    });
+    evs.on('delete', file => {
+        if (file === req.params.file) 
+            socket.send('close');
+    });
+    evs.on('redirect', (file, newF) => {
+        if (file === req.params.file)
+            socket.send(`goto:${newF}`);
+    })
+})
+app.useHTTP(cors());
 const index = '/index.php';
-app.use(async (req, res) => {
+app.useHTTP(async (req, res) => {
     console.log('got request for', req.path);
     const file = path.resolve(manager.buildDir, `.${req.path === '/' ? index : req.path}`);
     if (file.endsWith('.php')) {
@@ -32,11 +50,12 @@ app.use(async (req, res) => {
 
 const port = 3000
 manager.buildAll().then(() => {
-    fs.watch(manager.entry, { recursive: true }, (ev, file) => {
+    fs.watch(manager.entry, { recursive: true }, async (ev, file) => {
         file = path.resolve(file);
         if (manager.isIgnored.test(file)) return;
-        if (ev === 'rename' && !manager.exists(file)) {
+        if (ev === 'rename') {
             fs.rm(manager.built[file], { recursive: true, force: true });
+            evs.emit('delete', manager.built[file]);
             delete manager.built[file];
             return;
         }
@@ -44,8 +63,13 @@ manager.buildAll().then(() => {
             return manager.makeIgnored();
         if (path.extname(file) === '.precomp.js')
             return manager.getPrecomps();
-        manager.getFile(file, true);
-    })
+        const [output, data, skipped] = await manager.getFile(file, true);
+        if (data.includes('"filejson"') && !skipped) {
+            const fileJson = JSON.stringify(await manager.recursiveRead());
+            fs.writeFileSync(output, data.replace('"filejson"', fileJson));
+        }
+        evs.emit('update', output);
+    });
     app.listen(port, async () => {
         console.log(`hosted on http://localhost:${port}`);
         console.log('');
