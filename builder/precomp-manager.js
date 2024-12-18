@@ -63,8 +63,6 @@ class PrecompManager {
                     /preprocessors/.source,
                     /\.buildignore/.source,
                     /\.git/.source,
-                    // only match none-dist files/folders
-                    /node_modules(\\|\/)[^\\\/)]*?(\\|\/)(?!dist)/.source,
                     /package-lock\.json/.source,
                     /package\.json/.source,
                 ].join('|');
@@ -108,6 +106,9 @@ class PrecompManager {
         );
         if (this.isIgnored.test(file.path))
             return [file.path, file.file, true];
+        const toApply = this.precomps.filter(precomp => precomp.matchFile(file));
+        if (file.skip) // one of the match file ops tells us to ignore this file
+            return [file.path, file.file, true];
         if (file.binnary) {
             const name = target.replace(this.entry, '');
             const endPath = path.resolve(this.buildDir, name);
@@ -115,14 +116,15 @@ class PrecompManager {
             await fs.writeFile(endPath, content);
             return [endPath, content.toString('utf8'), true];
         }
-        this.built[target] = true;
         console.log('\tbuilding', target.replace(this.entry, ''));
-        const toApply = this.precomps.filter(precomp => precomp.matchFile(file));
+        this.built[target] = true;
         for (const precomp of toApply) {
             if (!precomp.matchFile(file)) continue;
             console.log('\t\tapplying precomp', precomp.title);
             await precomp(file);
             await file.bake();
+            if (file.skip) // this precomp decided that the file needs to be ignored
+                return [file.path, file.file, true];
         }
         await file.bake(this.buildDir);
         this.built[target] = file.path;

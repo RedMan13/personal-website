@@ -1,7 +1,5 @@
 const fs = require('fs/promises');
-const { get } = require('https');
 const path = require('path');
-const { stdout } = require('process');
 const Tokenizer = require('./tokenizer');
 // note: i will be adding things to this as *i* need them, not as they may be needed
 class PrecompUtils {

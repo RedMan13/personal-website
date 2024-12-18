@@ -4,8 +4,6 @@ let imprtVar = 0;
 let exprtVar = 0;
 const captureRequired = /=\s*require\(["'`](.*?)["'`]\)/gi;
 module.exports = async function(util) {
-    // file is not a cjs module and so does not require any wrappings
-    if (!/(module\.)?exports\s*=|require\(["'`].*?["'`]\)/gi.test(util.file)) return;
     const cjsImported = {};
     const cjsRequired = [];
     for (const [_, imp] of util.file.matchAll(captureRequired)) {
@@ -43,4 +41,7 @@ module.exports = async function(util) {
     `;
 }
 // this precomp really should only ever run on things i dont control
-module.exports.matchFile = util => util.path.includes('node_modules') && util.matchType('js,cjs');
+module.exports.matchFile = util => util.path.includes('node_modules') && 
+    util.matchType('js,cjs') && 
+    /(module\.)?exports\s*=|require\(["'`].*?["'`]\)/gi.test(util.file);
+module.exports.wheight = 0;

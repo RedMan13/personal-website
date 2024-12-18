@@ -4,6 +4,7 @@ const base = path.resolve('.');
 
 module.exports = async function(util) {
     const depPath = util.file.split(/<!TEMPLATE |>\r?\n\r?/, 3)[1];
+    
     if (!depPath) return;
     const templatePath = depPath.startsWith('/') 
         ? path.resolve(`.${depPath}`)

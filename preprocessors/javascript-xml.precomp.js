@@ -43,6 +43,8 @@ function parseTokens(tokens, util) {
         const end = batch.at(-1);
         const isShorthand = end.name === 'close' || !end.tagname
         const start = batch[0];
+        if (end.tagname && end.tagname !== start.tagname && end.namespace !== start.namespace)
+            throw new SyntaxError(`XML End must equal XML Start (${start.namespace}:${start.tagname} !== ${end.namespace}:${end.tagname})`);
         const attributes = isShorthand 
             ? batch.slice(1, -2)
             : batch.slice(1, -3);
@@ -88,9 +90,10 @@ function parseTokens(tokens, util) {
         const isCustom = [...start.tagname].filter(isUppercase).length >= 2;
         output.push({
             tagname: start.tagname,
+            namespace: start.namespace,
             isCustom,
             isEmpty: attributes.length <= 0 && children.filter(Boolean).length <= 0,
-            attributes: attributes.map(({ key, value }) => [key, value]),
+            attributes: attributes.map(({ key, value, namespace }) => [key, value, namespace]),
             children: children.filter(Boolean),
             start: start.start,
             end: end.end
@@ -109,12 +112,19 @@ function makeJS(token, container, parent) {
     container ??= `EL${elVar++}`;
     let res = `${!containerExists ? 'const ' : ''}${container} = ${elDef}; `;
 
-    for (const [key, value] of token.attributes)
-        res += `${container}.setAttribute("${key}", ${value 
-            ? value[0] === '{' 
-                ? value.slice(1, -1) 
-                : '`' + value.slice(1, -1).replaceAll('`', '\\`') + '`'
-            : 'true'}); `;
+    for (const [key, value, namespace] of token.attributes) {
+        switch (namespace) {
+        case 'on':
+            res += `${container}.addEventListener("${key}", ${value.slice(1, -1)}); `;
+            break;
+        default:
+            res += `${container}.setAttribute("${key}", ${value 
+                ? value[0] === '{' 
+                    ? value.slice(1, -1) 
+                    : '`' + value.slice(1, -1).replaceAll('`', '\\`') + '`'
+                : 'true'}); `;
+        }
+    }
     for (const child of token.children) {
         if (typeof child === 'string') {
             res += `${container}.appendChild(document.createTextNode(${JSON.stringify(child)})); `;
@@ -141,29 +151,34 @@ function makeJS(token, container, parent) {
     const isAsync = res.includes('await');
     return parent || containerExists
         ? res
-        : `(${isAsync ? 'async ' : ''}() => {${res} return ${container};})()`;
+        : `(${isAsync ? 'await ' : ''}(${isAsync ? 'async ' : ''}() => {${res} return ${container};})())`;
 }
 
 module.exports = async function(util) {
+    util.file = util.file
+        .replaceAll('.jsx\'', '.js\'')
+        .replaceAll('.jsx`', '.js`')
+        .replaceAll('.jsx"', '.js"');
     if (util.matchType('.js'))
-        return util.file = util.file.replaceAll('.jsx', '.js');
+        return;
 
     util.tokenize({
         _(str) {
             const jmp = util.jumpArbit(str);
             return jmp ? { length: jmp } : null;
         },
-        start: /^<(?<tagname>[a-z$_][a-z$_0-9-]*)\s*/i,
+        start: /^<(?:(?<namespace>[a-z$_][a-z$_0-9-]*):)?(?<tagname>[a-z$_][a-z$_0-9-]*)\s*/i,
         attributes(str) {
-            const name = str.match(/^([a-z$_][a-z$_0-9\-]*)\s*/i);
+            const name = str.match(/^(?:([a-z$_][a-z$_0-9-]*):)?([a-z$_][a-z$_0-9\-]*)\s*/i);
             if (!name) return;
             const split = name[0].length;
-            if (str[split] !== '=') return { key: name[1], length: name[1].length };
+            if (str[split] !== '=') return { key: name[2], namespace: name[1], length: name[2].length };
             const val = str.slice(split +1).trimStart();
             if (val[0] === '"' || val[0] === "'") {
                 const value = str.slice(split +1).match(/\s*('([^']|\\')*'|"([^"]|\\")*")/i);
                 return {
-                    key: name[1],
+                    key: name[2],
+                    namespace: name[1],
                     value: value[1],
                     length: split + value[0].length +1
                 }
@@ -180,14 +195,15 @@ module.exports = async function(util) {
                 if (val[i] === '}') indent--;
                 if (indent <= 0)
                     return {
-                        key: name[1],
+                        key: name[2],
+                        namespace: name[1],
                         value: val.slice(0, i +1),
                         length: i + split + (str.slice(split -1).length - val.length)
                     }
             }
         },
         close: /^>/,
-        end: /^(\/>|<\/(?<tagname>[a-z$_][a-z$_0-9-]*\s*)>)/i
+        end: /^(\/>|<\/(?:(?<namespace>[a-z$_][a-z$_0-9-]*):)?(?<tagname>[a-z$_][a-z$_0-9-]*\s*)>)/i
     }, ['start', '*attributes', '?close', '^', 'end']);
     
     for (const usage of parseTokens(util.tokens, util)) {
@@ -196,9 +212,9 @@ module.exports = async function(util) {
         const container = contMatch?.groups?.variable;
         const start = contMatch?.index ?? usage.start;
         if (usage.tagname === 'define') {
-            let gen = `defineElement("${fixCustom(container)}", {`;
-            for (const [key, value] of usage.attributes) {
-                gen += `["${key}"]: ${value 
+            let gen = `${container} = defineElement("${fixCustom(container)}", {`;
+            for (const [key, value, namespace] of usage.attributes) {
+                gen += `["${namespace ? `${namespace}:` : ''}${key}"]: ${value 
                     ? value[0] === '{' 
                         ? value.slice(1, -1) 
                         : '`' + value.slice(1, -1).replaceAll('`', '\\`') + '`' 
@@ -211,7 +227,7 @@ module.exports = async function(util) {
                 attributes: [],
                 children: [...usage.children]
             })});`;
-            util.replace(start - contMatch?.index, usage.end, gen);
+            util.replace(start, usage.end, gen);
             continue;
         }
         util.replace(start, usage.end, makeJS(usage, container));

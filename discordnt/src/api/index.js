@@ -1,28 +1,19 @@
 import { Inflate } from 'pako';
-import { PreloadedUserSettings } from './setting-protos/user-settings.proto';
-import { Base64Binary } from './b64-binnary.js';
+import { GatewayOpcode } from './type-enums.js';
+import { EventSource } from './event-source.js';
 // note: this is reversed to how it should actually be shaped
 const ZLIB_SUFFIX = new Uint8Array([255, 255, 0, 0]);
 const gateway = 'wss://gateway.discord.gg';
 
-export const dmServer = Symbol('@me')
-export default class ApiInterface {
-    constructor() {
+export default class ApiInterface extends EventSource {
+    constructor(token, version = 9) {
+        super();
         this.mustAuthImediat = false;
         this.reconUrl = gateway;
         this.sessionId = null;
-        this.token = localStorage.token;
-        this.version = 9;
-        this.reqVisUpdate = () => {};
-        this.users = {};
-        this.emojis = {};
-        this.stickers = {};
-        this.savedMedia = [];
-        this.messages = {};
-        this.channels = {};
-        this.settings = null;
-        this.guilds = { [dmServer]: [] };
-        this.uploadId = 0;
+        this.token = token ?? localStorage.token;
+        this.version = version;
+        this.stores = [];
 
         this.msgBuf = new Uint8Array();
         this.infContext = new Inflate({
@@ -77,79 +68,19 @@ export default class ApiInterface {
             })
             .catch(message => Promise.reject({ message }));
     }
-    uploadFile(file, meta) {
-        const req = new XMLHttpRequest();
-        return {
-            id: meta.id,
-            filename: file.name,
-            uploaded_name: meta.upload_name,
-            set onprogress(func) {
-                req.addEventListener('progress', func);
-            },
-            promise: new Promise((resolve, reject) => {
-                req.open('PUT', meta.upload_url);
-                req.onerror = req.onabort = reject;
-                req.onload = resolve;
-                req.send(file);
-            }),
-            cancel() {
-                req.abort();
-                fetch(meta.upload_url, { method: 'DELETE' });
-            }
-        };
+    askFor(key, ...args) {
+        const parts = key.split('.');
+        const storeName = parts.length >= 2 ? parts[0] : null;
+        key = parts[1] ?? parts[0];
+        const store = this.stores.find(store => 
+            (storeName ? Object.getPrototypeOf(store).constructor.name === storeName : true) &&
+            typeof store[key] !== 'undefined');
+        if (!store || !store[key]) return;
+        if (typeof store[key] !== 'function') return store[key];
+        return store[key].apply(store, args);
     }
-    async sendMessage(msg, channel) {
-        if (msg.attachments.length) {
-            const attachments = msg.attachments;
-            msg.attachments = [];
-            for (const attachment of attachments) {
-                if (await attachment.promise.catch(() => true)) continue;
-                msg.attachments.push({
-                    id: attachment.id,
-                    filename: attachment.filename,
-                    uploaded_name: attachment.upload_name
-                });
-            }
-        }
-        return this.fromApi(`POST /channels/${channel}/messages`, msg);
-    }
-    async getUser(userId, guildId) {
-        if (!guildId) {
-            if (!this.users) return this.users[userId] = await this.fromApi(`GET /users/${userId}`);
-            return this.users[userId];
-        }
-        if (!this.guilds[guildId]?.members?.[userId]) {
-            const member = await this.fromApi(`GET /guilds/${guildId}/members/${userId}`).catch(() => null);
-            if (!member) return this.getUser(userId);
-            this.users[userId] = member.user;
-            if (!this.guilds[guildId]) return member;
-            return this.guilds[guildId].members[userId] = member;
-        }
-        return this.guilds[guildId].members[userId];
-    }
-    async getUserDisplay(userId, guildId) {
-        const user = await this.getUser(userId, guildId).catch(() => null);
-        if (!user) return {
-            id: '0',
-            name: 'Invalid User',
-            avatar: null
-        };
-        return {
-            id: user.id ?? user.user.id,
-            name: user.nick ?? 
-                user.user?.global_name ?? user.user?.username ?? user.user?.discriminator ?? 
-                user.global_name ?? user.username ?? user.discriminator ?? 
-                `FATAL: ${user.id} (found with ${userId}) has no viable name`,
-            avatar: user.avatar ?? user.user?.avatar ?? '',
-            color: user.roles 
-                ? user.roles.reduce((cur, val) => {
-                    const role = client.roles[val];
-                    if (role.position > cur[0] && role.color) 
-                        return [role.color, role.position];
-                    return cur
-                }, ['#FFF', -1])[0]
-                : '#FFF'
-        };
+    store(name) {
+        return this.stores.find(store => Object.getPrototypeOf(store).constructor.name === name);
     }
 
     reconnect(useGateway, message) {
@@ -194,20 +125,20 @@ export default class ApiInterface {
         }
     }
     onpacket({ op: opcode, d: data, s: seq, t: event }) {
+        console.log('gateway op:', GatewayOpcode[opcode] ?? opcode, 'd:', data, 's:', seq, 't:', event);
         if (seq) this.seq = seq;
         if (event) return this.onevent(event, data);
-        console.log('gateway op:', opcode, 'd:', data, 's:', seq, 't:', event);
         switch (opcode) {
-        case 1:
+        case GatewayOpcode.Heartbeat:
             this.send(11);
             break;
-        case 7:
+        case GatewayOpcode.Reconnect:
             this.reconnect(false, 'server requested reconnect');
             break;
-        case 9:
+        case GatewayOpcode.InvalidSession:
             this.reconnect(true, 'invalid session');
             break;
-        case 10:
+        case GatewayOpcode.Hello:
             this.heart = setInterval(() => {
                 if (this.waitingResponse) return this.reconnect(false, 'no pong to our ping')
                 this.send(1, this.seq)
@@ -244,61 +175,17 @@ export default class ApiInterface {
                 }
             });
             break;
-        case 11:
+        case GatewayOpcode.HeartbeatACK:
             this.waitingResponse = false;
             break;
         }
     }
     async onevent(event, data) {
-        switch (event) {
-        case 'READY':
-            for (const server of data.guilds) {
-                for (const emoji of server.emojis) {
-                    emoji.guild_id = server.id;
-                    this.emojis[emoji.id] = emoji;
-                }
-                for (const sticker of server.stickers) {
-                    sticker.guild_id = server.id;
-                    this.stickers[sticker.id] = sticker;
-                }
-                const channels = {};
-                for (const channel of server.channels) {
-                    channel.guild_id = server.id
-                    channels[channel.id] = channel;
-                }
-                for (const channel of server.threads) {
-                    channel.guild_id = server.id
-                    channels[channel.id] = channel;
-                };
-                Object.assign(this.channels, channels);
-                const roles = {};
-                for (const role of server.roles) roles[role.id] = role;
-                this.guilds[server.id] = {
-                    ...server.properties,
-                    channels,
-                    members: {},
-                    roles
-                };
-            }
-            const { settings } = await this.fromApi('GET /users/@me/settings-proto/1');
-            const rawBin = Base64Binary.decode(settings);
-            this.settings = PreloadedUserSettings.decode(rawBin);
-            this.reqVisUpdate(event, data);
-            break;
-        case 'MESSAGE_EDIT': 
-        case 'MESSAGE_CREATE':
-            if (data.channel_id !== channel) break;
-            this.reqVisUpdate(event, data);
-            this.messages[data.id] = data;
-            if (Object.keys(this.messages).length > 200) 
-                delete this.messages[Object.keys(this.messages)[0]];
-            break;
-        case 'MESSAGE_DELETE':
-            if (data.channel_id !== channel) break;
-            this.reqVisUpdate(event, data);
-            delete this.messages[data.id];
-            break;
-        }
+        this.stores.forEach(store => {
+            if (store.listens.includes(event))
+                store.notify(event, data);
+        });
+        this.emit(event, data);
     }
     onerror() {
         this.reconnect(false, 'websocket errored');
@@ -308,6 +195,7 @@ export default class ApiInterface {
     }
 
     send(opcode, data) {
+        console.log('gateway op:', GatewayOpcode[opcode] ?? opcode, 'd:', data);
         const obj = {
             op: opcode,
             d: data

@@ -4,8 +4,11 @@ const pbjs = require('protobufjs-cli/pbjs');
 
 let tmpNum = 0;
 module.exports = async function(util) {
-    if (util.matchType('.js') && !globalThis.isBuild) {
-        util.file = util.file.replaceAll('.proto', '.js');
+    // Array.jstype
+    if (util.matchType('.js')) {
+        util.file = util.file
+            .replaceAll('.proto"', '.js"')
+            .replaceAll('.proto\'', '.js\'');
         return;
     }
     const tmpFile = path.resolve(path.dirname(util.path), 'tmp' + (++tmpNum));
@@ -18,4 +21,4 @@ module.exports = async function(util) {
     });
 }
 module.exports.matchFile = util => util.matchType('.proto') || 
-    (util.matchType('.js') && !globalThis.isBuild);
+    (util.matchType('.js'));

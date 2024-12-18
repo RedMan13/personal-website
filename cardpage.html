@@ -90,19 +90,22 @@
         // loose def for elements that dont require any direct manipulation
         function defineElement(name, attributes, innerGen) {
             /** @type {HTMLElement} */
+            const extend = attributes.extends;
             const elClass = window[elementClassNames[extend]] ?? HTMLElement;
             class newElement extends elClass {
                 static observedAttributes = Object.keys(attributes)
                     .filter(key => !key.startsWith('on') && !['extends', 'attributes'].includes(key));
-                #display = null;
-                #priv = {};
+                display = null;
+                priv = {};
                 constructor() {
+                    if (extend) 
+                        return document.createElement(extend, { is: name });
                     super();
-                    if (!this.#display) this.#display = this.attachShadow({ mode: 'open' });
-                    innerGen.apply(this, [this.#display]);
+                    if (!this.display) this.display = this.attachShadow({ mode: 'open' });
+                    innerGen.apply(this, [this.display]);
                     for (const [key, val] of Object.entries(attributes)) {
                         if (key.startsWith('on')) {
-                            this.addEventListener(key.slice(2), val);
+                            this.addEventListener(key.slice(2), val.bind(this));
                             continue;
                         }
                         this.setAttribute(key, val);
@@ -137,7 +140,7 @@
                 delete attributes.attributes;
             }
             if (attributes.this) {
-                Object.assign(newElement, attributes.this);
+                Object.assign(newElement.prototype, attributes.this);
                 delete attributes.this;
             }
             delete attributes.extends;
@@ -147,12 +150,13 @@
         function appendChildren(parent, children) {
             children.forEach(child => {
                 if (!child) return;
-                if (typeof child === 'string')
-                    child = document.createTextNode(child);
                 if (Array.isArray(child))
                     return appendChildren(parent, child);
 
-                parent.appendChild(child);
+                try { parent.appendChild(child); }
+                catch (e) {
+                    parent.appendChild(document.createTextNode(String(child)));
+                }
             });
         }
     </script>
@@ -307,6 +311,9 @@
         .browser .folder.noicon {
             padding-left: 1em;
         }
+        .browser .folder.resolves {
+            padding-left: 1em;
+        }
         .browser .folder.opened.noicon::before {
             content: 'v';
             font-weight: bold;
@@ -378,17 +385,18 @@
                         json.resolve || json.selected 
                             ? 'opened' 
                             : 'closed'
-                    } ${json.icon 
-                            ? 'noicon' 
+                    } ${!json.icon 
+                            ? json.resolve 
+                                ? 'resolves'
+                                : 'noicon' 
                             : ''
                     }`}
-                    onclick={e => {
+                    on:click={e => {
                         e.stopPropagation();
                         if (!json.resolve) {
-                            e.target.classList.toggle('opened');
-                            e.target.classList.toggle('closed');
-                        } else
-                            window.open(folder.resolve, '_self');
+                            folder.classList.toggle('opened');
+                            folder.classList.toggle('closed');
+                        } else window.open(json.resolve, '_self');
                     }}
                 >
                     {json.icon
@@ -418,16 +426,20 @@
                                 : b.sort;
                             return aName - bName;
                         })
-                        .map(file => file.member 
+                        .map(file => Array.isArray(file.members) 
                             ? makeBrowser(file, false)
                             : <div class={`file ${
                                 file.selected 
                                     ? 'selected' 
                                     : ''
-                                } ${file.icon 
-                                    ? '' 
-                                    : 'noicon'
+                                } ${!file.icon 
+                                    ? 'noicon' 
+                                    : ''
                                 }`}
+                                on:click={e => {
+                                    e.stopPropagation();
+                                    window.open(file.resolve, '_self');
+                                }}
                             >
                                 {file.icon
                                     ? <img src={file.icon} />
@@ -470,7 +482,7 @@
             if (files.pages <= pages.length) { enableBrowser(); updateBrowser(files); }
             localStorage.pages = pages.join();
         </script>
-        <div id="main" style="
+        <div style="
             width: 100%; 
             height: 100%; 
             overflow-wrap: break-word; 
@@ -478,7 +490,7 @@
             overflow-y: auto; 
             position: absolute;
         ">
-            <div>{body}</div>
+            <div id="main">{body}</div>
         </div>
     </div>
     <script>
