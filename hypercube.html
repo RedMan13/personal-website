@@ -1,0 +1,78 @@
+<!TEMPLATE /cardpage.html>
+<head>
+    <title>Hypercube</title>
+</head>
+<body>
+    <canvas width="480" height="360" id="cube"></canvas>
+    <script>
+        const r = n => n * Math.PI / 180;
+        const d = n => n * 180 / Math.PI;
+        const offsets = [r(0), r(60), r(180)];
+        /** @type {HTMLCanvasElement} */
+        const cube = document.getElementById('cube');
+        const ctx = cube.getContext('2d');
+        const rots = [0, 0, 0];
+        const poo = (x, y, z) => {
+            const cosa = Math.cos(rots[0]);
+            const sina = Math.sin(rots[0]);
+            const cosb = Math.cos(rots[1]);
+            const sinb = Math.sin(rots[1]);
+            const cosc = Math.cos(rots[2]);
+            const sinc = Math.sin(rots[2]);
+
+            const Axx = cosa*cosb;
+            const Axy = cosa*sinb*sinc - sina*cosc;
+            const Axz = cosa*sinb*cosc + sina*sinc;
+            const Ayx = sina*cosb;
+            const Ayy = sina*sinb*sinc + cosa*cosc;
+            const Ayz = sina*sinb*cosc - cosa*sinc;
+            const Azx = -sinb;
+            const Azy = cosb*sinc;
+            const Azz = cosb*cosc;
+
+            const rz = (Azx*x + Azy*y + Azz*z + 2.5) / 3.5;
+            return [
+                (Axx*x + Axy*y + Axz*z) * 160 * rz,
+                (Ayx*x + Ayy*y + Ayz*z) * 160 * rz
+            ];
+        };
+        function step(t) {
+            ctx.resetTransform();
+            ctx.translate(240, 180);
+            ctx.clearRect(-240, -180, 480, 360);
+
+            ctx.beginPath();
+            ctx.moveTo(...poo(-1, -1, 1));
+            ctx.lineTo(...poo(-1, 1, 1));
+            ctx.lineTo(...poo(1, 1, 1));
+            ctx.lineTo(...poo(1, -1, 1));
+            ctx.closePath();
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(...poo(-1, -1, -1));
+            ctx.lineTo(...poo(-1, 1, -1));
+            ctx.lineTo(...poo(1, 1, -1));
+            ctx.lineTo(...poo(1, -1, -1));
+            ctx.closePath();
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(...poo(-1, -1, 1));
+            ctx.lineTo(...poo(-1, -1, -1));
+            ctx.moveTo(...poo(-1, 1, 1));
+            ctx.lineTo(...poo(-1, 1, -1));
+            ctx.moveTo(...poo(1, 1, 1));
+            ctx.lineTo(...poo(1, 1, -1));
+            ctx.moveTo(...poo(1, -1, 1));
+            ctx.lineTo(...poo(1, -1, -1));
+            ctx.stroke();
+
+            rots[0] = Math.sin((t / 1000) + offsets[0]) * Math.PI;
+            rots[1] = Math.sin((t / 1000) + offsets[1]) * Math.PI;
+            rots[2] = Math.sin((t / 1000) + offsets[2]) * Math.PI;
+            requestAnimationFrame(step);
+        }
+        requestAnimationFrame(step);
+    </script>
+</body>
