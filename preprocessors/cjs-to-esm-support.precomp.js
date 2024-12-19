@@ -44,5 +44,6 @@ module.exports = async function(util) {
 module.exports.matchFile = util => util.path.includes('node_modules') && 
     util.matchType('js,cjs') && 
     /(module\.)?exports\s*=|require\(["'`].*?["'`]\)/gi.test(util.file) &&
-    !util.path.includes('bin');
+    !util.path.includes('bin') &&
+    !util.path.includes('type');
 module.exports.wheight = 0;
