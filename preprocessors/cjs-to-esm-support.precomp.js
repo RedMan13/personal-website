@@ -43,5 +43,6 @@ module.exports = async function(util) {
 // this precomp really should only ever run on things i dont control
 module.exports.matchFile = util => util.path.includes('node_modules') && 
     util.matchType('js,cjs') && 
-    /(module\.)?exports\s*=|require\(["'`].*?["'`]\)/gi.test(util.file);
+    /(module\.)?exports\s*=|require\(["'`].*?["'`]\)/gi.test(util.file) &&
+    !util.path.includes('bin');
 module.exports.wheight = 0;
