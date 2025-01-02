@@ -1,8 +1,8 @@
 {
   "scripts": {
-    "build": "node ./builder/index.js",
-    "dev": "node ./builder/dev-api.js",
-    "start": "node ./builder/dev-api.js"
+    "build": "node ./builder/index.js --report-uncaught-exception",
+    "dev": "node ./builder/dev-api.js --report-uncaught-exception",
+    "start": "node ./builder/dev-api.js --report-uncaught-exception"
   },
   "dependencies": {
     "cors": "^2.8.5",

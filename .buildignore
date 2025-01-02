@@ -1,4 +1,7 @@
 useless-history
 builder
+public_html
+dist
 visitors.txt
 README\.md
+.*tmp.*

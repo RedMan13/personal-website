@@ -25,13 +25,6 @@ export class Guilds extends LimitedStore {
                 delete guild.guild_scheduled_events;
                 this.set(guild.id, guild);
             }
-            for (const settings of data.user_guild_settings.entries) {
-                const id = settings.guild_id;
-                if (!this.has(id)) continue;
-                delete settings.guild_id;
-                delete settings.channel_overrides;
-                this.set(id, settings);
-            }
             break;
         case 'GUILD_UPDATE':
         case 'GUILD_CREATE': 
@@ -44,6 +37,15 @@ export class Guilds extends LimitedStore {
             this.remove(data.id);
             break;
         }
+    }
+    get(id) {
+        const guild = super.get(id);
+        if (!guild) return guild;
+        const settings = { ...this.client.askFor(guild.id) };
+        if (!settings) return guild;
+        delete settings.guild_id;
+        delete settings.channel_overrides;
+        return Object.assign(guild, settings);
     }
     toFolder(id) {
         id = `${id}`;

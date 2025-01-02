@@ -8,56 +8,34 @@
     <meta name="theme-color" content="white">
     <meta name="color-scheme" content="light">
 
+    <!-- bootstrap long into window so protobufjs fucking loads -->
+    <script type="module">
+        import Long from "/node_modules/long/index.js";
+        window.Long = Long; // globalize Long for protobufjs
+    </script>
     <style>
-        .message-render blockquote {
-            border-left: 3px solid rgba(0, 0, 0, 0.44);
-            border-radius: 3px;
-            background-color: rgba(0, 0, 0, 0.20);
-            margin: 0;
-            padding-left: 5px;
+        .browser {
+            overflow-y: hidden;
         }
-        .message-render code {
-            border: 1px solid rgba(0, 0, 0, 0.20);
-            border-radius: 2px;
-            background-color: rgba(0, 0, 0, 0.20);
-            font-family: monospace;
+        .guild-folder:hover {
+            background-color: rgba(0,0,0, 25%);
         }
-        .message-render code.external {
-            padding: 0.3rem;
-            border-radius: 7px;
-            margin-right: 0.3rem;
-            display: block;
-        }
-        .message-render .emoji {
-            display: inline-block;
-            object-fit: contain;
-            width: 1rem;
-            height: 1rem;
-            vertical-align: bottom;
-        }
-        .message-render .jumbo-emoji {
-            object-fit: contain;
-            width: 3rem;
-            height: 3rem;
-            vertical-align: bottom;
-        }
-        .message-render .mention {
-            border-radius: 3px;
-            padding: 0 2px;
-            font-weight: 500;
-            unicode-bidi: plaintext;
-            background: oklab(0.576971 0.014185 -0.208914 / 0.3);
-        }
-        .message-render .mention em {
-            font-weight: bolder;
-            margin-bottom: 1;
-        }
-        .message-render h3, .message-render h4, .message-render h5 {
-            margin-top: 0.2rem;
-            margin-bottom: 0.2rem;
+        .guild-channel:hover {
+            background-color: rgba(0,0,0, 25%);
         }
     </style>
-    <script type="importmap">{packages}</script>
-    <script src="./src/index.js" type="module"></script>
 </head>
 <body></body>
+<script>
+    const card = document.getElementsByClassName('card')[0]
+    const roots = card.children;
+    while (roots.length) {
+        const root = roots[0]
+        root.remove();
+        document.body.appendChild(root);
+    }
+    document.body.setAttribute('class', '');
+    card.remove();
+    window.scale = 1;
+</script>
+<script src="./src/index.jsx" type="module"></script>

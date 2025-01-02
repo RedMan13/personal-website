@@ -27,13 +27,16 @@ export class Members extends LimitedStore {
             for (const [idx, guild] of Object.entries(data.merged_members)) {
                 const guildId = data.guilds[idx].id;
                 for (const member of guild) {
+                    member.guild_id = guildId;
                     this.set(guildId + member.user_id, member);
                 }
             }
             break;
         case 'GUILD_MEMBERS_CHUNK':
-            for (const member of data.members)
+            for (const member of data.members) {
+                member.guild_id = data.guild_id;
                 this.set(data.guild_id + member.user.id, member);
+            }
             if (data.chunk_index >= data.chunk_count -1) {
                 const resolves = this.requests[data.nonce][1];
                 if (Array.isArray(resolves)) {
@@ -53,37 +56,49 @@ export class Members extends LimitedStore {
         }
     }
     
-    async getMember(guild, userId) {
-        if (!guild) return this.client.askFor('getUser', userId);
+    async batchLoad(guild, users) {
+        let resolveFunc;
+        const promise = new Promise(resolve => resolveFunc = resolve);
+        const nonce = `${this.nonce++}`;
+        this.requests[nonce] = [null, resolveFunc];
+
+        this.client.send(GatewayOpcode.RequestGuildMembers, {
+            guild_id: guild,
+            user_ids: users
+                .reduce((c,v) => (c.includes(v) || c.push(v), c), []),
+            nonce: nonce
+        });
+
+        await promise;
+    }
+    async loadUser(guild, userId) {
         const id = guild + userId;
         if (!this.has(id)) {
-            let resolveFunc;
-            const promise = new Promise(resolve => resolveFunc = resolve);
-            const nonce = `${this.nonce++}`;
-            this.requests[nonce] = [userId, resolveFunc];
             if (!this.inTimeout) {
-                this.inTimeout = true;
-                // set timeout to collect all of a moment instead of one of this call
+                let resolveFunc;
+                const promise = new Promise(resolve => resolveFunc = resolve);
+                this.inTimeout = promise;
+                const nonce = `${this.nonce}`;
+                this.requests[nonce] = [userId, resolveFunc];
                 setTimeout(() => {
                     this.inTimeout = false;
                     const users = Object.entries(this.requests)
                         .filter(([id]) => +id >= +nonce)
                         .map(([nonce, resolve]) => resolve);
+                    this.batchLoad(guild, users.map(([id]) => id))
+                        .then(() => resolveFunc());
                     this.requests[nonce][1] = users
                         .map(([id, resolve]) => resolve)
-                    this.client.send(GatewayOpcode.RequestGuildMembers, {
-                        guild_id: guild,
-                        user_ids: users
-                            .map(([id]) => id)
-                            .reduce((c,v) => (c.includes(v) || c.push(v), c), []),
-                        nonce: nonce
-                    });
                 }, 1);
             }
-            await promise;
+            await this.inTimeout;
         }
+        return this.get(id);
+    }
+    async getMember(guild, userId) {
         const user = await this.client.askFor('getUser', userId);
-        const member = this.get(id);
+        if (!guild) return user;
+        const member = await this.loadUser(guild, userId);
         if (!member) return user;
         const topRole = this.client.askFor('totalRole', member.roles);
         return {
@@ -91,8 +106,10 @@ export class Members extends LimitedStore {
             ...member,
             top_role: topRole,
             username: member.nick ?? user.username,
-            avatar: member.avatar ?? user.avatar,
-            banner: member.banner ?? user.banner,
+            avatar: user.avatar,
+            banner: user.banner,
+            alt_avatar: member.avatar,
+            alt_banner: member.banner,
             avatar_decoration_data: member.avatar_decoration_data ?? user.avatar_decoration_data
         }
     }

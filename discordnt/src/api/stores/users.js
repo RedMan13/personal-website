@@ -1,5 +1,6 @@
 import { LimitedStore } from "../store.js";
 import { User } from "../type-enums.js";
+import { Asset } from "../asset-helper.js";
 
 export class Users extends LimitedStore {
     constructor(client) {
@@ -11,9 +12,8 @@ export class Users extends LimitedStore {
     notify(ev, data) {
         switch (ev) {
         case 'READY':
-            for (const user of data.users) {
+            for (const user of data.users)
                 this.set(user.id, user);
-            }
             break;
         case 'PRESENCE_UPDATE':
             const user = this.get(data.user.id);

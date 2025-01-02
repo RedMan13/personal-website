@@ -125,9 +125,6 @@ if ($visitors > 9 && $visitors < 20) $sufix = 'th';
             orbital.appendChild(hyperlink);
         }
 
-        function interpol(start, end, percent) {
-            return start + (end - start) * percent;
-        }
         // the time (in ms) a full revolution of the orbit should take
         const speed = 300;
         const width = 60;

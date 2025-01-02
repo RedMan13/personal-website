@@ -39,9 +39,12 @@ export default class ApiInterface extends EventSource {
         this.websocket.onmessage = this.onmessage.bind(this);
         this.websocket.onerror = this.onerror.bind(this);
         this.websocket.onclose = this.onclose.bind(this);
+
+        this.apiReqs = {};
     }
 
     fromApi(callPath, body) {
+        if (this.apiReqs[callPath]) return this.apiReqs[callPath];
         const [method, path] = callPath.split(' ', 2);
         const url = new URL(`https://discord.com/api/v${this.version}${path}`);
         console.log(method, 'at', url.toString());
@@ -60,13 +63,16 @@ export default class ApiInterface extends EventSource {
             opts.body = JSON.stringify(body);
         }
 
-        return fetch(url, opts)
+        const promise = fetch(url, opts)
             .then(req => req.json())
             .then(res => {
+                delete this.apiReqs[url];
                 if ('code' in res) return Promise.reject(res);
-                return res
+                return res;
             })
             .catch(message => Promise.reject({ message }));
+        this.apiReqs[url] = promise
+        return promise;
     }
     askFor(key, ...args) {
         const parts = key.split('.');
@@ -125,9 +131,9 @@ export default class ApiInterface extends EventSource {
         }
     }
     onpacket({ op: opcode, d: data, s: seq, t: event }) {
-        console.log('gateway op:', GatewayOpcode[opcode] ?? opcode, 'd:', data, 's:', seq, 't:', event);
         if (seq) this.seq = seq;
         if (event) return this.onevent(event, data);
+        console.log('gateway op:', GatewayOpcode[opcode] ?? opcode, 'd:', data, 's:', seq, 't:', event);
         switch (opcode) {
         case GatewayOpcode.Heartbeat:
             this.send(11);

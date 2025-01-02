@@ -1,4 +1,5 @@
 const PrecompUtils = require('./precomp-utils');
+const { resolveImport } = require('./mjs-helpers');
 // const Client = require('ssh2-sftp-client');
 const fs = require('fs/promises');
 const path = require('path');
@@ -36,6 +37,7 @@ class PrecompManager {
         this.server = null;
         this.precomps = [];
         this.built = {};
+        this.depends = {};
         this.isIgnored = /./;
         this.buildDir = sftpServerIP ? buildDir : path.resolve(buildDir);
         globalThis.buildDir = this.buildDir;
@@ -99,26 +101,32 @@ class PrecompManager {
                 await fs.readFile(this.built[target], 'utf8'),
                 false
             ];
+        if (target.startsWith(this.buildDir))
+            return [
+                target,
+                await fs.readFile(target, 'utf8'),
+                false
+            ];
         const file = new PrecompUtils(
             target, 
             await fs.readFile(target, 'utf8'), 
-            this
+            this,
+            force
         );
         if (this.isIgnored.test(file.path))
             return [file.path, file.file, true];
-        const toApply = this.precomps.filter(precomp => precomp.matchFile(file));
         if (file.skip) // one of the match file ops tells us to ignore this file
             return [file.path, file.file, true];
         if (file.binnary) {
             const name = target.replace(this.entry, '');
             const endPath = path.resolve(this.buildDir, name);
             const content = await fs.readFile(target);
+            await fs.mkdir(path.dirname(endPath), { recursive: true });
             await fs.writeFile(endPath, content);
             return [endPath, content.toString('utf8'), true];
         }
         console.log('\tbuilding', target.replace(this.entry, ''));
-        this.built[target] = true;
-        for (const precomp of toApply) {
+        for (const precomp of this.precomps) {
             if (!precomp.matchFile(file)) continue;
             console.log('\t\tapplying precomp', precomp.title);
             await precomp(file);
@@ -135,11 +143,13 @@ class PrecompManager {
         ];
     }
     async buildAll() {
-        if (this.exists(this.buildDir)) {
+        if (await this.exists(this.buildDir)) {
             console.log('removing old build dir');
             await fs.rm(this.buildDir, { recursive: true, force: true });
         }
         await fs.mkdir(this.buildDir);
+        this.built = {};
+        this.asoc = {};
         const files = await fs.readdir('.', { recursive: true });
         const toAddFileList = [];
         console.log('\nbuilding all files');
@@ -147,13 +157,16 @@ class PrecompManager {
             const stat = await fs.stat(path).catch(() => false);
             if (!stat) continue;
             if (stat.isDirectory()) continue;
+            if (path.startsWith('node_modules')) continue;
             const [res, data, skipped] = await this.getFile(path);
             if (data.includes('"filejson"') && !skipped) toAddFileList.push(res);
         }
+        
         console.log('\nmaking page browser from built');
         const fileJson = JSON.stringify(await this.recursiveRead());
         for (const path of toAddFileList) {
-            const data = await fs.readFile(path, 'utf8');
+            const data = await fs.readFile(path, 'utf8').catch(() => null);
+            if (!data) continue;
             await fs.writeFile(path, data.replace('"filejson"', fileJson));
         }
         console.log('finnished building');
@@ -171,7 +184,8 @@ class PrecompManager {
         for (const file of dirs) {
             if (file.startsWith('.')) continue;
             const target = path.resolve(dir, file);
-            const stat = await fs.stat(target);
+            const stat = await fs.stat(target).catch(() => null);
+            if (!stat) continue;
             if (stat.isDirectory()) {
                 const subFolder = await this.recursiveRead(target, true);
                 if (!Object.keys(subFolder.members).length) continue;

@@ -1,9 +1,11 @@
 const fs = require('fs/promises');
 const path = require('path');
 const Tokenizer = require('./tokenizer');
+const { jumpArbit } = require('./js-helpers');
 // note: i will be adding things to this as *i* need them, not as they may be needed
 class PrecompUtils {
-    constructor(path, file, manager) {
+    constructor(path, file, manager, forced = false) {
+        this.force = forced;
         this.path = path;
         this.file = file.toString('utf8');
         this.binnary = /[\x00\x1F]/gi.test(file);
@@ -30,31 +32,7 @@ class PrecompUtils {
      * @param {string} str The string to check (only checks from start)
      * @returns {number} the length of the match
      */
-    jumpArbit(str) {
-        const match = str.match(/^('([^'\n]|\\')*'|"([^"\n]|\\")*"|`([^`$]|\\`|\\\$)*`|\/\/[^\n]*|\/\*([^*]|\*.)*?\*\/|\/([^\/\n]|\\\/)*\/[a-z]*)/i);
-        if (match) return match[0].length;
-        if (str[0] !== '`') return 0;
-        let indent = 0;
-        let inJs = false;
-        for (let i = 1; i < str.length; i++) {
-            if (inJs) {
-                const jmp = this.jumpArbit(str.slice(i));
-                if (jmp) {
-                    i += jmp -1;
-                    continue;
-                }
-            }
-            if (str[i -1] === '\\') continue;
-            if (!inJs && str[i] === '`') return i +1;
-            if (str[i] === '$') inJs = true;
-            if (str[i] === '{') indent++;
-            if (str[i] === '}') {
-                indent--;
-                if (inJs && indent === 0) inJs = false;
-            }
-        }
-        return 0;
-    }
+    jumpArbit = jumpArbit;
     tokenize(tokens, filter, debug) {
         const tok = new Tokenizer(this.file, tokens, debug);
         if (filter) {
@@ -75,6 +53,16 @@ class PrecompUtils {
         return `${token.name} "${token.match}" (at L${line[2] +1}:C${col +1} of ${this.path})`
     }
 
+    get buildDir() { return this.manager.buildDir }
+    get entry() { return this.manager.entry }
+    getFile(pathTo, force) {
+        pathTo = path.resolve(pathTo);
+        this.manager.depends[pathTo] ??= [];
+        if (!this.manager.depends[pathTo].includes(this.path))
+            this.manager.depends[pathTo].push(this.path);
+        force ??= this.force;
+        return this.manager.getFile(pathTo, force);
+    }
     insert(idx, str) {
         this.replace(idx, idx, str);
     }

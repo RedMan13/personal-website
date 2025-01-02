@@ -53,9 +53,12 @@ function parseTokens(tokens, util) {
             const elements = parseTokens(batch.at(-2), util);
             const mid = batch.find(tok => tok.name === 'close');
             let inside = 0;
+            if (mid)
             for (let i = mid.end; i < end.start; i++) {
                 const el = elements.find(tok => i >= tok.start && i < tok.end);
                 if (el) {
+                    if (inside && !Array.isArray(children.at(-1)))
+                        inside = 0;
                     if (inside) children.at(-1).push(el, '');
                     else children.push(el, '')
                     i = el.end -1;
@@ -87,7 +90,7 @@ function parseTokens(tokens, util) {
             }
         }
 
-        const isCustom = [...start.tagname].filter(isUppercase).length >= 2;
+        const isCustom = isUppercase(start.tagname[0]);
         output.push({
             tagname: start.tagname,
             namespace: start.namespace,
@@ -107,10 +110,13 @@ function makeJS(token, container, parent) {
     const elDef = token.isCustom 
         ? `new ${token.tagname}` 
         : `document.createElement("${token.tagname}")`;
-    if (token.isEmpty) return elDef;
     const containerExists = !!container;
-    container ??= `EL${elVar++}`;
+    if (token.isEmpty && !containerExists) return parent 
+        ? `${parent}.appendChild(${elDef}); `
+        : elDef;
+    if (!containerExists) container = `EL${elVar++}`;
     let res = `${!containerExists ? 'const ' : ''}${container} = ${elDef}; `;
+    if (token.isEmpty && containerExists) return res;
 
     for (const [key, value, namespace] of token.attributes) {
         switch (namespace) {
@@ -118,7 +124,7 @@ function makeJS(token, container, parent) {
             res += `${container}.addEventListener("${key}", ${value.slice(1, -1)}); `;
             break;
         default:
-            res += `${container}.setAttribute("${key}", ${value 
+            res += `setAttribute(${container}, "${key}", ${value 
                 ? value[0] === '{' 
                     ? value.slice(1, -1) 
                     : '`' + value.slice(1, -1).replaceAll('`', '\\`') + '`'
@@ -155,14 +161,8 @@ function makeJS(token, container, parent) {
 }
 
 module.exports = async function(util) {
-    util.file = util.file
-        .replaceAll('.jsx\'', '.js\'')
-        .replaceAll('.jsx`', '.js`')
-        .replaceAll('.jsx"', '.js"');
-    if (util.matchType('.js'))
-        return;
-
     util.tokenize({
+        end: /^(\/>|<\/(?:(?<namespace>[a-z$_][a-z$_0-9-]*):)?(?<tagname>[a-z$_][a-z$_0-9-]*\s*)>)/i,
         _(str) {
             const jmp = util.jumpArbit(str);
             return jmp ? { length: jmp } : null;
@@ -202,8 +202,7 @@ module.exports = async function(util) {
                     }
             }
         },
-        close: /^>/,
-        end: /^(\/>|<\/(?:(?<namespace>[a-z$_][a-z$_0-9-]*):)?(?<tagname>[a-z$_][a-z$_0-9-]*\s*)>)/i
+        close: /^>/
     }, ['start', '*attributes', '?close', '^', 'end']);
     
     for (const usage of parseTokens(util.tokens, util)) {
@@ -234,4 +233,4 @@ module.exports = async function(util) {
     }
     util.path = util.path.replace(/jsx$/i, 'js');
 }
-module.exports.matchFile = util => util.matchType('.jsx,js');
+module.exports.matchFile = util => util.matchType('.jsx');

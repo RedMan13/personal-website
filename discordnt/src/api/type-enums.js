@@ -27,7 +27,7 @@ export class Flags extends Array {
         super(...names);
     }
     toString() {
-        return this.join(', ');
+        return `BitField(${this.join(', ')})`;
     }
 }
 export class Dict {
@@ -117,27 +117,6 @@ export function checkType(object, compare, silence, keypath = '', checked) {
         }
         handled = true;
     }
-    if (Array.isArray(compare) && !handled) {
-        if (compare[0] === '...') {
-            if (!Array.isArray(object))
-                err('array', object);
-            const [_, type, min, max] = compare;
-            if (compare.length > 2) {
-                if (object.length < min || object.length > max)
-                    err(`[${min}, ${max}]`, object);
-                const isGood = object
-                    .reduce((cur, ent, idx) => checkType(ent, type, silence, `${keypath}[${idx}]`, checked) && cur, true);
-                checked[keypath] = isGood;
-                return isGood;
-            }
-        } else { 
-            const isGood = compare
-                .some((type, idx) => checkType(object, type, true, `${keypath}(var ${idx})`, checked));
-            if (!isGood)
-                err(`oneof ${toString(compare)}`, object);
-        }
-        handled = true;
-    }
     if (compare instanceof Any && !handled) {
         handled = true;
     }
@@ -160,6 +139,27 @@ export function checkType(object, compare, silence, keypath = '', checked) {
         const isGood = typeOf(compare[object]) !== 'undefined';
         if (!isGood)
             err(`oneof ${compare}`, object);
+        handled = true;
+    }
+    if (Array.isArray(compare) && !handled) {
+        if (compare[0] === '...') {
+            if (!Array.isArray(object))
+                err('array', object);
+            const [_, type, min, max] = compare;
+            if (compare.length > 2) {
+                if (object.length < min || object.length > max)
+                    err(`[${min}, ${max}]`, object);
+                const isGood = object
+                    .reduce((cur, ent, idx) => checkType(ent, type, silence, `${keypath}[${idx}]`, checked) && cur, true);
+                checked[keypath] = isGood;
+                return isGood;
+            }
+        } else { 
+            const isGood = compare
+                .some((type, idx) => checkType(object, type, true, `${keypath}(var ${idx})`, checked));
+            if (!isGood)
+                err(`oneof ${toString(compare)}`, object);
+        }
         handled = true;
     }
     if (compare instanceof Object && !handled) {
@@ -539,6 +539,7 @@ export const Sticker = {
 }
 export const Member = {
     user: [User, null],                           // the user this guild member represents
+    guild_id: [string, null],
     user_id: [string, null],
     nick: [string, null],                         // this user's guild nickname
     avatar: [string, null],                       // the member's guild avatar hash
@@ -628,6 +629,13 @@ export const Channel = {
         }),
         resource_id: [string, null]
     }, null],
+    safety_warnings: [['...', Any], null],
+    recipient_ids: [['...', string], null],
+    recipient_flags: [new Flags([]), null],
+    is_spam: [boolean, null],
+    is_message_request: [boolean, null],
+    is_message_request_timestamp: [string, null],
+    blocked_user_warning_dismissed: [boolean, null],
     video_quality_mode: [number, null], // the camera video quality mode of the voice channel, 1 when not present
     message_count: [number, null], // number of messages (not including the initial message or deleted messages) in a thread.
     member_count: [number, null], // an approximate count of users in a thread, stops counting at 50

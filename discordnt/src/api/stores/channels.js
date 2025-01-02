@@ -25,12 +25,11 @@ export class Channels extends LimitedStore {
                     this.set(channel.id, channel);
                 }
             }
-            for (const guild of data.user_guild_settings.entries) {
-                for (const settings of guild.channel_overrides) {
-                    const id = settings.channel_id
-                    delete settings.channel_id;
-                    this.set(id, settings);
-                }
+            for (const channel of data.private_channels) {
+                if (channel.type === ChannelType.DM && !data.relationships.find(user => user.id === channel.id)) 
+                    continue; // ignore user channels that have no relations (those users arnt included anywhere else)
+                channel.guild_id = data.user.id;
+                this.set(channel.id, channel);
             }
             break;
         case 'THREAD_CREATE':
@@ -56,6 +55,14 @@ export class Channels extends LimitedStore {
             break;
         }
     }
+    get(id) {
+        const channel = super.get(id);
+        if (!channel) return channel;
+        const settings = { ...this.client.askFor('getChannelSettings', channel.id) };
+        if (!settings) return channel;
+        delete settings.channel_id;
+        return Object.assign(channel, settings);
+    }
     forGuild(id) {
         return [...this]
             .map(([id, channel]) => channel)
@@ -65,14 +72,13 @@ export class Channels extends LimitedStore {
         const channels = this.forGuild(guild);
         const members = [];
         const tree = {};
-        const selected = this.client.askFor('Messages.channel');
         for (const channel of channels) {
             tree[channel.id] = {
+                id: channel.id,
                 sort: channel.position,
-                selected: channel.id === selected || 
-                    (channel.type === ChannelType.GUILD_CATEGORY && !channel.collapsed),
+                collapsed: channel.collapsed,
+                type: channel.type,
                 name: channel.name,
-                resolve: `#${channel.id}`,
                 members: tree[channel.id]?.members
             };
             if (channel.parent_id) {

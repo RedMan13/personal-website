@@ -10,8 +10,8 @@ module.exports = async function(util) {
         ? path.resolve(`.${depPath}`)
         : path.resolve(util.path, '..', depPath);
 
-        
-    const template = (await util.manager.getFile(templatePath))[1];
+    
+    const template = (await util.getFile(templatePath))[1];
     const headBody = template.split(/{head}|{body}/, 3);
     const headLoc = util.file.indexOf('<head>');
     const headClose = util.file.indexOf('</head>');
@@ -19,6 +19,6 @@ module.exports = async function(util) {
     const bodyClose = util.file.indexOf('</body>');
     util.replace(headLoc,    headLoc +6,   headBody[0]);
     util.replace(headClose,  bodyLoc +6,   headBody[1]);
-    util.replace(bodyClose,  bodyClose +6, headBody[2]);
+    util.replace(bodyClose,  bodyClose +7, headBody[2]);
 }
 module.exports.matchFile = util => util.matchType('.php,.html') && util.file.startsWith('<!TEMPLATE');

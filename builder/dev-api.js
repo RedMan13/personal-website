@@ -30,7 +30,6 @@ app.ws('/debug/:file', async (req, res) => {
 app.useHTTP(cors());
 const index = '/index.php';
 app.useHTTP(async (req, res) => {
-    console.log('got request for', req.path);
     const file = path.resolve(manager.buildDir, `.${req.path === '/' ? index : req.path}`);
     if (file.endsWith('.php')) {
         console.log('running php');
@@ -43,8 +42,6 @@ app.useHTTP(async (req, res) => {
     // always explicitly set the mime type to the *output* of runing the precomps
     const mimeType = mime.lookup(file.replace('.php', '.html'), 'text/plain');
     res.header('Content-Type', mimeType);
-    console.log('sending file as mime', mimeType, 'because', path.extname(file));
-    console.log('');
     return res.sendFile(file);
 })
 
@@ -52,23 +49,28 @@ const port = 3000
 manager.buildAll().then(() => {
     fs.watch(manager.entry, { recursive: true }, async (ev, file) => {
         file = path.resolve(file);
-        if (manager.isIgnored.test(file)) return;
-        if (ev === 'rename') {
-            fs.rm(manager.built[file], { recursive: true, force: true });
-            evs.emit('delete', manager.built[file]);
-            delete manager.built[file];
-            return;
-        }
         if (path.basename(file) === '.buildignore') 
             return manager.makeIgnored();
         if (path.extname(file) === '.precomp.js')
             return manager.getPrecomps();
-        const [output, data, skipped] = await manager.getFile(file, true);
-        if (data.includes('"filejson"') && !skipped) {
-            const fileJson = JSON.stringify(await manager.recursiveRead());
-            fs.writeFileSync(output, data.replace('"filejson"', fileJson));
+        if (manager.isIgnored.test(file)) return;
+        if (ev === 'rename') {
+            manager.buildAll();
+            return;
         }
-        evs.emit('update', output);
+        console.log('creating file json for micro build')
+        const fileJson = JSON.stringify(await manager.recursiveRead());
+        const copy = manager.depends[file] ?? [];
+        copy.unshift(file);
+        console.log('begining micro build')
+        for (const dependant of copy) {
+            const [output, data, skipped] = await manager.getFile(dependant, true);
+            if (data.includes('"filejson"') && !skipped) {
+                fs.writeFileSync(output, data.replace('"filejson"', fileJson));
+            }
+            evs.emit('update', output);
+        }
+        console.log('finished micro build')
     });
     app.listen(port, async () => {
         console.log(`hosted on http://localhost:${port}`);

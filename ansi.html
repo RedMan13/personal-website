@@ -1,0 +1,361 @@
+<!TEMPLATE /cardpage.html>
+<head>
+    <title>ANSI Code Helper</title>
+    <meta name="keywords" content="ansi,ascii,discord,text,formating">
+    <style>
+        @keyframes blink {
+            from { display: none; }
+            to { display: inherit; }
+        }
+    </style>
+</head>
+<body>
+    <script>
+        // color table
+        // contains the full 256 ansi color mapping
+        const colors = [
+            // normal
+            // black      red        green      yellow     blue       purple     cyan       white
+            "#000000", "#CD3131", "#0DBC79", "#E5E510", "#2472C8", "#BC3FBC", "#11A8CD", "#E5E5E5",
+            // bright
+            "#666666", "#F14C4C", "#23D18B", "#F5F543", "#3B8EEA", "#D670D6", "#29B8DB", "#E5E5E5",
+            // 215 color space
+            ...(new Array(215)
+                .fill(0)
+                .map((_, i) => i)
+                .map(i => [i % 6, Math.floor(i / 6), Math.floor(i / 36)])
+                .map(([r,g,b]) => [(r / 5 * 255), (g / 5 * 255), (b / 5 * 255)])
+                .map(([r,g,b]) => [r.toString(16), g.toString(16), b.toString(16)])
+                .map(([r,g,b]) => [r.padStart(2, '0'), g.padStart(2, '0'), b.padStart(2, '0')])
+                .map(([r,g,b]) => `#${r}${g}${b}`)),
+            // 22 gray-scale
+            ...(new Array(22)
+                .fill(0)
+                .map((_, i) => `csv(0, 1, ${i / 22})`))
+        ];
+    </script>
+    <code id="terminal"></code>
+    <script file="jsx">
+        const bell = new Audio('/bell.wav');
+        const term = document.getElementById('terminal');
+        let cx = 0;
+        let cy = 0;
+        function goto(x,y) {
+            const merged = x + Math.min(Math.max(y, 0), 17) * 48;
+            cx = merged % 48;
+            cy = Math.floor(merged / 48);
+        }
+        function move(dx = 1,dy = 0) {
+            goto(cx + dx, cy + dy);
+        }
+        function set(char) {
+            const el = document.getElementById(`${cx}-${cy}`);
+            if (!el) return console.log(cx, cy);
+            el.children[0].textContent = char;
+        }
+        function style(styles, set) {
+            const el = document.getElementById(`${cx}-${cy}`);
+            if (set) {
+                for (const key of Object.values(el.style)) 
+                    el.style[key] = '0';
+            }
+            for (const key in styles)
+                el.style[key] = styles;
+        }
+        function styles() {
+            const resolved = {};
+            for (let y = 0; y <= cy; y++) {
+                for (let x = 0; x <= cx; x++) {
+                    const el = document.getElementById(`${cx}-${cy}`);
+                    for (const key of Object.values(el.style)) {
+                        if (!el.style[key]) continue;
+                        resolved[key] = el.style[key];
+                    }
+                }
+            }
+            return resolved;
+        }
+        function clear() {
+            term.innerHTML = '';
+            let head = term;
+            cx = 0;
+            cy = 0;
+            for (let y = 0; y < 18; y++) {
+                for (let x = 0; x < 48; x++) {
+                    const char = <span 
+                        id={`${x}-${y}`} 
+                        style={`color: ${colors[0x0]}; background-color: ${colors[0xF]};`}
+                    > 
+                        <span 
+                            style={`
+                                position: absolute;
+                                display: inline-block;
+                                width: 10px;
+                                height: 20px;
+                                font-size: 16px;
+                                white-space: pre;
+                                left: ${x * 10}px;
+                                top: ${y * 20}px;
+                            `}
+                        > </span>
+                    </span>;
+                    head.appendChild(char);
+                    head = char
+                }
+                head.appendChild(<br/>);
+            }
+        }
+        clear();
+        /**
+         * @param {string|string[]} chars
+         */
+        function write(chars) {
+            console.log(chars.replaceAll(/\x1b\[.*?[a-z]/gi, ''));
+            chars = [...chars];
+            for (let i = 0; i < chars.length; i++) {
+                const char = chars[i];
+                console.log(cx, cy)
+                switch (char) {
+                case '\x07': bell.play(); break;
+                case '\x08':
+                    move(-1);
+                    set(' ');
+                    style({}, true);
+                    break;
+                case '\x09':
+                    goto(Math.ceil(cx / 8) * 8, cy);
+                    break;
+                case '\x0A':
+                case '\x0C':
+                case '\x0D':
+                    goto(0, cy +1);
+                    break;
+                case '\x1B':
+                    i++;
+                    const type = chars[i];
+                    switch (type) {
+                    case '[': // Control Sequence Introducer
+                        const commandIdx = chars.findIndex((char, idx) => idx > i && /[a-z]/i.test(char));
+                        i = commandIdx;
+                        const command = chars[commandIdx];
+                        const args = chars
+                            .slice(i +1, command)
+                            .join('')
+                            .split(';')
+                            .map(str => Number(str) || 0);
+                        
+                        switch (command) {
+                        case 'A': move(0, -(args[0] || 1)); break;
+                        case 'B': move(0,  (args[0] || 1)); break;
+                        case 'C': move( (args[0] || 1), 0); break;
+                        case 'D': move(-(args[0] || 1), 0); break;
+                        case 'E': goto(0, cy +  (args[0] || 1)); break;
+                        case 'F': goto(0, cy + -(args[0] || 1)); break;
+                        case 'G': goto(args[0] || 1, cy); break;
+                        case 'H': case 'f': goto(args[0] || 1, args[1] || 1); break;
+                        case 'J':
+                            switch (args[0]) {
+                            default:
+                            case 0: {
+                                const start = [cx, cy];
+                                for (let i = cx; i < 48; i++) {
+                                    goto(i, cy);
+                                    set(' ');
+                                    style({}, true);
+                                }
+                                goto(...start);
+                                break;
+                            }
+                            case 1: {
+                                const start = [cx, cy];
+                                for (let i = cx; i >= 0; i--) {
+                                    goto(i, cy);
+                                    set(' ');
+                                    style({}, true);
+                                }
+                                goto(...start);
+                                break;
+                            }
+                            case 3: case 2: clear(); break;
+                            }
+                            break;
+                        case 'K':
+                            switch (args[0]) {
+                            default:
+                            case 0: {
+                                const start = [cx, cy];
+                                for (let i = cx; i < 48; i++) {
+                                    goto(i, cy);
+                                    set(' ');
+                                    style({}, true);
+                                }
+                                goto(...start);
+                                break;
+                            }
+                            case 1: {
+                                const start = [cx, cy];
+                                for (let i = cx; i >= 0; i--) {
+                                    goto(i, cy);
+                                    set(' ');
+                                    style({}, true);
+                                }
+                                goto(...start);
+                                break;
+                            }
+                            case 2: {
+                                const start = [cx, cy];
+                                for (let i = 0; i < 48; i--) {
+                                    goto(i, cy);
+                                    set(' ');
+                                    style({}, true);
+                                }
+                                goto(...start);
+                                break;
+                            }
+                            }
+                            break;
+                        case 'm':
+                            switch (args[0]) {
+                            default:
+                            case 0: style({}, true); break;
+                            case 1: style({ fontWeight: 'bold' }); break;
+                            case 2: style({ fontWeight: 'lighter' }); break;
+                            case 3: style({ fontStyle: 'italic' }); break;
+                            case 4: {
+                                const { textDecoration } = styles();
+                                if (textDecoration.includes('underline')) break;
+                                style({ textDecoration: `${textDecoration} underline` }); 
+                                break;
+                            }
+                            case 5: style({ animation: 'blink 2.5s linear infinite' }); break;
+                            case 6: style({ animation: 'blink 0.5s linear infinite' }); break;
+                            case 27:
+                            case 7: 
+                                const { color, backgroundColor } = styles();
+                                style({ color: backgroundColor, backgroundColor: color }); 
+                                break;
+                            case 8: style({ opacity: '0' }); break;
+                            case 9: {
+                                const { textDecoration } = styles();
+                                if (textDecoration.includes('line-through')) break;
+                                style({ textDecoration: `${textDecoration} line-through` }); 
+                                break;
+                            }
+                            case 21: {
+                                const { textDecoration } = styles();
+                                style({ textDecorationStyle: 'double' });
+                                if (textDecoration.includes('underline')) break;
+                                style({ textDecoration: `${textDecoration} underline` }); 
+                                break;
+                            }
+                            case 22: style({ fontWeight: '' }); break;
+                            case 23: style({ fontStyle: '' }); break;
+                            case 24: {
+                                const { textDecoration } = styles();
+                                if (!textDecoration.includes('underline')) break;
+                                style({
+                                    textDecoration: textDecoration.replace('underline', ''),
+                                    textDecorationStyle: ''
+                                }); 
+                                break;
+                            }
+                            case 25: style({ animation: '' }); break;
+                            case 28: style({ opacity: '' }); break;
+                            case 29: {
+                                const { textDecoration } = styles();
+                                if (!textDecoration.includes('line-through')) break;
+                                style({ textDecoration: textDecoration.replace('line-through', '') }); 
+                                break;
+                            }
+                            case 30: style({ color: colors[0x0] }); break;
+                            case 31: style({ color: colors[0x1] }); break;
+                            case 32: style({ color: colors[0x2] }); break;
+                            case 33: style({ color: colors[0x3] }); break;
+                            case 34: style({ color: colors[0x4] }); break;
+                            case 35: style({ color: colors[0x5] }); break;
+                            case 36: style({ color: colors[0x6] }); break;
+                            case 37: style({ color: colors[0x7] }); break;
+                            case 90: style({ color: colors[0x8] }); break;
+                            case 91: style({ color: colors[0x9] }); break;
+                            case 92: style({ color: colors[0xA] }); break;
+                            case 93: style({ color: colors[0xB] }); break;
+                            case 94: style({ color: colors[0xC] }); break;
+                            case 95: style({ color: colors[0xD] }); break;
+                            case 96: style({ color: colors[0xE] }); break;
+                            case 97: style({ color: colors[0xF] }); break;
+                            case 38: 
+                                style({
+                                    color: args[1] === 2 
+                                        ? `rgb(${args[2]}, ${args[3]}, ${args[4]})`
+                                        : colors[args[2]]
+                                }); 
+                                break;
+                            case 39: style({ color: colors[0x0] }); break;
+                            case 40: style({ backgroundColor: colors[0x0] }); break;
+                            case 41: style({ backgroundColor: colors[0x1] }); break;
+                            case 42: style({ backgroundColor: colors[0x2] }); break;
+                            case 43: style({ backgroundColor: colors[0x3] }); break;
+                            case 44: style({ backgroundColor: colors[0x4] }); break;
+                            case 45: style({ backgroundColor: colors[0x5] }); break;
+                            case 46: style({ backgroundColor: colors[0x6] }); break;
+                            case 47: style({ backgroundColor: colors[0x7] }); break;
+                            case 100: style({ backgroundColor: colors[0x8] }); break;
+                            case 101: style({ backgroundColor: colors[0x9] }); break;
+                            case 102: style({ backgroundColor: colors[0xA] }); break;
+                            case 103: style({ backgroundColor: colors[0xB] }); break;
+                            case 104: style({ backgroundColor: colors[0xC] }); break;
+                            case 105: style({ backgroundColor: colors[0xD] }); break;
+                            case 106: style({ backgroundColor: colors[0xE] }); break;
+                            case 107: style({ backgroundColor: colors[0xF] }); break;
+                            case 48: 
+                                style({
+                                    backgroundColor: args[1] === 2 
+                                        ? `rgb(${args[2]}, ${args[3]}, ${args[4]})`
+                                        : colors[args[2]]
+                                }); 
+                                break;
+                            case 49: style({ backgroundColor: colors[0xF] }); break;
+                            case 53: {
+                                const { textDecoration } = styles();
+                                if (textDecoration.includes('underline')) break;
+                                style({ textDecoration: `${textDecoration} underline` }); 
+                                break;
+                            }
+                            case 55: {
+                                const { textDecoration } = styles();
+                                if (!textDecoration.includes('underline')) break;
+                                style({
+                                    textDecoration: textDecoration.replace('underline', ''),
+                                    textDecorationStyle: ''
+                                }); 
+                                break;
+                            }
+                            case 58: 
+                                style({
+                                    textDecorationColor: args[1] === 2 
+                                        ? `rgb(${args[2]}, ${args[3]}, ${args[4]})`
+                                        : colors[args[2]]
+                                }); 
+                                break;
+                            case 59: style({ textDecorationColor: colors[0x0] }); break;
+                            }
+                            break;
+                        case 'n':
+                            console.log('curX:', cx, 'curY:', cy);
+                            break;
+                        }
+                    }
+                    break;
+                default:
+                    set(char);
+                    move(1);
+                }
+            }
+        }
+        write(new Array(9).fill(0)
+            .map((_, idx) => new Array(12).fill(0)
+                .map((_, i) => `\x1B[${i + (idx * 12)}m${(i + (idx * 12)).toString().padStart(4)}\x1B[0m`)
+                .join(''))
+            .join('\n'));
+    </script>
+</body>

@@ -18,9 +18,14 @@ export class Messages extends LimitedStore {
         ];
         window.onhashchange = () => this.moveto(location.hash.slice(1));
         this.on('set', (key, old, val) => {
-            if (val && val.author?.id) {
+            if (val && val.author?.id && !val.webhook_id) {
                 this.client.askFor('Users.set', val.author.id, val.author);
                 val.author_id = val.author.id;
+                delete val.author;
+            }
+            if (val && val.referenced_message && val.referenced_message.author && !val.referenced_message.webhook_id) {
+                this.client.askFor('Users.set', val.referenced_message.author.id, val.referenced_message.author);
+                val.referenced_message.author_id = val.referenced_message.author.id;
                 delete val.author;
             }
         })
@@ -105,8 +110,13 @@ export class Messages extends LimitedStore {
                 ? { after: this.get(-1) } 
                 : { [this.offset]: this.center })
         });
+        if (this.guild)
+            // make requests for all the members in this message list
+            // we dont await this as to not hold up on actually viewing the messages
+            this.client.askFor('Members.batchLoad', this.guild, messages.map(msg => msg.author_id || msg.author.id));
         for (const message of messages)
             this.shift(message.id, message, true);
+        this.emit('loaded');
     }
     moveto(channel) {
         this.channel = channel;
@@ -117,8 +127,9 @@ export class Messages extends LimitedStore {
         this.emit('moved', channel);
     }
     goto(message) {
-        this.offset = message;
-        this.center = 'around';
+        this.offset = 'around';
+        this.center = message;
+        this.clear();
     }
     isChildMessage(id) {
         const parent = this.get(this.indexOf(id) -1);
@@ -127,8 +138,7 @@ export class Messages extends LimitedStore {
         const before = new Date(parent.timestamp)
         const after = new Date(message.timestamp)
         const inTimeframe = after - before < 3600000
-        const isUser = parent.author_id === message.author_id;
-        console.log(id, inTimeframe, isUser);
+        const isUser = (parent.author_id ?? parent.author.id) === (message.author_id ?? message.author.id);
         return inTimeframe && isUser;
     }
 }

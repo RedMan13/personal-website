@@ -1,3 +1,4 @@
+import Long from "long"; // import to ensure existence in node modules
 import ApiInterface from "./api/index.js";
 import { Messages } from "./api/stores/messages.js";
 import { Users } from "./api/stores/users.js";
@@ -15,26 +16,22 @@ const roles    = new Roles(client);    client.stores.push(roles);
 const members  = new Members(client);  client.stores.push(members);
 
 import { DiscordMessage } from "./elements/message.jsx";
+import { fillViewer } from './elements/guilds.jsx';
 
 const root = document.getElementById('main');
 client.on('READY', () => {
-    updateBrowser(client.askFor('myServers'));
+    fillViewer();
     enableBrowser();
 
     const messages = new Messages(client); client.stores.push(messages);
-    members.on('set', async (id, old, member) => {
-        const userId = member.user_id;
-        for (const [id, message] of messages) {
-            if (message.author_id !== userId) continue;
-            const msg = document.getElementById(id);
-            if (!msg) continue;
-            msg.render(await members.getMember(guilds.guild_id, userId));
-        }
-    });
+    messages.on('loaded', () => {
+        const msgId = messages.center || messages.get(0).id;
+        const msg = document.getElementById(msgId);
+        msg.scrollIntoView();
+    })
     messages.on('push', id => {
         const msg = <DiscordMessage id={id}></DiscordMessage>;
         root.append(msg);
-        root.scrollIntoView(msg);
     });
     messages.on('insert', (idx, id) => {
         const insert = root.children[idx -1];
