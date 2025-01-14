@@ -14,11 +14,9 @@
         // color table
         // contains the full 256 ansi color mapping
         const colors = [
-            // normal
-            // black      red        green      yellow     blue       purple     cyan       white
-            "#000000", "#CD3131", "#0DBC79", "#E5E510", "#2472C8", "#BC3FBC", "#11A8CD", "#E5E5E5",
-            // bright
-            "#666666", "#F14C4C", "#23D18B", "#F5F543", "#3B8EEA", "#D670D6", "#29B8DB", "#E5E5E5",
+            // black             red               green             yellow            blue              purple            cyan              white
+/* normal */[0x00,0x00,0x00], [0xCD,0x31,0x31], [0x0D,0xBC,0x79], [0xE5,0xE5,0x10], [0x24,0x72,0xC8], [0xBC,0x3F,0xBC], [0x11,0xA8,0xCD], [0xE5,0xE5,0xE5],
+/* bright */[0x66,0x66,0x66], [0xF1,0x4C,0x4C], [0x23,0xD1,0x8B], [0xF5,0xF5,0x43], [0x3B,0x8E,0xEA], [0xD6,0x70,0xD6], [0x29,0xB8,0xDB], [0xE5,0xE5,0xE5],
             // 215 color space
             ...(new Array(215)
                 .fill(0)
@@ -26,101 +24,256 @@
                 .map(i => [i % 6, Math.floor(i / 6), Math.floor(i / 36)])
                 .map(([r,g,b]) => [(r / 5 * 255), (g / 5 * 255), (b / 5 * 255)])
                 .map(([r,g,b]) => [r.toString(16), g.toString(16), b.toString(16)])
-                .map(([r,g,b]) => [r.padStart(2, '0'), g.padStart(2, '0'), b.padStart(2, '0')])
-                .map(([r,g,b]) => `#${r}${g}${b}`)),
+                .map(([r,g,b]) => [r.padStart(2, '0'), g.padStart(2, '0'), b.padStart(2, '0')])),
             // 22 gray-scale
             ...(new Array(22)
                 .fill(0)
-                .map((_, i) => `csv(0, 1, ${i / 22})`))
+                .map((_, i) => (i / 22) * 255)
+                .map(b => [b,b,b]))
         ];
+        const chSize = [5,6];
+        const fontSet = document.createElement('canvas');
+        fontSet.width = chSize[0] * 16;
+        fontSet.height = chSize[1] * 16;
+        const font = fontSet.getContext('2d');
+        const bitmap = [
+            //  0    |||    1    |||    2   |||     3   |||     4   |||     5   |||     6   |||     7   |||     8   |||     9   |||     A   |||     B   |||     C   |||     D   |||     E   |||     F
+             ,1,1, , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , , 
+            1,1, , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , , 
+    /* 0 */ 1, ,1, ,1,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , , 
+             , , ,1,1,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , , 
+             , ,1,1, ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , , 
+             , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,
+
+             , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , , 
+             , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , , 
+    /* 1 */  , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , , 
+             , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , , 
+             , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , , 
+             , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,
+            
+             , , , , ,   , ,1, , ,   ,1, ,1, ,   , ,1,1, ,   ,1,1, , ,   , , , , ,   , ,1,1, ,   , ,1, , ,   , , ,1, ,   ,1, , , ,   ,1, ,1, ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , , 
+             , , , , ,   , ,1, , ,   ,1, ,1, ,   ,1,1,1,1,   , ,1,1, ,   ,1, , ,1,   ,1, , , ,   , ,1, , ,   , ,1, , ,   , ,1, , ,   , ,1, , ,   , ,1, , ,   , , , , ,   , , , , ,   , , , , ,   , , , ,1, 
+    /* 2 */  , , , , ,   , ,1, , ,   , , , , ,   , ,1,1, ,   ,1,1,1, ,   , , ,1, ,   ,1,1, ,1,   , , , , ,   , ,1, , ,   , ,1, , ,   ,1, ,1, ,   ,1,1,1, ,   , , , , ,   ,1,1,1, ,   , , , , ,   , , ,1, , 
+             , , , , ,   , , , , ,   , , , , ,   ,1,1,1,1,   ,1,1, , ,   , ,1, , ,   ,1, ,1, ,   , , , , ,   , ,1, , ,   , ,1, , ,   , , , , ,   , ,1, , ,   , ,1, , ,   , , , , ,   , , , , ,   , ,1, , , 
+             , , , , ,   , ,1, , ,   , , , , ,   , ,1,1, ,   , ,1,1, ,   ,1, , ,1,   , ,1, ,1,   , , , , ,   , , ,1, ,   ,1, , , ,   , , , , ,   , , , , ,   ,1, , , ,   , , , , ,   , ,1, , ,   ,1, , , , 
+             , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,
+            
+             , ,1,1, ,   , , ,1, ,   , ,1,1, ,   , ,1,1, ,   ,1, ,1, ,   ,1,1,1,1,   , ,1,1,1,   ,1,1,1,1,   , ,1,1, ,   , ,1,1, ,   , ,1, , ,   , ,1, , ,   , , ,1, ,   , , , , ,   , ,1, , ,   , ,1,1,1, 
+             ,1, , ,1,   , ,1,1, ,   ,1, , ,1,   ,1, , ,1,   ,1, ,1, ,   ,1, , , ,   ,1, , , ,   , , , ,1,   ,1, , ,1,   ,1, , ,1,   , ,1, , ,   , ,1, , ,   , ,1, , ,   ,1,1,1,1,   , , ,1, ,   , , , ,1, 
+    /* 3 */  ,1,1, ,1,   , , ,1, ,   , , ,1, ,   , , ,1, ,   ,1,1,1,1,   ,1,1,1, ,   ,1,1,1,1,   , , ,1, ,   , ,1,1, ,   ,1,1,1,1,   , , , , ,   , , , , ,   ,1, , , ,   , , , , ,   , , , ,1,   , , ,1,1, 
+             ,1, ,1,1,   , , ,1, ,   , ,1, , ,   ,1, , ,1,   , , ,1, ,   , , , ,1,   ,1, , ,1,   , ,1, , ,   ,1, , ,1,   , , , ,1,   , ,1, , ,   , ,1, , ,   , ,1, , ,   ,1,1,1,1,   , , ,1, ,   , , , , , 
+             , ,1,1, ,   , ,1,1,1,   ,1,1,1,1,   , ,1,1, ,   , , ,1, ,   ,1,1,1, ,   , ,1,1, ,   ,1, , , ,   , ,1,1, ,   ,1,1,1, ,   , ,1, , ,   ,1, , , ,   , , ,1, ,   , , , , ,   , ,1, , ,   , , ,1, , 
+             , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,
+            
+             , ,1,1, ,   , ,1,1, ,   ,1,1,1, ,   , ,1,1, ,   ,1,1,1, ,   ,1,1,1,1,   ,1,1,1,1,   , ,1,1, ,   ,1, , ,1,   ,1,1,1, ,   , , , ,1,   ,1, , ,1,   ,1, , , ,   ,1, , ,1,   ,1, , ,1,   , ,1,1, , 
+             ,1, , ,1,   ,1, , ,1,   ,1, , ,1,   ,1, , ,1,   ,1, , ,1,   ,1, , , ,   ,1, , , ,   ,1, , , ,   ,1, , ,1,   , ,1, , ,   , , , ,1,   ,1, ,1, ,   ,1, , , ,   ,1,1,1,1,   ,1,1, ,1,   ,1, , ,1, 
+    /* 4 */  ,1, ,1,1,   ,1,1,1,1,   ,1,1,1, ,   ,1, , , ,   ,1, , ,1,   ,1,1,1, ,   ,1,1,1, ,   ,1, ,1,1,   ,1,1,1,1,   , ,1, , ,   , , , ,1,   ,1,1, , ,   ,1, , , ,   ,1, , ,1,   ,1, ,1,1,   ,1, , ,1, 
+             ,1, , , ,   ,1, , ,1,   ,1, , ,1,   ,1, , ,1,   ,1, , ,1,   ,1, , , ,   ,1, , , ,   ,1, , ,1,   ,1, , ,1,   , ,1, , ,   ,1, , ,1,   ,1, ,1, ,   ,1, , , ,   ,1, , ,1,   ,1, , ,1,   ,1, , ,1, 
+             , ,1,1,1,   ,1, , ,1,   ,1,1,1, ,   , ,1,1, ,   ,1,1,1, ,   ,1,1,1,1,   ,1, , , ,   , ,1,1,1,   ,1, , ,1,   ,1,1,1, ,   , ,1,1, ,   ,1, , ,1,   ,1,1,1,1,   ,1, , ,1,   ,1, , ,1,   , ,1,1, , 
+             , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,
+
+             ,1,1,1, ,   , ,1,1, ,   ,1,1,1, ,   , ,1,1,1,   ,1,1,1, ,   ,1, , ,1,   ,1, ,1, ,   ,1, , ,1,   ,1, , ,1,   ,1, ,1, ,   ,1,1,1,1,   , ,1,1, ,   , , , , ,   ,1,1, , ,   , ,1, , ,   , , , , , 
+             ,1, , ,1,   ,1, , ,1,   ,1, , ,1,   ,1, , , ,   , ,1, , ,   ,1, , ,1,   ,1, ,1, ,   ,1, , ,1,   ,1, , ,1,   ,1, ,1, ,   , , ,1, ,   , ,1, , ,   ,1, , , ,   , ,1, , ,   ,1, ,1, ,   , , , , , 
+    /* 5 */  ,1,1,1, ,   ,1, , ,1,   ,1,1,1, ,   , ,1,1, ,   , ,1, , ,   ,1, , ,1,   ,1, ,1, ,   ,1, , ,1,   , ,1,1, ,   , ,1, , ,   , ,1, , ,   , ,1, , ,   , ,1, , ,   , ,1, , ,   , , , , ,   , , , , , 
+             ,1, , , ,   ,1, ,1,1,   ,1, ,1, ,   , , , ,1,   , ,1, , ,   ,1, , ,1,   , ,1, , ,   ,1,1,1,1,   ,1, , ,1,   , ,1, , ,   ,1, , , ,   , ,1, , ,   , , ,1, ,   , ,1, , ,   , , , , ,   , , , , , 
+             ,1, , , ,   , ,1,1,1,   ,1, , ,1,   ,1,1,1, ,   , ,1, , ,   , ,1,1, ,   , ,1, , ,   ,1, , ,1,   ,1, , ,1,   , ,1, , ,   ,1,1,1,1,   , ,1,1, ,   , , , ,1,   ,1,1, , ,   , , , , ,   ,1,1,1,1, 
+             , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,
+            
+             , ,1, , ,   , ,1,1, ,   ,1, , , ,   , , , , ,   , , , ,1,   , ,1,1, ,   , ,1,1, ,   , ,1,1,1,   ,1, , , ,   , ,1, , ,   , , ,1, ,   ,1, , , ,   ,1, , , ,   , , , , ,   , , , , ,   , , , , , 
+             , , ,1, ,   , , , ,1,   ,1, , , ,   , ,1,1, ,   , , , ,1,   ,1, , ,1,   ,1, , , ,   ,1, , ,1,   ,1, , , ,   , , , , ,   , , , , ,   ,1, ,1, ,   ,1, , , ,   ,1, , ,1,   ,1, , ,1,   , ,1,1, , 
+    /* 6 */  , , , , ,   , ,1,1,1,   ,1,1,1, ,   ,1, , , ,   , ,1,1,1,   ,1,1,1,1,   ,1,1, , ,   , ,1,1,1,   ,1,1,1, ,   , ,1, , ,   , , ,1, ,   ,1,1, , ,   ,1, , , ,   ,1,1,1,1,   ,1,1, ,1,   ,1, , ,1, 
+             , , , , ,   ,1, , ,1,   ,1, , ,1,   ,1, , , ,   ,1, , ,1,   ,1, , , ,   ,1, , , ,   , , , ,1,   ,1, , ,1,   , ,1, , ,   , , ,1, ,   ,1,1, , ,   ,1, , , ,   ,1, , ,1,   ,1, ,1,1,   ,1, , ,1, 
+             , , , , ,   , ,1,1,1,   ,1,1,1, ,   , ,1,1, ,   , ,1,1,1,   , ,1,1,1,   ,1, , , ,   , ,1,1, ,   ,1, , ,1,   , ,1, , ,   , ,1, , ,   ,1, ,1, ,   , ,1, , ,   ,1, , ,1,   ,1, , ,1,   , ,1,1, , 
+             , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,
+            
+             ,1,1,1, ,   , ,1,1,1,   ,1, , , ,   , ,1,1,1,   , ,1, , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , ,1, ,   , ,1, , ,   ,1, , , ,   , ,1, ,1,   , , , , , 
+             ,1, , ,1,   ,1, , ,1,   ,1,1,1, ,   ,1, , , ,   ,1,1,1, ,   ,1, , ,1,   ,1, ,1, ,   ,1, , ,1,   ,1, , ,1,   ,1, ,1, ,   ,1,1,1,1,   , ,1, , ,   , ,1, , ,   , ,1, , ,   ,1, ,1, ,   , , , , , 
+    /* 7 */  ,1,1,1, ,   , ,1,1,1,   ,1, , ,1,   , ,1,1, ,   , ,1, , ,   ,1, , ,1,   ,1, ,1, ,   ,1, , ,1,   ,1, , ,1,   , ,1, , ,   , , ,1, ,   ,1,1, , ,   , ,1, , ,   , ,1,1, ,   , , , , ,   , , , , , 
+             ,1, , , ,   , , , ,1,   ,1, , , ,   , , , ,1,   , ,1, , ,   ,1, , ,1,   ,1, ,1, ,   ,1,1,1,1,   , ,1,1, ,   , ,1, , ,   , ,1, , ,   , ,1, , ,   , ,1, , ,   , ,1, , ,   , , , , ,   , , , , , 
+             ,1, , , ,   , , , ,1,   ,1, , , ,   ,1,1,1, ,   , , ,1, ,   , ,1,1,1,   , ,1, , ,   ,1, , ,1,   ,1, , ,1,   , ,1, , ,   ,1,1,1,1,   , , ,1, ,   , ,1, , ,   ,1, , , ,   , , , , ,   , , , , , 
+             , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,
+        ];
+        const pixels = new Uint8ClampedArray(fontSet.width * (fontSet.height / 2) * 4);
+        for (let i = 0, v = bitmap[0]; i < bitmap.length; v = bitmap[++i] || 0)
+            pixels[(i*4)+0] = 
+            pixels[(i*4)+1] = 
+            pixels[(i*4)+2] = v * 255, 
+            pixels[(i*4)+3] = 255;
+        const imageData = new ImageData(pixels, fontSet.width, fontSet.height / 2);
+        font.putImageData(imageData, 0,0);
     </script>
-    <code id="terminal"></code>
+    <canvas 
+        id="terminal"
+        width="240"
+        height="180"
+        style="
+            width: 100%;
+            height: 100%;
+            image-rendering: pixelated;
+        "
+    ></canvas>
     <script file="jsx">
         const bell = new Audio('/bell.wav');
-        const term = document.getElementById('terminal');
+        const terminal = document.getElementById('terminal');
+        const mkcs = (def = 0) => new Array(terminal.width / chSize[0])
+            .fill()
+            .map(() => new Array(terminal.height / chSize[1]).fill(def));
+        /** @type {CanvasRenderingContext2D} */
+        const ctx = terminal.getContext('2d');
         let cx = 0;
         let cy = 0;
+
+        const defaults = {
+            italic:         false,
+            bold:           false,
+            faint:          false,
+            doubeUnderline: false,
+            underline:      false,
+            overline:       false,
+            strike:         false,
+            inverted:       false,
+            hidden:         false,
+            slowBlink:      false,
+            fastBlink:      false,
+            forColor: colors[7],
+            bacColor: colors[0],
+            linColor: colors[7],
+        }
+        let modeCp = { ...defaults };
+        let forColor = mkcs(colors[7]);
+        let bacColor = mkcs(colors[0]);
+        let linColor = mkcs(colors[7]);
+        let modeBits = mkcs(0);
+        let characters = mkcs(0x20);
         function goto(x,y) {
-            const merged = x + Math.min(Math.max(y, 0), 17) * 48;
-            cx = merged % 48;
-            cy = Math.floor(merged / 48);
+            cx = x;
+            cy = y;
+            while (y > (terminal.height / chSize[1])) {
+                characters.push(new Array(terminal.height / chSize[1]).fill(0x20));
+                modeBits.push(new Array(terminal.height / chSize[1]).fill(0));
+                linColor.push(new Array(terminal.height / chSize[1]).fill(colors[7]));
+                bacColor.push(new Array(terminal.height / chSize[1]).fill(colors[0]));
+                forColor.push(new Array(terminal.height / chSize[1]).fill(colors[7]));
+                characters.shift();
+                modeBits.shift();
+                linColor.shift();
+                bacColor.shift();
+                forColor.shift();
+            }
         }
         function move(dx = 1,dy = 0) {
             goto(cx + dx, cy + dy);
         }
+        function style(key, value) {
+            forColor[cx][cy] = modeCp.forColor;
+            bacColor[cx][cy] = modeCp.bacColor;
+            linColor[cx][cy] = modeCp.linColor;
+            modeBits[cx][cy] = (modeCp.fastBlink << 10) + (modeCp.slowBlink << 9) + (modeCp.bold << 8) + 
+                                (modeCp.doubeUnderline << 7) + (modeCp.faint << 6) + (modeCp.hidden << 5) + 
+                                (modeCp.inverted << 4) + (modeCp.italic << 3) + (modeCp.overline << 2) + 
+                                (modeCp.strike << 1) + modeCp.underline;
+        }
         function set(char) {
-            const el = document.getElementById(`${cx}-${cy}`);
-            if (!el) return console.log(cx, cy);
-            el.children[0].textContent = char;
+            if (cx >= (terminal.width / chSize[0])) 
+                cx = 0, 
+                cy = Math.floor(cx / (terminal.width / chSize[0]));
+            characters[cx][cy] = char.codePointAt(0);
+            style();
         }
-        function style(styles, set) {
-            const el = document.getElementById(`${cx}-${cy}`);
-            if (set) {
-                for (const key of Object.values(el.style)) 
-                    el.style[key] = '0';
-            }
-            for (const key in styles)
-                el.style[key] = styles;
+        function sample(code, color = colors[7], back = colors[0]) {
+            code = code & 0xFF;
+            const x = (code & 0x0F) * chSize[0];
+            const y = ((code & 0xF0) >> 4) * chSize[1];
+            const img = font.getImageData(x,y, chSize[0],chSize[1]);
+            const pixels = img.data.map((val, i) => (val / 255) * (color[i % 4] ?? 255) +
+                                            (1 - (val / 255)) * (back[i % 4] ?? 255));
+            return new ImageData(pixels, img.width, img.height);
         }
-        function styles() {
-            const resolved = {};
-            for (let y = 0; y <= cy; y++) {
-                for (let x = 0; x <= cx; x++) {
-                    const el = document.getElementById(`${cx}-${cy}`);
-                    for (const key of Object.values(el.style)) {
-                        if (!el.style[key]) continue;
-                        resolved[key] = el.style[key];
-                    }
+        let frame = 0;
+        function render() {
+            ctx.fillColor = colors[0];
+            ctx.fillRect(0,0, terminal.width, terminal.height);
+            for (let i = characters.length * characters[0].length, 
+                    x = 0, 
+                    y = 0; 
+                i >= 0; 
+                x = --i % characters.length, 
+                y = Math.floor(i / characters.length)
+            ) {
+                const settings = modeBits[x][y];
+                if (settings & 0b100000) continue;
+                if ((settings & 0b1000000000) && !(frame % 4)) continue;
+                if ((settings & 0b10000000000) && !(frame % 2)) continue;
+                const color = [...(settings & 0b10000) ? bacColor[x][y] : forColor[x][y]];
+                const back = [...(settings & 0b10000) ? forColor[x][y] : bacColor[x][y]];
+                if (settings & 0b100000000) {
+                    color[0] += 0x66;
+                    color[1] += 0x66;
+                    color[2] += 0x66;
                 }
+                if (settings & 0b1000000) {
+                    color[0] -= 0x66;
+                    color[1] -= 0x66;
+                    color[2] -= 0x66;
+                }
+                const linColor = (settings & 0b10000) ? bacColor[x][y] : forColor[x][y];
+                const char = sample(characters[x][y], color, back);
+                if (settings & 0b1000) {
+                    ctx.putImageData(char, (x * chSize[0]),    (y * chSize[1]), 0, 0, 6, 3);
+                    ctx.putImageData(char, (x * chSize[0]) -1, (y * chSize[1]), 0, 3, 6, 3);
+                } else
+                    ctx.putImageData(char, x * chSize[0], y * chSize[1]);
+                    
+                const line = new ImageData(new Uint8ClampedArray([
+                    ...linColor,255,...linColor,255,...linColor,255,...linColor,255,...linColor,255,
+                ]), 5, 1);
+                const dottedLine = new ImageData(new Uint8ClampedArray([
+                    ...linColor,255,0,0,0,255,0,0,0,255,...linColor,255,...linColor,255,
+                ]), 5, 1);
+                if (settings & 0b1)
+                    ctx.putImageData(line, x * chSize[0], (y * chSize[1]) +5);
+                if (settings & 0b10)
+                    ctx.putImageData(line, x * chSize[0], (y * chSize[1]) +2);
+                if (settings & 0b100)
+                    ctx.putImageData(line, x * chSize[0], (y * chSize[1]) -1);
+                if (settings & 0b10000000)
+                    ctx.putImageData(dottedLine, x * chSize[0], (y * chSize[1]) +5);
             }
-            return resolved;
         }
         function clear() {
-            term.innerHTML = '';
-            let head = term;
-            cx = 0;
-            cy = 0;
-            for (let y = 0; y < 18; y++) {
-                for (let x = 0; x < 48; x++) {
-                    const char = <span 
-                        id={`${x}-${y}`} 
-                        style={`color: ${colors[0x0]}; background-color: ${colors[0xF]};`}
-                    > 
-                        <span 
-                            style={`
-                                position: absolute;
-                                display: inline-block;
-                                width: 10px;
-                                height: 20px;
-                                font-size: 16px;
-                                white-space: pre;
-                                left: ${x * 10}px;
-                                top: ${y * 20}px;
-                            `}
-                        > </span>
-                    </span>;
-                    head.appendChild(char);
-                    head = char
-                }
-                head.appendChild(<br/>);
+            for (let i = characters.length * characters[0].length, 
+                    x = 0, 
+                    y = 0; 
+                i >= 0; 
+                x = --i % characters.length, 
+                y = Math.floor(i / characters.length)
+            ) {
+                cx = x;
+                cy = y;
+                set(' ');
+                console.log('reset!')
             }
+            render();
         }
         clear();
+        setInterval(() => {
+            render();
+            frame++;
+        }, 250); 
         /**
          * @param {string|string[]} chars
          */
         function write(chars) {
-            console.log(chars.replaceAll(/\x1b\[.*?[a-z]/gi, ''));
+            console.log(chars.replace(/\x1b\[.*?[a-zA-Z]/g), '')
             chars = [...chars];
             for (let i = 0; i < chars.length; i++) {
                 const char = chars[i];
-                console.log(cx, cy)
                 switch (char) {
                 case '\x07': bell.play(); break;
                 case '\x08':
                     move(-1);
                     set(' ');
-                    style({}, true);
                     break;
                 case '\x09':
                     goto(Math.ceil(cx / 8) * 8, cy);
@@ -136,13 +289,13 @@
                     switch (type) {
                     case '[': // Control Sequence Introducer
                         const commandIdx = chars.findIndex((char, idx) => idx > i && /[a-z]/i.test(char));
-                        i = commandIdx;
                         const command = chars[commandIdx];
                         const args = chars
-                            .slice(i +1, command)
+                            .slice(i +1, commandIdx)
                             .join('')
                             .split(';')
                             .map(str => Number(str) || 0);
+                        i = commandIdx;
                         
                         switch (command) {
                         case 'A': move(0, -(args[0] || 1)); break;
@@ -151,8 +304,8 @@
                         case 'D': move(-(args[0] || 1), 0); break;
                         case 'E': goto(0, cy +  (args[0] || 1)); break;
                         case 'F': goto(0, cy + -(args[0] || 1)); break;
-                        case 'G': goto(args[0] || 1, cy); break;
-                        case 'H': case 'f': goto(args[0] || 1, args[1] || 1); break;
+                        case 'G': goto((args[0] || 1) -1, cy); break;
+                        case 'H': case 'f': goto((args[0] || 1) -1, (args[1] || 1) -1); break;
                         case 'J':
                             switch (args[0]) {
                             default:
@@ -161,17 +314,15 @@
                                 for (let i = cx; i < 48; i++) {
                                     goto(i, cy);
                                     set(' ');
-                                    style({}, true);
                                 }
                                 goto(...start);
                                 break;
                             }
                             case 1: {
-                                const start = [cx, cy];
+                                const start = [cx, cy]; 
                                 for (let i = cx; i >= 0; i--) {
                                     goto(i, cy);
                                     set(' ');
-                                    style({}, true);
                                 }
                                 goto(...start);
                                 break;
@@ -187,7 +338,6 @@
                                 for (let i = cx; i < 48; i++) {
                                     goto(i, cy);
                                     set(' ');
-                                    style({}, true);
                                 }
                                 goto(...start);
                                 break;
@@ -197,7 +347,6 @@
                                 for (let i = cx; i >= 0; i--) {
                                     goto(i, cy);
                                     set(' ');
-                                    style({}, true);
                                 }
                                 goto(...start);
                                 break;
@@ -207,7 +356,6 @@
                                 for (let i = 0; i < 48; i--) {
                                     goto(i, cy);
                                     set(' ');
-                                    style({}, true);
                                 }
                                 goto(...start);
                                 break;
@@ -217,127 +365,79 @@
                         case 'm':
                             switch (args[0]) {
                             default:
-                            case 0: style({}, true); break;
-                            case 1: style({ fontWeight: 'bold' }); break;
-                            case 2: style({ fontWeight: 'lighter' }); break;
-                            case 3: style({ fontStyle: 'italic' }); break;
-                            case 4: {
-                                const { textDecoration } = styles();
-                                if (textDecoration.includes('underline')) break;
-                                style({ textDecoration: `${textDecoration} underline` }); 
-                                break;
-                            }
-                            case 5: style({ animation: 'blink 2.5s linear infinite' }); break;
-                            case 6: style({ animation: 'blink 0.5s linear infinite' }); break;
-                            case 27:
-                            case 7: 
-                                const { color, backgroundColor } = styles();
-                                style({ color: backgroundColor, backgroundColor: color }); 
-                                break;
-                            case 8: style({ opacity: '0' }); break;
-                            case 9: {
-                                const { textDecoration } = styles();
-                                if (textDecoration.includes('line-through')) break;
-                                style({ textDecoration: `${textDecoration} line-through` }); 
-                                break;
-                            }
-                            case 21: {
-                                const { textDecoration } = styles();
-                                style({ textDecorationStyle: 'double' });
-                                if (textDecoration.includes('underline')) break;
-                                style({ textDecoration: `${textDecoration} underline` }); 
-                                break;
-                            }
-                            case 22: style({ fontWeight: '' }); break;
-                            case 23: style({ fontStyle: '' }); break;
-                            case 24: {
-                                const { textDecoration } = styles();
-                                if (!textDecoration.includes('underline')) break;
-                                style({
-                                    textDecoration: textDecoration.replace('underline', ''),
-                                    textDecorationStyle: ''
-                                }); 
-                                break;
-                            }
-                            case 25: style({ animation: '' }); break;
-                            case 28: style({ opacity: '' }); break;
-                            case 29: {
-                                const { textDecoration } = styles();
-                                if (!textDecoration.includes('line-through')) break;
-                                style({ textDecoration: textDecoration.replace('line-through', '') }); 
-                                break;
-                            }
-                            case 30: style({ color: colors[0x0] }); break;
-                            case 31: style({ color: colors[0x1] }); break;
-                            case 32: style({ color: colors[0x2] }); break;
-                            case 33: style({ color: colors[0x3] }); break;
-                            case 34: style({ color: colors[0x4] }); break;
-                            case 35: style({ color: colors[0x5] }); break;
-                            case 36: style({ color: colors[0x6] }); break;
-                            case 37: style({ color: colors[0x7] }); break;
-                            case 90: style({ color: colors[0x8] }); break;
-                            case 91: style({ color: colors[0x9] }); break;
-                            case 92: style({ color: colors[0xA] }); break;
-                            case 93: style({ color: colors[0xB] }); break;
-                            case 94: style({ color: colors[0xC] }); break;
-                            case 95: style({ color: colors[0xD] }); break;
-                            case 96: style({ color: colors[0xE] }); break;
-                            case 97: style({ color: colors[0xF] }); break;
+                            case 0: modeCp = { ...defaults }; break;
+                            case 1: modeCp.bold = true; break;
+                            case 2: modeCp.faint = true; break;
+                            case 3: modeCp.italic = true; break;
+                            case 4: modeCp.underline = true; break;
+                            case 5: modeCp.slowBlink = true; break;
+                            case 6: modeCp.fastBlink = true; break;
+                            case 7: modeCp.inverted = true; break;
+                            case 8: modeCp.hidden = true; break;
+                            case 9: modeCp.strike = true; break;
+                            case 21: modeCp.doubeUnderline = true; break;
+                            case 22: modeCp.faint = modeCp.bold = false; break;
+                            case 23: modeCp.italic = false; break;
+                            case 24: modeCp.doubeUnderline = modeCp.underline = false; break;
+                            case 25: modeCp.fastBlink = modeCp.slowBlink = false; break;
+                            case 27: modeCp.inverted = false; break;
+                            case 28: modeCp.hidden = false; break;
+                            case 29: modeCp.strike = false; break;
+                            case 30: modeCp.forColor = colors[0x0]; break;
+                            case 31: modeCp.forColor = colors[0x1]; break;
+                            case 32: modeCp.forColor = colors[0x2]; break;
+                            case 33: modeCp.forColor = colors[0x3]; break;
+                            case 34: modeCp.forColor = colors[0x4]; break;
+                            case 35: modeCp.forColor = colors[0x5]; break;
+                            case 36: modeCp.forColor = colors[0x6]; break;
+                            case 37: modeCp.forColor = colors[0x7]; break;
+                            case 90: modeCp.forColor = colors[0x8]; break;
+                            case 91: modeCp.forColor = colors[0x9]; break;
+                            case 92: modeCp.forColor = colors[0xA]; break;
+                            case 93: modeCp.forColor = colors[0xB]; break;
+                            case 94: modeCp.forColor = colors[0xC]; break;
+                            case 95: modeCp.forColor = colors[0xD]; break;
+                            case 96: modeCp.forColor = colors[0xE]; break;
+                            case 97: modeCp.forColor = colors[0xF]; break;
                             case 38: 
-                                style({
-                                    color: args[1] === 2 
-                                        ? `rgb(${args[2]}, ${args[3]}, ${args[4]})`
-                                        : colors[args[2]]
-                                }); 
+                                if (args.length < 3) break;
+                                modeCp.forColor = args[1] === 2 
+                                    ? [args[2], args[3], args[4]]
+                                    : colors[args[2]]; 
                                 break;
-                            case 39: style({ color: colors[0x0] }); break;
-                            case 40: style({ backgroundColor: colors[0x0] }); break;
-                            case 41: style({ backgroundColor: colors[0x1] }); break;
-                            case 42: style({ backgroundColor: colors[0x2] }); break;
-                            case 43: style({ backgroundColor: colors[0x3] }); break;
-                            case 44: style({ backgroundColor: colors[0x4] }); break;
-                            case 45: style({ backgroundColor: colors[0x5] }); break;
-                            case 46: style({ backgroundColor: colors[0x6] }); break;
-                            case 47: style({ backgroundColor: colors[0x7] }); break;
-                            case 100: style({ backgroundColor: colors[0x8] }); break;
-                            case 101: style({ backgroundColor: colors[0x9] }); break;
-                            case 102: style({ backgroundColor: colors[0xA] }); break;
-                            case 103: style({ backgroundColor: colors[0xB] }); break;
-                            case 104: style({ backgroundColor: colors[0xC] }); break;
-                            case 105: style({ backgroundColor: colors[0xD] }); break;
-                            case 106: style({ backgroundColor: colors[0xE] }); break;
-                            case 107: style({ backgroundColor: colors[0xF] }); break;
-                            case 48: 
-                                style({
-                                    backgroundColor: args[1] === 2 
-                                        ? `rgb(${args[2]}, ${args[3]}, ${args[4]})`
-                                        : colors[args[2]]
-                                }); 
+                            case 39: modeCp.forColor = colors[0x7]; break;
+                            case 40: modeCp.bacColor = colors[0x0]; break;
+                            case 41: modeCp.bacColor = colors[0x1]; break;
+                            case 42: modeCp.bacColor = colors[0x2]; break;
+                            case 43: modeCp.bacColor = colors[0x3]; break;
+                            case 44: modeCp.bacColor = colors[0x4]; break;
+                            case 45: modeCp.bacColor = colors[0x5]; break;
+                            case 46: modeCp.bacColor = colors[0x6]; break;
+                            case 47: modeCp.bacColor = colors[0x7]; break;
+                            case 100: modeCp.bacColor = colors[0x8]; break;
+                            case 101: modeCp.bacColor = colors[0x9]; break;
+                            case 102: modeCp.bacColor = colors[0xA]; break;
+                            case 103: modeCp.bacColor = colors[0xB]; break;
+                            case 104: modeCp.bacColor = colors[0xC]; break;
+                            case 105: modeCp.bacColor = colors[0xD]; break;
+                            case 106: modeCp.bacColor = colors[0xE]; break;
+                            case 107: modeCp.bacColor = colors[0xF]; break;
+                            case 48:
+                                if (args.length < 3) break;
+                                modeCp.bacColor = args[1] === 2 
+                                    ? [args[2], args[3], args[4]]
+                                    : colors[args[2]]; 
                                 break;
-                            case 49: style({ backgroundColor: colors[0xF] }); break;
-                            case 53: {
-                                const { textDecoration } = styles();
-                                if (textDecoration.includes('underline')) break;
-                                style({ textDecoration: `${textDecoration} underline` }); 
+                            case 49: modeCp.bacColor = colors[0x0]; break;
+                            case 53: modeCp.overline = true; break;
+                            case 55: modeCp.overline = false; break;
+                            case 58:
+                                if (args.length < 3) break;
+                                modeCp.linColor = args[1] === 2 
+                                    ? [args[2], args[3], args[4]]
+                                    +0                            : colors[args[2]]; 
                                 break;
-                            }
-                            case 55: {
-                                const { textDecoration } = styles();
-                                if (!textDecoration.includes('underline')) break;
-                                style({
-                                    textDecoration: textDecoration.replace('underline', ''),
-                                    textDecorationStyle: ''
-                                }); 
-                                break;
-                            }
-                            case 58: 
-                                style({
-                                    textDecorationColor: args[1] === 2 
-                                        ? `rgb(${args[2]}, ${args[3]}, ${args[4]})`
-                                        : colors[args[2]]
-                                }); 
-                                break;
-                            case 59: style({ textDecorationColor: colors[0x0] }); break;
+                            case 59: modeCp.linColor = colors[0x8]; break;
                             }
                             break;
                         case 'n':
@@ -351,11 +451,7 @@
                     move(1);
                 }
             }
+            render();
         }
-        write(new Array(9).fill(0)
-            .map((_, idx) => new Array(12).fill(0)
-                .map((_, i) => `\x1B[${i + (idx * 12)}m${(i + (idx * 12)).toString().padStart(4)}\x1B[0m`)
-                .join(''))
-            .join('\n'));
     </script>
 </body>
