@@ -28,4 +28,3 @@ every .precomp.js file is expected to export a function who when run, will first
 ## building/testing
 to make a new build run `npm run build`
 to start the dev server run `npm start` or `npm run dev`
-> the dev server applies precomps **after** running a .php file, whereas the builder will apply **before**. 
