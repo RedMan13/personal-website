@@ -17,7 +17,7 @@ function renderSlideDiv($slides) {
 if (!getenv('MDSERV')) return;
 $client = new MongoDB\Client(getenv('MDSERV'));
 $base = $client->selectDatabase(getenv('MDBASE'));
-$collect = $base->visitors;
+$collect = $base->general;
 $doc = $collect->findOne(['isVisitors' -> true]);
 $visitors = $doc->visitors +1;
 $collect->updateOne(['isVisitors' -> true], ['visitors' -> $visitors]);
