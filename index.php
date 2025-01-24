@@ -19,8 +19,8 @@ $client = new MongoDB\Client(getenv('MDSERV'));
 $base = $client->selectDatabase(getenv('MDBASE'));
 $collect = $base->general;
 $doc = $collect->findOne(['isVisitors' -> true]);
-$visitors = $doc->visitors +1;
-$collect->updateOne(['isVisitors' -> true], ['visitors' -> $visitors]);
+$visitors = $doc->count +1;
+$collect->updateOne(['isVisitors' -> true], ['count' -> $visitors]);
 $visitors = strval($visitors);
 
 $numSuf = ['th', 'st', 'nd', 'rd', 'th', 'th', 'th', 'th', 'th', 'th'];
