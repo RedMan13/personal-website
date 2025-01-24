@@ -14,16 +14,11 @@ function renderSlideDiv($slides) {
     echo '</div>';
 }
 
-$visitors = NAN;
-if (file_exists('../../.mongo.json')) {
-    $conf = json_decode(file_get_contents('../../.mongo.json'));
-    $client = new MongoDB\Client($conf['server']);
-    $base = $client->selectDatabase($conf['database']);
-    $collect = $base->general;
-    $doc = $collect->findOne(['isVisitors' -> true]);
-    $visitors = $doc['count'] +1;
-    $collect->updateOne(['isVisitors' -> true], ['count' -> $visitors]);
-}
+$visitors = file_exists('./visitors.txt') 
+    ? intval(file_get_contents('./visitors.txt')) +1
+    : 1;
+file_put_contents('./visitors.txt', strval($visitors));
+
 $numSuf = ['th', 'st', 'nd', 'rd', 'th', 'th', 'th', 'th', 'th', 'th'];
 $sufix = $numSuf[substr($visitors, -1)];
 if ($visitors > 9 && $visitors < 20) $sufix = 'th';
