@@ -15,8 +15,8 @@ function renderSlideDiv($slides) {
 }
 
 $visitors = NAN;
-if (file_exists('~/.mongo.json')) {
-    $conf = json_decode(file_get_contents('~/.mongo.json'));
+if (file_exists('../../.mongo.json')) {
+    $conf = json_decode(file_get_contents('../../.mongo.json'));
     $client = new MongoDB\Client($conf['server']);
     $base = $client->selectDatabase($conf['database']);
     $collect = $base->general;
