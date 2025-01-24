@@ -15,12 +15,13 @@ function renderSlideDiv($slides) {
 }
 
 $visitors = NAN;
-if (getenv('MDSERV')) {
-    $client = new MongoDB\Client(getenv('MDSERV'));
-    $base = $client->selectDatabase(getenv('MDBASE'));
+if (file_exists('~/.mongo.json')) {
+    $conf = json_decode(file_get_contents('~/.mongo.json'));
+    $client = new MongoDB\Client($conf['server']);
+    $base = $client->selectDatabase($conf['database']);
     $collect = $base->general;
     $doc = $collect->findOne(['isVisitors' -> true]);
-    $visitors = $doc->count +1;
+    $visitors = $doc['count'] +1;
     $collect->updateOne(['isVisitors' -> true], ['count' -> $visitors]);
 }
 $numSuf = ['th', 'st', 'nd', 'rd', 'th', 'th', 'th', 'th', 'th', 'th'];
