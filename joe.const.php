@@ -75,9 +75,10 @@
             ];
     
             foreach ($accounts as $url) {
+                $domain = parse_url($url, PHP_URL_HOST);
                 echo <<<END
                     <a style="margin-left: 2px; margin-right: 2px;" href="$url">
-                        <img style="width: 2rem; height: 2rem;" src="https://www.google.com/s2/favicons?sz=64&domain={parse_url($url, PHP_URL_HOST)}" />
+                        <img style="width: 2rem; height: 2rem;" src="https://www.google.com/s2/favicons?sz=64&domain=$domain" />
                     </a>
                 END;
             }
