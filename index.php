@@ -14,9 +14,7 @@ function renderSlideDiv($slides) {
     echo '</div>';
 }
 
-$visitors = 0;
-$sufix = 'th';
-echo getenv('MDBASE');
+$visitors = NAN;
 if (getenv('MDSERV')) {
     $client = new MongoDB\Client(getenv('MDSERV'));
     $base = $client->selectDatabase(getenv('MDBASE'));
