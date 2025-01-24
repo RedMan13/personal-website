@@ -14,10 +14,14 @@ function renderSlideDiv($slides) {
     echo '</div>';
 }
 
-$visitors = file_exists('./visitors.txt') 
-    ? intval(file_get_contents('./visitors.txt')) +1
-    : 1;
-file_put_contents('./visitors.txt', strval($visitors));
+if (!getenv('MDSERV')) return;
+$client = new MongoDB\Client(getenv('MDSERV'));
+$base = $client->selectDatabase(getenv('MDBASE'));
+$collect = $base->visitors;
+$doc = $collect->findOne(['isVisitors' -> true]);
+$visitors = $doc->visitors +1;
+$collect->updateOne(['isVisitors' -> true], ['visitors' -> $visitors]);
+$visitors = strval($visitors);
 
 $numSuf = ['th', 'st', 'nd', 'rd', 'th', 'th', 'th', 'th', 'th', 'th'];
 $sufix = $numSuf[substr($visitors, -1)];
