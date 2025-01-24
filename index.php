@@ -14,15 +14,16 @@ function renderSlideDiv($slides) {
     echo '</div>';
 }
 
-if (!getenv('MDSERV')) return;
-$client = new MongoDB\Client(getenv('MDSERV'));
-$base = $client->selectDatabase(getenv('MDBASE'));
-$collect = $base->general;
-$doc = $collect->findOne(['isVisitors' -> true]);
-$visitors = $doc->count +1;
-$collect->updateOne(['isVisitors' -> true], ['count' -> $visitors]);
-$visitors = strval($visitors);
-
+$visitors = 0;
+$sufix = 'th';
+if (getenv('MDSERV')) {
+    $client = new MongoDB\Client(getenv('MDSERV'));
+    $base = $client->selectDatabase(getenv('MDBASE'));
+    $collect = $base->general;
+    $doc = $collect->findOne(['isVisitors' -> true]);
+    $visitors = $doc->count +1;
+    $collect->updateOne(['isVisitors' -> true], ['count' -> $visitors]);
+}
 $numSuf = ['th', 'st', 'nd', 'rd', 'th', 'th', 'th', 'th', 'th', 'th'];
 $sufix = $numSuf[substr($visitors, -1)];
 if ($visitors > 9 && $visitors < 20) $sufix = 'th';
