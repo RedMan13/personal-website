@@ -123,7 +123,7 @@ class PrecompManager {
             const content = await fs.readFile(target);
             await fs.mkdir(path.dirname(endPath), { recursive: true });
             await fs.writeFile(endPath, content);
-            return [endPath, content.toString('utf8'), true];
+            return [endPath, content, true];
         }
         console.log('\tbuilding', target.replace(this.entry, ''));
         for (const precomp of this.precomps) {

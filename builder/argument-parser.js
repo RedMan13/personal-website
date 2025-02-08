@@ -1,10 +1,13 @@
 const path = require('path');
 
+function clean(str) {
+    return str.replace(/\x1b\[[0-9;]*[a-zA-Z]/g, '');
+}
 module.exports = function parseArgs(keys, argv) {
-    const lookup = {};
+    const lookup = { '?': 'help', 'help': 'help' };
     for (const [k,v] of Object.entries(keys)) {
         for (const varient of v[0]) {
-            lookup[varient] = k;
+            lookup[clean(varient)] = k;
         }
         lookup[k] = k;
     }
@@ -24,6 +27,33 @@ module.exports = function parseArgs(keys, argv) {
             : lookup['default'] ?? 'default';
         if (arg[0] === '-') i++;
         args[key] = argv[i];
+    }
+    if ('help' in args) {
+        let largest;
+        const lines = Object.entries(keys)
+            .map(([name, mapping]) => [
+                `--${name}, ` + (mapping[0]
+                    .map(key => 
+                        key === 'default' 
+                            ? '\x1b[32m\x1b[1mdefault\x1b[0m' 
+                            : key.length > 1 
+                                ? `--${key}` 
+                                : `-${key}`
+                    )
+                    .join(', ')),
+                mapping[2],
+                mapping[1] 
+                    ? `\x1b[1mDefault: ${mapping[1]}\x1b[0m` 
+                    : ''
+            ])
+            .map((str, i, lines) => {
+                largest ??= lines.reduce((c,v) => Math.max(c,clean(v[0]).length), 0);
+                const spacing = ' '.repeat(largest - clean(str[0]).length);
+                return `${spacing}  ${str[0]} : ${str[1]} ${str[2]}`;
+            });
+
+        console.log(lines.map(line => line.split(':')[0].padStart(largest, ' ') + ':' + line.split(':').slice(1).join(':')).join('\n'));
+        process.exit(0);
     }
     return args;
 }

@@ -1,7 +1,0 @@
-syntax = "proto3";
-
-message Versions {
-    uint32 client_version = 1;
-    uint32 server_version = 2;
-    uint32 data_version = 3;
-}

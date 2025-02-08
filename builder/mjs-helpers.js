@@ -34,7 +34,6 @@ const resolveImport = module.exports.resolveImport = (() => {
                     }
                 }
             } while (!data || data.isDirectory());
-            cached[cacheKey] = data ? pathTo : importName;
             if (!data) {
                 console.warn('couldnt locate import ' + importName + ' from ' + root);
                 return [false, importName, path.resolve(root, importName)];

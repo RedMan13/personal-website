@@ -7,7 +7,6 @@
  * 
  * @callback TokenGeneratorFunction A function that matches for a token
  * @param {string} str The string this generator is to work on
- * @param {Token[]} matches The matches made before this token
  * @returns {{ length: number, [key: string]: any } | void} The length of this capture + any extra metadata to append to this token
  * 
  * @typedef {TokenGeneratorFunction | RegExp} TokenGenerator
@@ -54,6 +53,8 @@ class Tokenizer {
     }
     [Symbol.iterator] = function*() {
         this.matches = [];
+        for (const name in this.colors) 
+            process.stdout.write(`${this.colors[name]}${name}\x1b[0m\n`);
         for (; this.str.length; this.idx++) {
             const tok = this.match();
             if (tok) {
@@ -123,7 +124,14 @@ class Tokenizer {
                 break;
             }
             }
-            if (i >= g.length) return [idx, matched];
+            if (i >= g.length) {
+                if (this.debug) {
+                    process.stdout.write('\n------------\x1b[1mTOKEN GROUP\x1b[0m------------\n');
+                    for (const tok of matched.flat(Infinity))
+                        process.stdout.write(`${tok.name} { ${Object.entries(tok).filter(([key, val]) => !['length', 'name', 'start', 'end', 'match'].includes(key) && (typeof (val ?? undefined) !== 'undefined')).map(([key, val]) => `\x1b[90m${key}:\x1b[0m ${val}`).join(', ')} }\n`);
+                }
+                return [idx, matched];
+            }
         }
     }
     getGroups(grouping) {
@@ -145,7 +153,7 @@ class Tokenizer {
         const func = this.tokens[name];
         const res = func(this.str);
         // WHAT THE FUCK, WHY IS null AN OBJECT
-        if (typeof res !== 'object' || !res) return;
+        if (typeof (res ?? undefined) !== 'object') return;
         const match = this.str.slice(0, res.length);
         if (this.debug) 
             process.stdout.write(this.colors[name] + this.str.slice(0, res.length) + '\x1b[0m');
