@@ -12,7 +12,59 @@
         const cube = document.getElementById('cube');
         const ctx = cube.getContext('2d');
         const rots = [0, 0, 0];
+        const quads = [
+            [
+                '#EE0f0f',
+                [-1, -1,  1],
+                [-1,  1,  1],
+                [ 1,  1,  1],
+                [ 1, -1,  1],
+                [.5, .5,  1]
+            ],
+            [
+                '#0fEE0f',
+                [-1, -1, -1],
+                [-1,  1, -1],
+                [ 1,  1, -1],
+                [ 1, -1, -1],
+                [.5, .5, -1]
+            ],
+            [
+                '#0f0fEE',
+                [-1,  1, -1],
+                [-1,  1,  1],
+                [ 1,  1,  1],
+                [ 1,  1, -1],
+                [.5,  1, .5]
+            ],
+            [
+                '#0fEf0E',
+                [ 1, -1, -1],
+                [ 1, -1,  1],
+                [ 1,  1,  1],
+                [ 1,  1, -1],
+                [ 1, .5, .5]
+            ],
+            [
+                '#Ef0f0E',
+                [-1, -1, -1],
+                [-1, -1,  1],
+                [ 1, -1,  1],
+                [ 1, -1, -1],
+                [.5, -1, .5]
+            ],
+            [
+                '#EfEf00',
+                [-1, -1, -1],
+                [-1, -1,  1],
+                [-1,  1,  1],
+                [-1,  1, -1],
+                [-1, .5, .5]
+            ]
+        ];
+        const cam = [1.5, 1.5, 1.5];
         const poo = (x, y, z) => {
+            if (Array.isArray(x)) [x, y, z] = x;
             const cosa = Math.cos(rots[0]);
             const sina = Math.sin(rots[0]);
             const cosb = Math.cos(rots[1]);
@@ -33,7 +85,8 @@
             const rz = (Azx*x + Azy*y + Azz*z + 2.5) / 3.5;
             return [
                 (Axx*x + Axy*y + Axz*z) * 160 * rz,
-                (Ayx*x + Ayy*y + Ayz*z) * 160 * rz
+                (Ayx*x + Ayy*y + Ayz*z) * 160 * rz,
+                (Azx*x + Azy*y + Azz*z)
             ];
         };
         function step(t) {
@@ -41,32 +94,24 @@
             ctx.translate(240, 180);
             ctx.clearRect(-240, -180, 480, 360);
 
-            ctx.beginPath();
-            ctx.moveTo(...poo(-1, -1, 1));
-            ctx.lineTo(...poo(-1, 1, 1));
-            ctx.lineTo(...poo(1, 1, 1));
-            ctx.lineTo(...poo(1, -1, 1));
-            ctx.closePath();
-            ctx.stroke();
-
-            ctx.beginPath();
-            ctx.moveTo(...poo(-1, -1, -1));
-            ctx.lineTo(...poo(-1, 1, -1));
-            ctx.lineTo(...poo(1, 1, -1));
-            ctx.lineTo(...poo(1, -1, -1));
-            ctx.closePath();
-            ctx.stroke();
-
-            ctx.beginPath();
-            ctx.moveTo(...poo(-1, -1, 1));
-            ctx.lineTo(...poo(-1, -1, -1));
-            ctx.moveTo(...poo(-1, 1, 1));
-            ctx.lineTo(...poo(-1, 1, -1));
-            ctx.moveTo(...poo(1, 1, 1));
-            ctx.lineTo(...poo(1, 1, -1));
-            ctx.moveTo(...poo(1, -1, 1));
-            ctx.lineTo(...poo(1, -1, -1));
-            ctx.stroke();
+            const toDraw = quads
+                .map(([color, ...quad]) => [color, quad.map(poo)])
+                .sort((a,b) => 
+                    Math.abs(((a[1][4][0] - cam[0]) ** 2) + ((a[1][4][1] - cam[1]) ** 2) + ((a[1][4][2] - cam[2]) ** 2)) -
+                    Math.abs(((b[1][4][0] - cam[0]) ** 2) + ((b[1][4][1] - cam[1]) ** 2) + ((b[1][4][2] - cam[2]) ** 2))
+                );
+            for (const [color, quad] of toDraw) {
+                ctx.beginPath();
+                ctx.fillStyle = color;
+                console.log(...quad)
+                ctx.moveTo(...quad[0]);
+                ctx.lineTo(...quad[1]);
+                ctx.lineTo(...quad[2]);
+                ctx.lineTo(...quad[3]);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+            }
 
             rots[0] = Math.sin((t / 1000) + offsets[0]) * Math.PI;
             rots[1] = Math.sin((t / 1000) + offsets[1]) * Math.PI;
