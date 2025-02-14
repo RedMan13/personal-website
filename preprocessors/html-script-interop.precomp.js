@@ -1,4 +1,4 @@
-const PrecompUtils = require('../builder/precomp-utils');
+const {PrecompUtils} = require('builder');
 
 module.exports = async function(util) {
     util.tokenize({

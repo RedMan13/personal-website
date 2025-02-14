@@ -19,7 +19,7 @@ jobs:
       - name: Install dependencies and build site
         run: |
           npm i
-          node ./builder -o ./public_html
+          npx build -o ./public_html
           echo ${{ toJSON(toJSON(github.event.commits)) }} > ./commits.json
       - name: Push built to Site
         uses: wlixcc/SFTP-Deploy-Action@v1.2.4

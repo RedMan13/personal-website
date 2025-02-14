@@ -1,5 +1,7 @@
-const { isMJS, resolveImport } = require('../builder/mjs-helpers');
-const { toCJS, getCJSRequired } = require('../builder/js-helpers');
+const { 
+    MJSHelpers: { isMJS, resolveImport }, 
+    CJSHelpers: { toCJS, getCJSRequired }
+} = require('builder');
 const mime = require('mime');
 const path = require('path');
 
