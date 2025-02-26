@@ -67,8 +67,8 @@
                 'https://twitter.com/PuzzlingGGG',
                 'https://www.tiktok.com/@puzzlingggg',
                 'https://discord.gg/KgVGtvqJKB',
-                'https://puzzlingggg.newgrounds.com', '/audio',
-                'https://github.compuzzlingggg',
+                'https://puzzlingggg.newgrounds.com/audio',
+                'https://github.com/puzzlingggg',
                 'https://itch.io/profile/puzzlingggg',
                 'https://cocrea.world/@PuzzlingGGG',
                 'https://steamcommunity.com/id/puzzlingGGG/'
