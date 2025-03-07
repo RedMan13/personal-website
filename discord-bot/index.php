@@ -114,33 +114,21 @@ if (!$dispatch or $dispatch['type'] == PING) {
         case 'rps_rock':
         case 'rps_paper':
         case 'rps_scissor':
-            $com = ['rps_rock', 'rps_paper', 'rps_scissor'][rand(1, 3)];
+            $com = ['rps_rock', 'rps_paper', 'rps_scissor'][rand(0, 2)];
             $res = '';
             switch ($data['custom_id'] + ' vs ' + $com) {
             case 'rps_rock vs rps_paper':
-                $res = <<<END
-                Computer wins against You!
-                END; break;
             case 'rps_paper vs rps_scissor':
-                $res = <<<END
-                Computer wins against You!
-                END; break;
             case 'rps_scissor vs rps_rock':
-                $res = <<<END
-                Computer wins against You!
-                END; break;
-            case 'rps_paper vs rps_rock':
-                $res = <<<END
-                You win against Computer!
-                END; break;
-            case 'rps_scissor vs rps_paper':
-                $res = <<<END
-                You win against Computer!
-                END; break;
+                $res = "Computer wins against You!"; break;
             case 'rps_rock vs rps_scissor':
-                $res = <<<END
-                You win against Computer!
-                END; break;
+            case 'rps_paper vs rps_rock':
+            case 'rps_scissor vs rps_paper':
+                $res = "You win against Computer!"; break;
+            case 'rps_rock vs rps_rock':
+            case 'rps_paper vs rps_paper':
+            case 'rps_scissor vs rps_scissor':
+                $res = "Its a tie!"; break;
             }
             echo json_encode([
                 'type' => UPDATE_MESSAGE,
