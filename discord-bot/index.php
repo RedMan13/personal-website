@@ -68,7 +68,8 @@ if (!$dispatch or $dispatch['type'] == PING) {
     $data = $dispatch['data'];
     $appId = $dispatch['application_id'];
     $token = $dispatch['token'];
-    if ($dispatch['type'] == APPLICATION_COMMAND) {
+    switch ($dispatch['type']) {
+    case APPLICATION_COMMAND: {
         switch ($data['name']) {
         case 'ping':
             $timeToProcess =  microtime(true) - $start;
@@ -109,7 +110,8 @@ if (!$dispatch or $dispatch['type'] == PING) {
                 ]
             ]); break;
         }
-    } else if ($dispatch['type'] == MESSAGE_COMPONENT) {
+    }
+    case MESSAGE_COMPONENT: {
         switch ($data['custom_id']) {
         case 'rps_rock':
         case 'rps_paper':
@@ -131,7 +133,7 @@ if (!$dispatch or $dispatch['type'] == PING) {
                 $res = "Its a tie!"; break;
             }
             echo json_encode([
-                'type' => CHANNEL_MESSAGE_WITH_SOURCE,
+                'type' => UPDATE_MESSAGE,
                 'data' => [
                     'embeds' => [
                         [
@@ -145,6 +147,16 @@ if (!$dispatch or $dispatch['type'] == PING) {
                 ]
             ]);
         }
+    }
+    default:
+        $dispType = $dispatch["type"]; 
+        echo json_encode([
+            'type' => CHANNEL_MESSAGE_WITH_SOURCE,
+            'data' => [ 
+                'content' => "discord, why the fuck did you send me a $dispType"
+            ]
+        ]); 
+        break;
     }
 }
 
