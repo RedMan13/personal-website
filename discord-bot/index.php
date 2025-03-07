@@ -131,7 +131,7 @@ if (!$dispatch or $dispatch['type'] == PING) {
                 $res = "Its a tie!"; break;
             }
             echo json_encode([
-                'type' => UPDATE_MESSAGE,
+                'type' => CHANNEL_MESSAGE_WITH_SOURCE,
                 'data' => [
                     'embeds' => [
                         [
