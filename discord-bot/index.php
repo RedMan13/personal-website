@@ -1,5 +1,5 @@
 <?php
-$start = time();
+$start = microtime(true);
 // Interaction Type
 const PING                             = 1;
 const APPLICATION_COMMAND              = 2;
@@ -71,7 +71,7 @@ if (!$dispatch or $dispatch['type'] == PING) {
     if ($dispatch['type'] == APPLICATION_COMMAND) {
         switch ($data['name']) {
         case 'ping':
-            $timeToProcess =  time() - $start;
+            $timeToProcess =  microtime(true) - $start;
             echo json_encode([
                 'type' => CHANNEL_MESSAGE_WITH_SOURCE,
                 'data' => [ 
