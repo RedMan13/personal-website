@@ -110,6 +110,7 @@ if (!$dispatch or $dispatch['type'] == PING) {
                 ]
             ]); break;
         }
+        break;
     }
     case MESSAGE_COMPONENT: {
         switch ($data['custom_id']) {
@@ -145,8 +146,9 @@ if (!$dispatch or $dispatch['type'] == PING) {
                         ]
                     ]
                 ]
-            ]);
+            ]); break;
         }
+        break;
     }
     default:
         $dispType = $dispatch["type"]; 
@@ -155,8 +157,7 @@ if (!$dispatch or $dispatch['type'] == PING) {
             'data' => [ 
                 'content' => "discord, why the fuck did you send me a $dispType"
             ]
-        ]); 
-        break;
+        ]); break;
     }
 }
 
