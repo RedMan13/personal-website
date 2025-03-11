@@ -258,7 +258,7 @@ if ($visitors > 9 && $visitors < 20) $sufix = 'th';
                                 : date.toLocaleTimeString();
                             commitsEl.appendChild(<div class="commit">
                                 <img class="commit-user" src={`https://github.com/${commit.author.username}.png`}/>
-                                <strong>{commit.author.name || commit.author.username}</strong>
+                                <strong>{commit.author.username || commit.author.name}</strong>
                                 <span class="commit-time">{time}</span>
                                 <a href={commit.url} class="commit-message">{commit.message}</a>
                             </div>);
