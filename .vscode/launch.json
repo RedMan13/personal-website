@@ -11,7 +11,7 @@
             "skipFiles": [
                 "<node_internals>/**"
             ],
-            "program": "${workspaceFolder}/builder/dev-api.js"
+            "program": "${workspaceFolder}/node_modules/.bin/develop"
         }
     ]
 }

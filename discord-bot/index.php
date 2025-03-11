@@ -62,103 +62,100 @@ if (!sodium_crypto_sign_verify_detached($signiture, $messageBody, $publickey)) {
 }
 
 $dispatch = json_decode($body, true);
-if (!$dispatch or $dispatch['type'] == PING) {
-    echo json_encode([ 'type' => PONG ]);
-} else {
-    $data = $dispatch['data'];
-    $appId = $dispatch['application_id'];
-    $token = $dispatch['token'];
-    switch ($dispatch['type']) {
-    case APPLICATION_COMMAND: {
-        switch ($data['name']) {
-        case 'ping':
-            $timeToProcess =  microtime(true) - $start;
-            echo json_encode([
-                'type' => CHANNEL_MESSAGE_WITH_SOURCE,
-                'data' => [ 
-                    'content' => <<<END
-                        pong!!!!!!!!!
-                        took `$timeToProcess` seconds to process
-                        END 
-                ]
-            ]); break;
-        case 'fart':
-            echo json_encode([
-                'type' => CHANNEL_MESSAGE_WITH_SOURCE,
-                'data' => [ 'content' => 'i farted on your mom 😎' ]
-            ]); break;
-        case 'rps':
-            echo json_encode([
-                'type' => CHANNEL_MESSAGE_WITH_SOURCE,
-                'data' => [
-                    'embeds' => [
-                        [
-                            'title' => 'Rock Paper Scissors',
-                            'description' => <<<END
-                                RPS game started!
-                                Please select an option.
-                                END
-                        ]
-                    ],
-                    'components' => [
-                        ['type' => ActionRow, 'components' => [
-                            ['type' => Button, 'style' => Secondary, 'label' => 'Rock', 'custom_id' => 'rps_rock'],
-                            ['type' => Button, 'style' => Secondary, 'label' => 'Paper', 'custom_id' => 'rps_paper'],
-                            ['type' => Button, 'style' => Secondary, 'label' => 'Scissor', 'custom_id' => 'rps_scissor']
-                        ]]
-                    ]
-                ]
-            ]); break;
-        }
-        break;
-    }
-    case MESSAGE_COMPONENT: {
-        switch ($data['custom_id']) {
-        case 'rps_rock':
-        case 'rps_paper':
-        case 'rps_scissor':
-            $com = ['rps_rock', 'rps_paper', 'rps_scissor'][rand(0, 2)];
-            $res = '';
-            switch ($data['custom_id'] + ' vs ' + $com) {
-            case 'rps_rock vs rps_paper':
-            case 'rps_paper vs rps_scissor':
-            case 'rps_scissor vs rps_rock':
-                $res = "Computer wins against You!"; break;
-            case 'rps_rock vs rps_scissor':
-            case 'rps_paper vs rps_rock':
-            case 'rps_scissor vs rps_paper':
-                $res = "You win against Computer!"; break;
-            case 'rps_rock vs rps_rock':
-            case 'rps_paper vs rps_paper':
-            case 'rps_scissor vs rps_scissor':
-                $res = "Its a tie!"; break;
-            }
-            echo json_encode([
-                'type' => UPDATE_MESSAGE,
-                'data' => [
-                    'embeds' => [
-                        [
-                            'title' => 'Rock Paper Scissors',
-                            'description' => <<<END
-                                RPS game ended!
-                                $res.
-                                END
-                        ]
-                    ]
-                ]
-            ]); break;
-        }
-        break;
-    }
-    default:
-        $dispType = $dispatch["type"]; 
+$data = $dispatch['data'];
+$appId = $dispatch['application_id'];
+$token = $dispatch['token'];
+switch ($dispatch['type']) {
+case PING: 
+    echo json_encode([ 'type' => PONG ]); break;
+case APPLICATION_COMMAND: {
+    switch ($data['name']) {
+    case 'ping':
+        $timeToProcess =  microtime(true) - $start;
         echo json_encode([
             'type' => CHANNEL_MESSAGE_WITH_SOURCE,
             'data' => [ 
-                'content' => "discord, why the fuck did you send me a $dispType"
+                'content' => <<<END
+                    pong!!!!!!!!!
+                    took `$timeToProcess` seconds to process
+                    END 
+            ]
+        ]); break;
+    case 'fart':
+        echo json_encode([
+            'type' => CHANNEL_MESSAGE_WITH_SOURCE,
+            'data' => [ 'content' => 'i farted on your mom 😎' ]
+        ]); break;
+    case 'rps':
+        echo json_encode([
+            'type' => CHANNEL_MESSAGE_WITH_SOURCE,
+            'data' => [
+                'embeds' => [
+                    [
+                        'title' => 'Rock Paper Scissors',
+                        'description' => <<<END
+                            RPS game started!
+                            Please select an option.
+                            END
+                    ]
+                ],
+                'components' => [
+                    ['type' => ActionRow, 'components' => [
+                        ['type' => Button, 'style' => Secondary, 'label' => 'Rock', 'custom_id' => 'rps_rock'],
+                        ['type' => Button, 'style' => Secondary, 'label' => 'Paper', 'custom_id' => 'rps_paper'],
+                        ['type' => Button, 'style' => Secondary, 'label' => 'Scissor', 'custom_id' => 'rps_scissor']
+                    ]]
+                ]
             ]
         ]); break;
     }
+    break;
 }
-
+case MESSAGE_COMPONENT: {
+    switch ($data['custom_id']) {
+    case 'rps_rock':
+    case 'rps_paper':
+    case 'rps_scissor':
+        $com = ['rps_rock', 'rps_paper', 'rps_scissor'][rand(0, 2)];
+        $res = '';
+        switch ($data['custom_id'] + ' vs ' + $com) {
+        case 'rps_rock vs rps_paper':
+        case 'rps_paper vs rps_scissor':
+        case 'rps_scissor vs rps_rock':
+            $res = "Computer wins against You!"; break;
+        case 'rps_rock vs rps_scissor':
+        case 'rps_paper vs rps_rock':
+        case 'rps_scissor vs rps_paper':
+            $res = "You win against Computer!"; break;
+        case 'rps_rock vs rps_rock':
+        case 'rps_paper vs rps_paper':
+        case 'rps_scissor vs rps_scissor':
+            $res = "Its a tie!"; break;
+        }
+        echo json_encode([
+            'type' => UPDATE_MESSAGE,
+            'data' => [
+                'embeds' => [
+                    [
+                        'title' => 'Rock Paper Scissors',
+                        'description' => <<<END
+                            RPS game ended!
+                            $res.
+                            END
+                    ]
+                ]
+            ]
+        ]); break;
+    }
+    break;
+}
+default:
+    $dispType = $dispatch["type"]; 
+    echo json_encode([
+        'type' => CHANNEL_MESSAGE_WITH_SOURCE,
+        'data' => [ 
+            'content' => "discord, why the fuck did you send me a $dispType"
+        ]
+    ]); break;
+}
 ?>

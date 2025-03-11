@@ -4,9 +4,11 @@ function renderSlideDiv($slides) {
     $slideLength = max(count($slides), 5);
     echo "<div class=\"slider\" style=\"grid-template-columns: repeat($slideLength, minmax(102px, 1fr));\">";
     foreach ($slides as [$title, $redirect, $image]) {
+        if ($image == "") $image = '/github.png';
+        else $image = "$redirect$image";
         echo <<<END
             <a class="slideContent" href="$redirect">
-                <img src="$redirect$image" class="slideImage"></img><br>
+                <img src="$image" class="slideImage"></img><br>
                 <p class="slideTitle">$title</p>
             </a>
         END;
@@ -34,8 +36,8 @@ if ($visitors > 9 && $visitors < 20) $sufix = 'th';
             margin-right: auto;
             margin-top: 6px;
             width: 90px;
-            height: auto;
-            object-fit: scale-down;
+            height: 90px;
+            object-fit: fill;
         }
         .slideTitle {
             margin-top: 0px;
@@ -63,6 +65,39 @@ if ($visitors > 9 && $visitors < 20) $sufix = 'th';
             grid-gap: 12px;
             box-shadow: inset 0px 0px 4px black;
         }
+        .footer-grid {
+            display: grid; 
+            grid-template-columns: repeat(2, 1fr); 
+            grid-template-rows: 174px 174px;
+        }
+        .footer-grid-item {
+            padding: 4px;
+        }
+        .commits-box {
+            box-shadow: inset 0px 0px 4px black;
+            padding: 8px;
+        }
+        .commit-user {
+            border-radius: 50%;
+            width: 1.50lh;
+            margin: .125lh;
+            margin-top: .25lh;
+            grid-row: 1 / 3;
+        }
+        .commit-time {
+            font-size: small;
+            color: #999;
+        }
+        .commit-message {
+            font-size: small;
+            grid-column: 2 / 4;
+            overflow: clip;
+        }
+        .commit {
+            display: grid;
+            grid-template-columns: calc(1.75lh + 2px) 1fr max-content;
+            grid-template-rows: 1lh .75lh;
+        }
     </style>
 </head>
 <body><br>
@@ -83,7 +118,8 @@ if ($visitors > 9 && $visitors < 20) $sufix = 'th';
     <!-- profile link orbit controller -->
     <script>
         const links = [
-            ['GitHub', new URL('https://github.com/RedMan13')],
+            ['The Powder Toy', new URL('https://powdertoy.co.uk/User.html?Name=thepowderkeg')],
+            ['GitHub', new URL('https://github.com/RedMan13'), './github.png'],
             ['Scratch', new URL('https://scratch.mit.edu/RedMan13')],
             ['PenguinMod', new URL('https://penguinmod.com/profile?user=redman13')],
             ['Roblox', new URL('https://www.roblox.com/users/749363285/profile')],
@@ -97,13 +133,16 @@ if ($visitors > 9 && $visitors < 20) $sufix = 'th';
 
         const orbital = document.getElementById('orbital');
         let mouseHovering = null;
-        for (const [idx, [name, link]] of Object.entries(links)) {
+        for (const [idx, [name, link, icon]] of Object.entries(links)) {
             // use googles favicon service for it is much more convinient then trying to extract it ourselves
             // only exception is the first and last element, as these are part of the webrings
-            const favicon = new URL('https://www.google.com/s2/favicons');
-            favicon.searchParams.set('sz', 64);
-            favicon.searchParams.set('domain', link.hostname);
-            
+            let favicon = icon;
+            if (!favicon) {
+                favicon = new URL('https://www.google.com/s2/favicons');
+                favicon.searchParams.set('sz', 64);
+                favicon.searchParams.set('domain', link.hostname);
+            }
+
             const img = new Image();
             img.width = 20;
             img.src = favicon;
@@ -187,10 +226,12 @@ if ($visitors > 9 && $visitors < 20) $sufix = 'th';
     <?php renderSlideDiv([
         ["PenguinMod", "https://penguinmod.com", "/favicon.ico"],
         ["Scratch For Discord", "https://s4d.discodes.xyz", "/scratch.png"],
-        ["CC:T Discord", "https://github.com/RedMan13/cc-discord", "/../../favicon.ico"],
-        ["Clamp Coding", "https://clamp-coding.vercel.app", "/favicon.png"]
+        ["CC:T Discord", "https://github.com/RedMan13/cc-discord", ""],
+        ["Clamp Coding", "https://clamp-coding.vercel.app", "/favicon.png"],
+        ["DiscordNT", "/discordnt.html", "/../favicon.ico"],
+        ["Builder", "https://github.com/RedMan13/builder", ""]
     ]) ?>
-    <h3>here are some other cool sites you should check out!</h3>
+    <h3 class="horizontalCenter">here are some other cool sites you should check out!</h3>
     <ul>
         <li><a href="https://gen1x.is-a.dev/">Gen1x's Website (works in XP-era Internet Explorer!)</a></li>
         <li><a href="https://theshovel.rocks/">JodieTheShovel's website! dont forget to check out cofunk (previously penguinfunk) if you like fnf multiplayer!</a></li>
@@ -198,8 +239,34 @@ if ($visitors > 9 && $visitors < 20) $sufix = 'th';
         <li><a href="https://ddededodediamante.vercel.app">ddededodediamantes website! (guys cool trust 🙏)</a></li>
     </ul><br>
     
-    <div style="display: grid; grid-template-columns: repeat(2, 1fr);">
-        <iframe style="margin: 8px; margin-right: 4px; grid-row: 1;" src="https://discord.com/widget?id=1248818317364301967&theme=dark" width="234" height="343.75" allowtransparency="true" frameborder="0" sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"></iframe>
-        <p style="margin: 8px; margin-left: 4px; grid-row: 1;">btw check out my discord! i will be sending like updates and shizz there</p>
+    <div class="footer-grid">
+        <iframe class="footer-grid-item" src="https://discord.com/widget?id=1248818317364301967&theme=dark" width="234" height="343.75" allowtransparency="true" frameborder="0" sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"></iframe>
+        <div class="commits-box">
+            <h4 class="horizontalCenter" style="margin: 0">Commits</h4>
+            <div id="commits"></div>
+            <script file="jsx">
+                const commitsEl = document.getElementById('commits');
+                fetch('/commits.json')
+                    .then(async req => {
+                        if (!req.ok) return;
+                        const res = await req.json();
+                        for (const commit of res) {
+                            const date = new Date(commit.timestamp);
+                            const dayLen = new Date(Date.now()).getDay() -  date.getDay();
+                            const time = dayLen > 0
+                                ? dayLen > 1 ? date.toLocaleDateString() : 'Yesterday'
+                                : date.toLocaleTimeString();
+                            commitsEl.appendChild(<div class="commit">
+                                <img class="commit-user" src={`https://github.com/${commit.author.username}.png`}/>
+                                <strong>{commit.author.name || commit.author.username}</strong>
+                                <span class="commit-time">{time}</span>
+                                <a href={commit.url} class="commit-message">{commit.message}</a>
+                            </div>);
+                        }
+                    })
+            </script>
+        </div>
+        <div class="footer-grid-item"></div>
+        <p class="footer-grid-item">btw check out my discord! i will be sending like updates and shizz there</p>
     </div>
 </body>
