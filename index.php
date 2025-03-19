@@ -1,5 +1,47 @@
 <!TEMPLATE /cardpage.html>
 <?php
+# from https://stackoverflow.com/a/2690541
+function time2str($ts) {
+    if(!ctype_digit($ts))
+        $ts = strtotime($ts);
+
+    $diff = time() - $ts;
+    if($diff == 0)
+        return 'now';
+    elseif($diff > 0) {
+        $day_diff = floor($diff / 86400);
+        if($day_diff == 0)
+        {
+            if($diff < 60) return 'just now';
+            if($diff < 120) return '1 minute ago';
+            if($diff < 3600) return floor($diff / 60) . ' minutes ago';
+            if($diff < 7200) return '1 hour ago';
+            if($diff < 86400) return floor($diff / 3600) . ' hours ago';
+        }
+        if($day_diff == 1) return 'Yesterday';
+        if($day_diff < 7) return $day_diff . ' days ago';
+        if($day_diff < 31) return ceil($day_diff / 7) . ' weeks ago';
+        if($day_diff < 60) return 'last month';
+        return date('F Y', $ts);
+    }
+    else {
+        $diff = abs($diff);
+        $day_diff = floor($diff / 86400);
+        if($day_diff == 0) {
+            if($diff < 120) return 'in a minute';
+            if($diff < 3600) return 'in ' . floor($diff / 60) . ' minutes';
+            if($diff < 7200) return 'in an hour';
+            if($diff < 86400) return 'in ' . floor($diff / 3600) . ' hours';
+        }
+        if($day_diff == 1) return 'Tomorrow';
+        if($day_diff < 4) return date('l', $ts);
+        if($day_diff < 7 + (7 - date('w'))) return 'next week';
+        if(ceil($day_diff / 7) < 4) return 'in ' . ceil($day_diff / 7) . ' weeks';
+        if(date('n', $ts) == date('n') + 1) return 'next month';
+        return date('F Y', $ts);
+    }
+}
+
 function renderSlideDiv($slides) {
     $slideLength = max(count($slides), 5);
     echo "<div class=\"slider\" style=\"grid-template-columns: repeat($slideLength, minmax(102px, 1fr));\">";
@@ -243,28 +285,29 @@ if ($visitors > 9 && $visitors < 20) $sufix = 'th';
         <iframe class="footer-grid-item" src="https://discord.com/widget?id=1248818317364301967&theme=dark" width="234" height="343.75" allowtransparency="true" frameborder="0" sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"></iframe>
         <div class="commits-box">
             <h4 class="horizontalCenter" style="margin: 0">Commits</h4>
-            <div id="commits"></div>
-            <script file="jsx">
-                const commitsEl = document.getElementById('commits');
-                fetch('/commits.json')
-                    .then(async req => {
-                        if (!req.ok) return;
-                        const res = await req.json();
-                        for (const commit of res) {
-                            const date = new Date(commit.timestamp);
-                            const dayLen = new Date(Date.now()).getDay() -  date.getDay();
-                            const time = dayLen > 0
-                                ? dayLen > 1 ? date.toLocaleDateString() : 'Yesterday'
-                                : date.toLocaleTimeString();
-                            commitsEl.appendChild(<div class="commit">
-                                <img class="commit-user" src={`https://github.com/${commit.author.username}.png`}/>
-                                <strong>{commit.author.username || commit.author.name}</strong>
-                                <span class="commit-time">{time}</span>
-                                <a href={commit.url} class="commit-message">{commit.message}</a>
-                            </div>);
-                        }
-                    })
-            </script>
+            <div id="commits">
+                <?php 
+                if (file_exists('./commits.json')) {
+                    $commits = json_decode(file_get_contents('./commits.json'), true);
+                    foreach ($commits as $commit) {
+                        $time = time2str($commit['timestamp']);
+                        $name = $commit['author']['name'];
+                        $pfp = "https://github.com/$name.png";
+                        $username = $commit['author']['username'] ?? $commit['author']['name'];
+                        $url = $commit['url'];
+                        $message = $commit['message'];
+                        echo <<<END
+                            <div class="commit">
+                                <img class="commit-user" src="$pfp"/>
+                                <strong>$username</strong>
+                                <span class="commit-time">$time</span>
+                                <a href="$url" class="commit-message">$message</a>
+                            </div>
+                        END;
+                    }
+                }
+                ?>
+            </div>
         </div>
         <div class="footer-grid-item"></div>
         <p class="footer-grid-item">btw check out my discord! i will be sending like updates and shizz there</p>
