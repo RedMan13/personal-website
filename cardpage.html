@@ -659,6 +659,19 @@
             case 'close': close();
             }
         }
+
+        if (location.hash === '#spin') {
+            let rot = 0;
+            let last = 0;
+            document.onclick = () => {
+                const cards = document.getElementsByClassName('card');
+                for (const card of cards) {
+                    if (!card.style.transform.includes('rotate')) card.style.transform += ` rotate(${last}deg)`;
+                    card.style.transform = card.style.transform.replace(`rotate(${last}deg)`, `rotate(${++rot}deg)`);
+                    last = rot;
+                }
+            }
+        }
     </script>
 </body>
 </html>
