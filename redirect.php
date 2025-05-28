@@ -3,16 +3,7 @@
     <title>Hey! are you sure?</title>
 
     <script>
-        window.target = new URL(<?php
-            $target = empty($_GET['target']) ? '' : $_GET['target'];
-            if (empty($_GET['target']))
-                echo "history.back(), ";
-            echo json_encode($target);
-        ?>, location.origin);
-        const expiry = +localStorage.getItem(`safesite:${target}`);
-        // if this is a safe url then redirect immediatly after page load
-        console.log(Date.now(), expiry)
-        if (Date.now() <= expiry || [
+        const alwaysSafe = [
             'discord.gg', 
             'discord.com', 
             'media.discordapp.net', 
@@ -20,11 +11,35 @@
             'youtube.com',
             'youtu.be',
             'www.youtube.com',
-            'www.youtu.be'
-        ].includes(target.hostname)) {
-            window.open(target, '_self');
-        } else {
-            localStorage.removeItem(`safesite:${target}`);
+            'www.youtu.be',
+            location.hostname
+        ];
+        if (alwaysSafe.includes(location.hostname)) window.open(target, '_self');
+
+        function toSafe(url) {
+            return `${url}`.replaceAll(',', '%2C').replaceAll(':', '%3A');
+        }
+        const safeSites = safeSites = Object.fromEntries(localStorage.safeSites
+                .split(',')
+                .map(str => str.split(':')));
+        function saveSafe() {
+            localStorage.safeSites = Object.entries(safeSites)
+                .map(([site, expires]) => `${toSafe(site)}:${expires}`)
+                .join(',');
+        }
+
+        const target = new URL(<?php
+            $target = empty($_GET['target']) ? '' : $_GET['target'];
+            if (empty($_GET['target']))
+                echo "history.back()";
+            echo json_encode($target);
+        ?>, location.origin);
+        const expiry = +safeSites[toSafe(target)];
+        // if this is a safe url then redirect immediatly after page load
+        if (Date.now() < expiry) window.open(target, '_self');
+        else {
+            delete safeSites[toSafe(target)];
+            saveSafe();
         }
     </script>
 </head>
@@ -64,7 +79,7 @@
     <script>
         const expiryDate = document.getElementById('expiry');
         function targetRemember() {
-            localStorage.setItem(`safesite:${target}`, expiryDate.valueAsNumber);
+            localStorage.safeSites += `,${toSafe(target)}:${expiryDate.valueAsNumber}`;
             window.open(target, '_self');
         }
     </script>
