@@ -500,7 +500,7 @@
                 toOpen = close.classList.contains('open') ? 2 : -2;
             }
 
-            resize.onmousedown = () => holdingResize = true;
+            resize.onmousedown = e => { e.preventDefault(); holdingResize = true };
             document.onmouseup = () => holdingResize = false;
             document.onmousemove = e => {
                 if (!holdingResize) return;
