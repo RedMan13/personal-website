@@ -30,3 +30,15 @@ jobs:
           delete_remote_files: true
           local_path: './public_html'
           remote_path: '/usr/home/godslayerakp/domains/godslayerakp.serv00.net/'
+      - name: Dispatch Extensions
+        uses: peter-evans/repository-dispatch@v2.0.1
+        with:
+          token: ${{ secrets.t }}
+          event-type: update
+          repository: RedMan13/my-extensions
+      - name: Dispatch Discordnt
+        uses: peter-evans/repository-dispatch@v2.0.1
+        with:
+          token: ${{ secrets.t }}
+          event-type: update
+          repository: RedMan13/dicordnt
