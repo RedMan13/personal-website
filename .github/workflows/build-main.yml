@@ -41,4 +41,4 @@ jobs:
         with:
           token: ${{ secrets.t }}
           event-type: update
-          repository: RedMan13/dicordnt
+          repository: RedMan13/discordnt
