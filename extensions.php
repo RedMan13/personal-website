@@ -1,6 +1,6 @@
 <!TEMPLATE /cardpage.html>
 <head>
-    <title>GSA Extensions</title>
+    <title>My Extensions</title>
     <style>
         .tiles {
             display: grid;
@@ -26,6 +26,8 @@
     </style>
 </head>
 <body>
+    Hey look! its all of the extensions i have ever made!!!!<br>
+    Please remember that these extensions are intended to function with <a href="https://penguinmod.com">PenguinMod</a> only.
     <div class="tiles">
         <?php
         $extensions = json_decode(file_get_contents('./built-extensions/index.json'));
