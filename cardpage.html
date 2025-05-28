@@ -503,6 +503,7 @@
             resize.onmousedown = e => { e.preventDefault(); holdingResize = true };
             document.onmouseup = () => holdingResize = false;
             document.onmousemove = e => {
+                e.preventDefault();
                 if (!holdingResize) return;
                 if (browser.classList.contains('close')) {
                     toOpen = 0;
