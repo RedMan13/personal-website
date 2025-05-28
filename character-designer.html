@@ -1,0 +1,274 @@
+<!TEMPLATE /cardpage.html>
+<head>
+    <title>ANSI Code Helper</title>
+    <meta name="keywords" content="ansi,ascii,discord,text,formating">
+    <style>
+        @keyframes blink {
+            from { display: none; }
+            to { display: inherit; }
+        }
+    </style>
+</head>
+<body>
+    <div style="
+        position: absolute; 
+        width: 480px; 
+        height: 360px; 
+        overflow-x: scroll; 
+        overflow-y: scroll;
+    " id="body">
+        <div style="
+            width: 160px; 
+            height: 192px; 
+            transform: scale(200%); 
+            transform-origin: left top;
+            position: absolute;
+            background-color: black;
+            font-family: monospace;
+            font-size: 10px;
+            color: grey;
+        " id="board">
+            <div style="
+                position: absolute; left: 0; right: 0;
+                display: grid;
+                grid-template-columns: repeat(10px, 16);
+                grid-template-rows: repeat(12px, 16);
+            " id="char-template"></div>
+            <canvas 
+                id="terminal"
+                style="position: absolute; left: 0; right: 0; image-rendering: pixelated;"
+            ></canvas>
+            <canvas
+                id="overlay"
+                style="position: absolute; left: 0; right: 0; image-rendering: pixelated;"
+            ></canvas>
+        </div>
+    </div>
+    <script file="jsx">
+        const body = document.getElementById('body');
+        const board = document.getElementById('board');
+        const template = document.getElementById('char-template');
+        /** @type {HTMLCanvasElement} */
+        const imageTransformer = document.createElement('canvas');
+        /** @type {CanvasRenderingContext2D} */
+        const itx = imageTransformer.getContext('2d');
+        /** @type {HTMLCanvasElement} */
+        const terminal = document.getElementById('terminal');
+        /** @type {HTMLCanvasElement} */
+        const overlay = document.getElementById('overlay');
+        /** @type {CanvasRenderingContext2D} */
+        const otx = overlay.getContext('2d');
+        /** @type {CanvasRenderingContext2D} */
+        const ctx = terminal.getContext('2d');
+        function imageDataToPng(imageData) {
+            return new Promise(resolve => {
+                imageTransformer.width = imageData.width;
+                imageTransformer.height = imageData.height;
+                itx.putImageData(imageData, 0, 0);
+                imageTransformer.toBlob(resolve, 'image/png');    
+            });
+        }
+        function pngBlobToImageData(blob) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.src = URL.createObjectURL(blob);
+                img.onload = () => {
+                    imageTransformer.width = img.width;
+                    imageTransformer.height = img.height;
+                    itx.drawImage(img, 0,0);
+                    resolve(itx.getImageData(0,0, img.width, img.height));
+                }
+                img.onerror = reject;
+            });
+        }
+
+        const chSize = [10,12];
+        template.style.gridTemplateColumns = `${chSize[0]}px `.repeat(16);
+        template.style.gridTemplateRows = `${chSize[1]}px `.repeat(16);
+        template.style.fontSize = `${chSize[0]}px`;
+        overlay.width = terminal.width = chSize[0] * 16;
+        overlay.height = terminal.height = chSize[1] * 16;
+        overlay.style.width = terminal.style.width = `${terminal.width}px`;
+        overlay.style.height = terminal.style.height = `${terminal.height}px`;
+        for (let i = 0; i < 256; i++)
+            template.appendChild(<span 
+                style={`text-align: center; background-color: ${((i + Math.floor(i / 16)) % 2) ? '#000' : '#222'}`}
+            >{String.fromCharCode(i)}</span>); 
+ 
+        let sx = 0;
+        let sy = 0;
+        let x = 0;
+        let y = 0;
+        let undoIdx = -1;
+        let scrollp = 200;
+        /** @type {string} */
+        let mode = null;
+        /** @type {ImageData} */
+        let clip = null;
+        let useInternalClipboard = !('ClipboardItem' in window) || typeof navigator.clipboard?.write !== 'function';
+        const undoLog = [];
+        // imagine firefox using ROUND instead of FLOOR for relative mouse position
+        function mpos(mx,my) {
+            const x = Math.floor((
+                // apply the cardpage transform (center and scale)
+                (
+                    // offset by the position of the top-left corner of the cardpage
+                    (mx - ((window.innerWidth / 2) - (240 * scale))) 
+                    // scale down to cardpage px size
+                    / scale) + 
+                // offset by the scroll pos
+                body.scrollLeft) / 
+                // scale by zoom factor
+                (scrollp / 100));
+            // repeat above but with all x-axis replaced with y-axis
+            const y = Math.floor((((my - ((window.innerHeight / 2) - (180 * scale))) / scale) + body.scrollTop) / (scrollp / 100));
+            return [x,y];
+        }
+        function draw() {
+            const snap = ctx.getImageData(x,y, 1,1);
+            const under = `rgba(${snap.data})`;
+            undoLog[undoIdx].push([x,y, under, ctx.fillStyle]);
+            ctx.clearRect(x,y, 1,1);
+            ctx.fillRect(x,y, 1,1);
+        }
+        body.onwheel = e => { 
+            e.preventDefault();
+            scrollp += -e.deltaY / 4;
+            scrollp = Math.max(scrollp, 10);
+            board.style.transform = `scale(${scrollp}%)`;
+        }
+        overlay.oncontextmenu = () => false;
+        overlay.onclick = e => e.preventDefault();
+        overlay.onmousedown = async e => {
+            e.preventDefault();
+            e.stopPropagation();
+            mode ||= 'drawing';
+            [x,y] = mpos(e.clientX, e.clientY);
+            undoLog[++undoIdx] = [];
+            switch (e.button) {
+            case 0: ctx.fillStyle = 'white'; break;
+            case 2: ctx.fillStyle = 'transparent'; break;
+            }
+            switch (mode) {
+            case 'pasting':
+                mode = 'drawing';
+                if (!clip) break;
+                otx.clearRect(0,0, overlay.width, overlay.height);
+                if (e.button === 2) break;
+                const snap = ctx.getImageData(x,y, clip.width, clip.height);
+                for (let i = 0; i < clip.data.length; i += 4) {
+                    const rx = ((i / 4) % clip.width) + x;
+                    const ry = Math.floor((i / 4) / clip.width) + y;
+                    undoLog[undoIdx].push([rx, ry, `rgba(${snap.data.slice(i, i +4)})`, `rgba(${clip.data.slice(i, i +4)})`]);
+                }
+                ctx.putImageData(clip, x,y);
+                break;
+            case 'copying': 
+                mode = 'drawing';
+                otx.clearRect(0,0, overlay.width, overlay.height);
+                if (e.button === 2) break;
+                const imageData = ctx.getImageData(sx, sy, x - sx, y - sy);
+                // always try to just put it into the actual clipboard if we think we can
+                // otherwise just use an internal variable to do it
+                clip = imageData;
+                if (!useInternalClipboard) {
+                    try {
+                        const png = await imageDataToPng(imageData);
+                        const data = [new ClipboardItem({ "image/png": png })];
+                        await navigator.clipboard.write(data);
+                    } catch (error) {
+                        useInternalClipboard = true;
+                    }
+                }
+                break;
+            case 'drawing': draw(); break;
+            }
+        }
+        overlay.onmouseup =
+        overlay.onmouseleave = () => {
+            if (mode !== 'drawing') return; 
+            mode = null;
+        }
+        overlay.onmousemove = e => {
+            [x,y] = mpos(e.clientX, e.clientY);
+            switch (mode) {
+            case 'pasting':
+                otx.clearRect(0,0, overlay.width, overlay.height);
+                if (!clip) break;
+                otx.fillStyle = `#0004`;
+                otx.fillRect(0,0, overlay.width, overlay.height);
+                otx.putImageData(clip, x,y);
+                break;
+            case 'copying':
+                otx.clearRect(0,0, overlay.width, overlay.height);
+                otx.fillStyle = `#0004`;
+                otx.fillRect(0,0, overlay.width, overlay.height);
+                otx.fillStyle = `#FFF3`;
+                otx.strokeStyle = `#FFF3`;
+                otx.lineWidth = 1;
+                otx.beginPath();
+                otx.rect(sx, sy, (x - sx) +.5, (y - sy) +.5);
+                otx.fill();
+                otx.stroke();
+                break;
+            case 'drawing': draw(); break;
+            }
+        }
+        document.onkeydown = async e => {
+            e.preventDefault();
+            if (!e.ctrlKey) return;
+            switch (e.key) {
+            case 'z': {
+                const oldCol = ctx.fillStyle;
+                for (const [x,y, color] of undoLog[undoIdx].reverse()) {
+                    ctx.fillStyle = color;
+                    ctx.clearRect(x,y, 1,1);
+                    ctx.fillRect(x,y, 1,1);
+                }
+                ctx.fillStyle = oldCol;
+                undoIdx--;
+                undoIdx = Math.max(undoIdx, 0);
+                break;
+            }
+            case 'y': {
+                undoIdx++;
+                undoIdx = Math.max(undoLog.length -1, 0);
+                const oldCol = ctx.fillStyle;
+                for (const [x,y, _, color] of undoLog[undoIdx]) {
+                    ctx.fillStyle = color;
+                    ctx.clearRect(x,y, 1,1);
+                    ctx.fillRect(x,y, 1,1);
+                }
+                ctx.fillStyle = oldCol;
+                break;
+            }
+            case 'c': 
+                sx = x;
+                sy = y;
+                mode = 'copying'; 
+                otx.clearRect(0,0, overlay.width, overlay.height);
+                otx.fillStyle = `#0004`;
+                otx.fillRect(0,0, overlay.width, overlay.height);
+                break;
+            case 'v': 
+                mode = 'pasting';
+                const clipboard = await navigator.clipboard.read();
+                if (!useInternalClipboard) {
+                    try {
+                        const img = await clipboard[0].getType('image/png').catch(() => {});
+                        if (!img) { mode = 'drawing'; break; }
+                        clip = await pngBlobToImageData(img).catch(() => null);
+                    } catch (err) {
+                        useInternalClipboard = true;
+                    }
+                }
+                if (!clip) { mode = 'drawing'; break; }
+                otx.clearRect(0,0, overlay.width, overlay.height);
+                otx.fillStyle = `#0004`;
+                otx.fillRect(0,0, overlay.width, overlay.height);
+                otx.putImageData(clip, x,y);
+                break;
+            }
+        }
+    </script>
+</body>

@@ -11,6 +11,7 @@
 </head>
 <body>
     <script>
+        const emptyColor = [0x00,0x00,0x00,0x00];
         // color table
         // contains the full 256 ansi color mapping
         const colors = [
@@ -31,94 +32,52 @@
                 .map((_, i) => (i / 22) * 255)
                 .map(b => [b,b,b]))
         ];
-        const chSize = [5,6];
+        const chSize = [10,12];
         const fontSet = document.createElement('canvas');
         fontSet.width = chSize[0] * 16;
         fontSet.height = chSize[1] * 16;
         const font = fontSet.getContext('2d');
-        const bitmap = [
-            //  0    |||    1    |||    2   |||     3   |||     4   |||     5   |||     6   |||     7   |||     8   |||     9   |||     A   |||     B   |||     C   |||     D   |||     E   |||     F
-             ,1,1, , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , , 
-            1,1, , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , , 
-    /* 0 */ 1, ,1, ,1,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , , 
-             , , ,1,1,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , , 
-             , ,1,1, ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , , 
-             , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,
-
-             , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , , 
-             , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , , 
-    /* 1 */  , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , , 
-             , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , , 
-             , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , , 
-             , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,
-            
-             , , , , ,   , ,1, , ,   ,1, ,1, ,   , ,1,1, ,   ,1,1, , ,   , , , , ,   , ,1,1, ,   , ,1, , ,   , , ,1, ,   ,1, , , ,   ,1, ,1, ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , , 
-             , , , , ,   , ,1, , ,   ,1, ,1, ,   ,1,1,1,1,   , ,1,1, ,   ,1, , ,1,   ,1, , , ,   , ,1, , ,   , ,1, , ,   , ,1, , ,   , ,1, , ,   , ,1, , ,   , , , , ,   , , , , ,   , , , , ,   , , , ,1, 
-    /* 2 */  , , , , ,   , ,1, , ,   , , , , ,   , ,1,1, ,   ,1,1,1, ,   , , ,1, ,   ,1,1, ,1,   , , , , ,   , ,1, , ,   , ,1, , ,   ,1, ,1, ,   ,1,1,1, ,   , , , , ,   ,1,1,1, ,   , , , , ,   , , ,1, , 
-             , , , , ,   , , , , ,   , , , , ,   ,1,1,1,1,   ,1,1, , ,   , ,1, , ,   ,1, ,1, ,   , , , , ,   , ,1, , ,   , ,1, , ,   , , , , ,   , ,1, , ,   , ,1, , ,   , , , , ,   , , , , ,   , ,1, , , 
-             , , , , ,   , ,1, , ,   , , , , ,   , ,1,1, ,   , ,1,1, ,   ,1, , ,1,   , ,1, ,1,   , , , , ,   , , ,1, ,   ,1, , , ,   , , , , ,   , , , , ,   ,1, , , ,   , , , , ,   , ,1, , ,   ,1, , , , 
-             , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,
-            
-             , ,1,1, ,   , , ,1, ,   , ,1,1, ,   , ,1,1, ,   ,1, ,1, ,   ,1,1,1,1,   , ,1,1,1,   ,1,1,1,1,   , ,1,1, ,   , ,1,1, ,   , ,1, , ,   , ,1, , ,   , , ,1, ,   , , , , ,   , ,1, , ,   , ,1,1,1, 
-             ,1, , ,1,   , ,1,1, ,   ,1, , ,1,   ,1, , ,1,   ,1, ,1, ,   ,1, , , ,   ,1, , , ,   , , , ,1,   ,1, , ,1,   ,1, , ,1,   , ,1, , ,   , ,1, , ,   , ,1, , ,   ,1,1,1,1,   , , ,1, ,   , , , ,1, 
-    /* 3 */  ,1,1, ,1,   , , ,1, ,   , , ,1, ,   , , ,1, ,   ,1,1,1,1,   ,1,1,1, ,   ,1,1,1,1,   , , ,1, ,   , ,1,1, ,   ,1,1,1,1,   , , , , ,   , , , , ,   ,1, , , ,   , , , , ,   , , , ,1,   , , ,1,1, 
-             ,1, ,1,1,   , , ,1, ,   , ,1, , ,   ,1, , ,1,   , , ,1, ,   , , , ,1,   ,1, , ,1,   , ,1, , ,   ,1, , ,1,   , , , ,1,   , ,1, , ,   , ,1, , ,   , ,1, , ,   ,1,1,1,1,   , , ,1, ,   , , , , , 
-             , ,1,1, ,   , ,1,1,1,   ,1,1,1,1,   , ,1,1, ,   , , ,1, ,   ,1,1,1, ,   , ,1,1, ,   ,1, , , ,   , ,1,1, ,   ,1,1,1, ,   , ,1, , ,   ,1, , , ,   , , ,1, ,   , , , , ,   , ,1, , ,   , , ,1, , 
-             , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,
-            
-             , ,1,1, ,   , ,1,1, ,   ,1,1,1, ,   , ,1,1, ,   ,1,1,1, ,   ,1,1,1,1,   ,1,1,1,1,   , ,1,1, ,   ,1, , ,1,   ,1,1,1, ,   , , , ,1,   ,1, , ,1,   ,1, , , ,   ,1, , ,1,   ,1, , ,1,   , ,1,1, , 
-             ,1, , ,1,   ,1, , ,1,   ,1, , ,1,   ,1, , ,1,   ,1, , ,1,   ,1, , , ,   ,1, , , ,   ,1, , , ,   ,1, , ,1,   , ,1, , ,   , , , ,1,   ,1, ,1, ,   ,1, , , ,   ,1,1,1,1,   ,1,1, ,1,   ,1, , ,1, 
-    /* 4 */  ,1, ,1,1,   ,1,1,1,1,   ,1,1,1, ,   ,1, , , ,   ,1, , ,1,   ,1,1,1, ,   ,1,1,1, ,   ,1, ,1,1,   ,1,1,1,1,   , ,1, , ,   , , , ,1,   ,1,1, , ,   ,1, , , ,   ,1, , ,1,   ,1, ,1,1,   ,1, , ,1, 
-             ,1, , , ,   ,1, , ,1,   ,1, , ,1,   ,1, , ,1,   ,1, , ,1,   ,1, , , ,   ,1, , , ,   ,1, , ,1,   ,1, , ,1,   , ,1, , ,   ,1, , ,1,   ,1, ,1, ,   ,1, , , ,   ,1, , ,1,   ,1, , ,1,   ,1, , ,1, 
-             , ,1,1,1,   ,1, , ,1,   ,1,1,1, ,   , ,1,1, ,   ,1,1,1, ,   ,1,1,1,1,   ,1, , , ,   , ,1,1,1,   ,1, , ,1,   ,1,1,1, ,   , ,1,1, ,   ,1, , ,1,   ,1,1,1,1,   ,1, , ,1,   ,1, , ,1,   , ,1,1, , 
-             , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,
-
-             ,1,1,1, ,   , ,1,1, ,   ,1,1,1, ,   , ,1,1,1,   ,1,1,1, ,   ,1, , ,1,   ,1, ,1, ,   ,1, , ,1,   ,1, , ,1,   ,1, ,1, ,   ,1,1,1,1,   , ,1,1, ,   , , , , ,   ,1,1, , ,   , ,1, , ,   , , , , , 
-             ,1, , ,1,   ,1, , ,1,   ,1, , ,1,   ,1, , , ,   , ,1, , ,   ,1, , ,1,   ,1, ,1, ,   ,1, , ,1,   ,1, , ,1,   ,1, ,1, ,   , , ,1, ,   , ,1, , ,   ,1, , , ,   , ,1, , ,   ,1, ,1, ,   , , , , , 
-    /* 5 */  ,1,1,1, ,   ,1, , ,1,   ,1,1,1, ,   , ,1,1, ,   , ,1, , ,   ,1, , ,1,   ,1, ,1, ,   ,1, , ,1,   , ,1,1, ,   , ,1, , ,   , ,1, , ,   , ,1, , ,   , ,1, , ,   , ,1, , ,   , , , , ,   , , , , , 
-             ,1, , , ,   ,1, ,1,1,   ,1, ,1, ,   , , , ,1,   , ,1, , ,   ,1, , ,1,   , ,1, , ,   ,1,1,1,1,   ,1, , ,1,   , ,1, , ,   ,1, , , ,   , ,1, , ,   , , ,1, ,   , ,1, , ,   , , , , ,   , , , , , 
-             ,1, , , ,   , ,1,1,1,   ,1, , ,1,   ,1,1,1, ,   , ,1, , ,   , ,1,1, ,   , ,1, , ,   ,1, , ,1,   ,1, , ,1,   , ,1, , ,   ,1,1,1,1,   , ,1,1, ,   , , , ,1,   ,1,1, , ,   , , , , ,   ,1,1,1,1, 
-             , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,
-            
-             , ,1, , ,   , ,1,1, ,   ,1, , , ,   , , , , ,   , , , ,1,   , ,1,1, ,   , ,1,1, ,   , ,1,1,1,   ,1, , , ,   , ,1, , ,   , , ,1, ,   ,1, , , ,   ,1, , , ,   , , , , ,   , , , , ,   , , , , , 
-             , , ,1, ,   , , , ,1,   ,1, , , ,   , ,1,1, ,   , , , ,1,   ,1, , ,1,   ,1, , , ,   ,1, , ,1,   ,1, , , ,   , , , , ,   , , , , ,   ,1, ,1, ,   ,1, , , ,   ,1, , ,1,   ,1, , ,1,   , ,1,1, , 
-    /* 6 */  , , , , ,   , ,1,1,1,   ,1,1,1, ,   ,1, , , ,   , ,1,1,1,   ,1,1,1,1,   ,1,1, , ,   , ,1,1,1,   ,1,1,1, ,   , ,1, , ,   , , ,1, ,   ,1,1, , ,   ,1, , , ,   ,1,1,1,1,   ,1,1, ,1,   ,1, , ,1, 
-             , , , , ,   ,1, , ,1,   ,1, , ,1,   ,1, , , ,   ,1, , ,1,   ,1, , , ,   ,1, , , ,   , , , ,1,   ,1, , ,1,   , ,1, , ,   , , ,1, ,   ,1,1, , ,   ,1, , , ,   ,1, , ,1,   ,1, ,1,1,   ,1, , ,1, 
-             , , , , ,   , ,1,1,1,   ,1,1,1, ,   , ,1,1, ,   , ,1,1,1,   , ,1,1,1,   ,1, , , ,   , ,1,1, ,   ,1, , ,1,   , ,1, , ,   , ,1, , ,   ,1, ,1, ,   , ,1, , ,   ,1, , ,1,   ,1, , ,1,   , ,1,1, , 
-             , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,
-            
-             ,1,1,1, ,   , ,1,1,1,   ,1, , , ,   , ,1,1,1,   , ,1, , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , ,1, ,   , ,1, , ,   ,1, , , ,   , ,1, ,1,   , , , , , 
-             ,1, , ,1,   ,1, , ,1,   ,1,1,1, ,   ,1, , , ,   ,1,1,1, ,   ,1, , ,1,   ,1, ,1, ,   ,1, , ,1,   ,1, , ,1,   ,1, ,1, ,   ,1,1,1,1,   , ,1, , ,   , ,1, , ,   , ,1, , ,   ,1, ,1, ,   , , , , , 
-    /* 7 */  ,1,1,1, ,   , ,1,1,1,   ,1, , ,1,   , ,1,1, ,   , ,1, , ,   ,1, , ,1,   ,1, ,1, ,   ,1, , ,1,   ,1, , ,1,   , ,1, , ,   , , ,1, ,   ,1,1, , ,   , ,1, , ,   , ,1,1, ,   , , , , ,   , , , , , 
-             ,1, , , ,   , , , ,1,   ,1, , , ,   , , , ,1,   , ,1, , ,   ,1, , ,1,   ,1, ,1, ,   ,1,1,1,1,   , ,1,1, ,   , ,1, , ,   , ,1, , ,   , ,1, , ,   , ,1, , ,   , ,1, , ,   , , , , ,   , , , , , 
-             ,1, , , ,   , , , ,1,   ,1, , , ,   ,1,1,1, ,   , , ,1, ,   , ,1,1,1,   , ,1, , ,   ,1, , ,1,   ,1, , ,1,   , ,1, , ,   ,1,1,1,1,   , , ,1, ,   , ,1, , ,   ,1, , , ,   , , , , ,   , , , , , 
-             , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,   , , , , ,
-        ];
-        const pixels = new Uint8ClampedArray(fontSet.width * (fontSet.height / 2) * 4);
-        for (let i = 0, v = bitmap[0]; i < bitmap.length; v = bitmap[++i] || 0)
-            pixels[(i*4)+0] = 
-            pixels[(i*4)+1] = 
-            pixels[(i*4)+2] = v * 255, 
-            pixels[(i*4)+3] = 255;
-        const imageData = new ImageData(pixels, fontSet.width, fontSet.height / 2);
-        font.putImageData(imageData, 0,0);
+        const img = new Image();
+        img.src = '/font-set.png';
+        img.onload = () => font.drawImage(img, 0,0);
     </script>
     <canvas 
         id="terminal"
-        width="240"
-        height="180"
+        width="480"
+        height="360"
         style="
             width: 100%;
             height: 100%;
-            image-rendering: pixelated;
         "
     ></canvas>
     <script file="jsx">
+        document.getElementById('close-browser').remove();
         const bell = new Audio('/bell.wav');
         const terminal = document.getElementById('terminal');
-        const mkcs = (def = 0) => new Array(terminal.width / chSize[0])
+        const width = terminal.width / chSize[0];
+        const height = terminal.height / chSize[1];
+        let pressed = null;
+        let timeout = null;
+        let repeat = false;
+        document.onkeydown = e => {
+            e.preventDefault();
+            timeout = setTimeout(() => repeat = true, 200);
+            switch (e.key) {
+            case 'Backspace': pressed = '\x7F'; break;
+            case 'Enter': pressed = '\n'; break;
+            default: pressed = e.key; break;
+            }
+            write(pressed);
+        }
+        document.onkeyup = e => {
+            e.preventDefault();
+            pressed = null;
+            clearTimeout(timeout);
+            repeat = false;
+        }
+        const mkcs = (def = 0) => new Array(width)
             .fill()
-            .map(() => new Array(terminal.height / chSize[1]).fill(def));
+            .map(() => new Array(height).fill(def));
         /** @type {CanvasRenderingContext2D} */
         const ctx = terminal.getContext('2d');
         let cx = 0;
@@ -149,18 +108,30 @@
         function goto(x,y) {
             cx = x;
             cy = y;
-            while (y > (terminal.height / chSize[1])) {
-                characters.push(new Array(terminal.height / chSize[1]).fill(0x20));
-                modeBits.push(new Array(terminal.height / chSize[1]).fill(0));
-                linColor.push(new Array(terminal.height / chSize[1]).fill(colors[7]));
-                bacColor.push(new Array(terminal.height / chSize[1]).fill(colors[0]));
-                forColor.push(new Array(terminal.height / chSize[1]).fill(colors[7]));
+            while (cx < 0) {
+                cx += width;
+                cy--;
+            }
+            while (cx >= width) {
+                cy++;
+                cx -= width;
+            }
+            while (cy < 0) cy++;
+            while (cy >= height) {
+                // scroll in new lines if and when required
+                characters.push(new Array(height).fill(0x20));
+                modeBits.push(new Array(height).fill(0));
+                linColor.push(new Array(height).fill(colors[7]));
+                bacColor.push(new Array(height).fill(colors[0]));
+                forColor.push(new Array(height).fill(colors[7]));
                 characters.shift();
                 modeBits.shift();
                 linColor.shift();
                 bacColor.shift();
                 forColor.shift();
+                cy--;
             }
+            render();
         }
         function move(dx = 1,dy = 0) {
             goto(cx + dx, cy + dy);
@@ -175,20 +146,62 @@
                                 (modeCp.strike << 1) + modeCp.underline;
         }
         function set(char) {
-            if (cx >= (terminal.width / chSize[0])) 
+            if (cx >= (width)) 
                 cx = 0, 
-                cy = Math.floor(cx / (terminal.width / chSize[0]));
+                cy = Math.floor(cx / (width));
             characters[cx][cy] = char.codePointAt(0);
             style();
         }
-        function sample(code, color = colors[7], back = colors[0]) {
+        function sample(code, color = colors[7], back = colors[0], underline = emptyColor, overline = emptyColor, strike = emptyColor, dotted = false) {
             code = code & 0xFF;
+            const [cr,cg,cb,ca = 255] = color;
+            const [br,bg,bb,ba = 255] = back;
+            const [ur,ug,ub,ua = 255] = underline;
+            const [or,og,ob,oa = 255] = overline;
+            const [sr,sg,sb,sa = 255] = strike;
             const x = (code & 0x0F) * chSize[0];
             const y = ((code & 0xF0) >> 4) * chSize[1];
             const img = font.getImageData(x,y, chSize[0],chSize[1]);
-            const pixels = img.data.map((val, i) => (val / 255) * (color[i % 4] ?? 255) +
-                                            (1 - (val / 255)) * (back[i % 4] ?? 255));
-            return new ImageData(pixels, img.width, img.height);
+            const pixels = new Uint8ClampedArray([...new Array(chSize[0] * 4), ...img.data, ...new Array(chSize[0] * 4)]);
+            // tranform the characters pixels
+            for (let i = 0; i < pixels.length; i += 4) {
+                const row = Math.floor((i / 4) / chSize[0]);
+                const [er,eg,eb,ea] = pixels.slice(i, i +4).map(v => v / 255);
+                const [ir,ig,ib,ia] = [1- er, 1- eg, 1- eb, 1- ea];
+                // funny ahh math muhahahahahaha
+                pixels[i +0] = (cr * er * ea) + (br * ir * ia);
+                pixels[i +1] = (cg * eg * ea) + (bg * ig * ia);
+                pixels[i +2] = (cb * eb * ea) + (bb * ib * ia);
+                pixels[i +3] = 255;
+                if (row === 0) { // overline
+                    if (dotted && (i % 2)) continue;
+                    const mul = (oa / 255);
+                    const inv = 1- mul;
+                    pixels[i +0] = (or * mul) + (pixels[i +0] * inv);
+                    pixels[i +1] = (og * mul) + (pixels[i +1] * inv);
+                    pixels[i +2] = (ob * mul) + (pixels[i +2] * inv);
+                    continue;
+                }
+                if (row === Math.floor(chSize[1] / 2)) { // strike out
+                    if (dotted && (i % 2)) continue;
+                    const mul = (sa / 255);
+                    const inv = 1- mul;
+                    pixels[i +0] = (sr * mul) + (pixels[i +0] * inv);
+                    pixels[i +1] = (sg * mul) + (pixels[i +1] * inv);
+                    pixels[i +2] = (sb * mul) + (pixels[i +2] * inv);
+                    continue;
+                }
+                if (row === chSize[1] +1) { // underline
+                    if (dotted && (i % 2)) continue;
+                    const mul = (ua / 255);
+                    const inv = 1- mul;
+                    pixels[i +0] = (ur * mul) + (pixels[i +0] * inv);
+                    pixels[i +1] = (ug * mul) + (pixels[i +1] * inv);
+                    pixels[i +2] = (ub * mul) + (pixels[i +2] * inv);
+                    continue;
+                }
+            }
+            return new ImageData(pixels, img.width, img.height +2);
         }
         let frame = 0;
         function render() {
@@ -203,7 +216,7 @@
             ) {
                 const settings = modeBits[x][y];
                 if (settings & 0b100000) continue;
-                if ((settings & 0b1000000000) && !(frame % 4)) continue;
+                if ((settings & 0b1000000000) && !(Math.floor(frame / 4) % 2)) continue;
                 if ((settings & 0b10000000000) && !(frame % 2)) continue;
                 const color = [...(settings & 0b10000) ? bacColor[x][y] : forColor[x][y]];
                 const back = [...(settings & 0b10000) ? forColor[x][y] : bacColor[x][y]];
@@ -218,28 +231,22 @@
                     color[2] -= 0x66;
                 }
                 const linColor = (settings & 0b10000) ? bacColor[x][y] : forColor[x][y];
-                const char = sample(characters[x][y], color, back);
+                const char = sample(characters[x][y], 
+                    color, back, 
+                    (settings & 0b1) ? linColor : undefined, 
+                    (settings & 0b100) ? linColor : undefined, 
+                    (settings & 0b10) ? linColor : undefined, 
+                    settings & 0b10000000
+                );
                 if (settings & 0b1000) {
-                    ctx.putImageData(char, (x * chSize[0]),    (y * chSize[1]), 0, 0, 6, 3);
+                    ctx.putImageData(char, (x * chSize[0]),    (y * chSize[1]) -1, 0, 0, 6, 3);
                     ctx.putImageData(char, (x * chSize[0]) -1, (y * chSize[1]), 0, 3, 6, 3);
                 } else
-                    ctx.putImageData(char, x * chSize[0], y * chSize[1]);
-                    
-                const line = new ImageData(new Uint8ClampedArray([
-                    ...linColor,255,...linColor,255,...linColor,255,...linColor,255,...linColor,255,
-                ]), 5, 1);
-                const dottedLine = new ImageData(new Uint8ClampedArray([
-                    ...linColor,255,0,0,0,255,0,0,0,255,...linColor,255,...linColor,255,
-                ]), 5, 1);
-                if (settings & 0b1)
-                    ctx.putImageData(line, x * chSize[0], (y * chSize[1]) +5);
-                if (settings & 0b10)
-                    ctx.putImageData(line, x * chSize[0], (y * chSize[1]) +2);
-                if (settings & 0b100)
-                    ctx.putImageData(line, x * chSize[0], (y * chSize[1]) -1);
-                if (settings & 0b10000000)
-                    ctx.putImageData(dottedLine, x * chSize[0], (y * chSize[1]) +5);
+                    ctx.putImageData(char, x * chSize[0], (y * chSize[1]) -1);
             }
+            if (!(Math.floor(frame / 4) % 2)) ctx.fillStyle = `rgba(${colors[0]})`;
+            else ctx.fillStyle = `rgba(${colors[7]})`;
+            ctx.fillRect(cx * chSize[0], cy * chSize[1], chSize[0], chSize[1]);
         }
         function clear() {
             for (let i = characters.length * characters[0].length, 
@@ -252,12 +259,12 @@
                 cx = x;
                 cy = y;
                 set(' ');
-                console.log('reset!')
             }
             render();
         }
         clear();
         setInterval(() => {
+            if (repeat && pressed) write(pressed);
             render();
             frame++;
         }, 250); 
@@ -265,7 +272,6 @@
          * @param {string|string[]} chars
          */
         function write(chars) {
-            console.log(chars.replace(/\x1b\[.*?[a-zA-Z]/g), '')
             chars = [...chars];
             for (let i = 0; i < chars.length; i++) {
                 const char = chars[i];
@@ -446,12 +452,15 @@
                         }
                     }
                     break;
+                case '\x7F':
+                    move(-1);
+                    set(' ');
+                    break;
                 default:
                     set(char);
                     move(1);
                 }
             }
-            render();
         }
     </script>
 </body>
