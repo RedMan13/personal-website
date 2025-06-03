@@ -1,0 +1,213 @@
+<!TEMPLATE /cardpage.html>
+<head>
+    <script src="/beautifier.min.js"></script>
+    <style>
+        #main {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .errorMessage {
+            color: red;
+            font-weight: bold;
+        }
+        @keyframes throber {
+            from { left: 0px; }
+            to { left: 480px; }
+        }
+    </style>
+</head>
+<body>
+    <div>
+        <input type="file" name="logs" id="log-file" accept=".json"><br>
+        <label for="logs">skibidi ohio rizz</label>
+    </div>
+    <span id="message"></span>
+    <script>
+        const messageEl = document.getElementById('message');
+        let functionStart = Date.now();
+        let frameNow = null;
+        requestAnimationFrame(function(t) {
+            frameNow = t;
+            const time = t - functionStart
+            if (messageEl.classList.contains('errorMessage')) {
+                messageEl.style.color = `hsl(0, 100%, ${(Math.sin(time / (50 / (1- Math.min(time / 7000, 0.5)))) * 8) + (50 + 8)}%)`;
+            } else messageEl.style.color = 'black';
+            requestAnimationFrame(arguments.callee);
+        });
+        let step = 0;
+        function message(msg) {
+            messageEl.classList.remove('errorMessage');
+            if (msg === '') return messageEl.innerText = '';
+            messageEl.innerText = `${step}: ${msg}`;
+        }
+        function error(msg) {
+            messageEl.classList.add('errorMessage');
+            messageEl.innerText = msg;
+            functionStart = frameNow;
+        }
+    </script>
+    <script file="jsx">
+        class ObjectInspector extends HTMLElement {
+            constructor() {
+                super();
+                this.attachShadow({ mode: 'open' });
+                this.data = JSON.parse(this.innerText);
+            }
+            initRender() {
+                appendChildren(this.shadowRoot, this.getObjectRender(this.data));
+            }
+            getObjectRender(obj) {
+                switch (typeof obj) {
+                case 'undefined':
+                    return <span class="undefined">undefined</span>;
+                case 'boolean':
+                    return <span class="boolean">{obj}</span>;
+                case 'number':
+                    return <span class="number">{obj}</span>;
+                case 'bigint':
+                    return <span class="bigint">n{obj}</span>;
+                case 'string':
+                    return <span class="string">{obj}</span>;
+                case 'symbol':
+                    return <span class="symbol">{obj}</span>;
+                case 'function':
+                    return <span class="function">function {obj.name}({new Array(obj.length).fill('$').map((v, i) => v + i)})</span>;
+                case 'object':
+                    const renders = [];
+                    const entries = Object.entries(obj);
+                    for (const [key, value] of entries) {
+                        renders.push(<div class="object-entry">
+                            <span class="object-key">"{key}":</span>
+                            <span class="object-value">{this.getObjectRender(value)}</span>
+                        </div>);
+                    }
+                    return <div class="object">
+                        <span class="object-preview">{`{ length: ${entries.length} }`}</span>
+                        <div class="object-entries" hidden>{renders}</div>
+                    </div>
+                }
+            }
+        }
+        customElements.define("object-inspector", ObjectInspector);
+    </script>
+    <script>
+        message('Awaiting log file');
+        let logs = [];
+        const sources = {};
+        const picker = document.getElementById('log-file');
+        picker.onchange = () => {
+            message('Reading log file');
+            const file = picker.files[0];
+            const reader = new FileReader();
+            reader.onload = async () => {
+                try {
+                    step++;
+                    message('Parsing log file');
+                    logs = JSON.parse(reader.result);
+                    step++;
+                    if (!Array.isArray(logs))
+                        throw 'Not a valid logs file!';
+                    for (const log of logs) {
+                        message('Formating log message content');
+                        log.message = formatMessage(log.message);
+                        step++;
+                        for (const trace of log.trace) {
+                            if (!(trace.url in sources)) {
+                                message(`Fetching source for ${trace.url}`);
+                                sources[trace.url] = [0, (await fetch(trace.url)
+                                    .then(res => res.text())
+                                    .catch(() => ''))
+                                    .split('\n')];
+                                step++;
+                            }
+                            message('Adding fragment marker');
+                            const origin = trace.origin;
+                            const line = sources[trace.url][1][origin[0]];
+                            if (line) {
+                                trace.id = ((Math.random() * 0xFFFFFFFF) & 0xFFFFFFFF).toString(16);
+                                const left = line.slice(0, sources[trace.url][0] + origin[1]);
+                                const right = line.slice(sources[trace.url][0] + origin[1]);
+                                const label = `/*! ${trace.id} line,column/${origin} !*/`;
+                                sources[trace.url][0] += label.length;
+                                sources[trace.url][1][origin[0]] = left + label + right;
+                            }
+                            step++;
+                            message('Creating trace text');
+                            trace.text = `${trace.name} (${trace.url} ${trace.origin[0]}:${trace.origin[1]})`;
+                            if (trace.evalType)
+                                trace.text += ` <${trace.evalType}> ${trace.evalOrigin[0]}:${trace.evalOrigin[1]}`;
+                            step++;
+                        }
+                    }
+                    for (const url in sources) {
+                        message('Beautifying loaded source code');
+                        sources[url] = beautifier.js(sources[url][1].join('\n'));
+                        step++;
+                    }
+                    message('');
+                } catch (err) {
+                    error(err.message);
+                    console.error(err);
+                }
+            }
+            reader.onerror = () => error(reader.error);
+            reader.readAsText(file);
+        }
+        function xmlEscape(str) {
+            return str
+                .replaceAll('>', '&gt;')
+                .replaceAll('<', '&lt;')
+                .replaceAll("'", '&apos;')
+                .replaceAll('"', '&quot;')
+                .replaceAll('&', '&amp;')
+        }
+        const matchSubstitute = /%((?<type>[oOdisfc])|\.(?<precision>[0-9]+)f)/g;
+        function formatMessage(args) {
+            if (!Array.isArray(args)) args = [args];
+            if (matchSubstitute.test(args[0])) {
+                let idx = 1;
+                let off = 0;
+                let out = xmlEscape(args[0]);
+                for (const match of args[0].matchAll(matchSubstitute)) {
+                    if (!(idx in args)) continue;
+                    const item = args[idx++];
+                    const len = match[0].length;
+                    off -= len;
+                    const left = out.slice(0, match.index + off);
+                    const right = out.slice(match.index + len + off);
+                    if (match.groups.precision) {
+                        const val = Number(item).toFixed(Number((match.groups.precision)));
+                        off += val.length;
+                        out = left + val + right;
+                        continue;
+                    }
+                    switch (match.groups.type) {
+                    case 'o':
+                    case 'O':
+                        out = left + `<object-inspector>${xmlEscape(item)}</object-inspector>` + right;
+                        break;
+                    case 'd':
+                    case 'i':
+                        out = left + Math.floor(Number(item)) + right;
+                        break;
+                    case 's':
+                        out = left + item + right;
+                    case 'f':
+                        out = left + Number(item) + right;
+                    case 'c':
+                        out = left + `<span style="${xmlEscape(String(item))}">` + right + '</span>';
+                    }
+                }
+                return out;
+            }
+            return args.map(arg => typeof arg !== 'object' 
+                ? xmlEscape((arg = String(arg)).length > 400 
+                    ? arg.slice(0, 400) + '...'
+                    : arg) 
+                : `<object-inspector>${xmlEscape(arg)}</object-inspector>`);
+        }
+    </script>
+</body>
