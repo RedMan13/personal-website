@@ -1,63 +1,45 @@
 <!TEMPLATE /cardpage.html>
 <head>
     <script src="/beautifier.min.js"></script>
-    <style>
-        #main {
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/default.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"></script>
+    <style id="object-inspector-styles">
+        .undefined { color: #2c69af; }
+        .boolean { color: #2c69af; }
+        .bigint,
+        .number { color: #9ab37b; }
+        .string { color: #795225; }
+        .symbol { color: #3da769; }
+        .function { color: #ebde70; }
+        .object-preview { color: blue; }
+        .object-preview::before {
+            content: "⯆";
+            color: black;
+            display: inline-block;
         }
-        .errorMessage {
-            color: red;
-            font-weight: bold;
+        .object-preview.closed::before { transform: rotate(-90deg); }
+        .object-entries {
+            margin-left: 0.5rem;
+            padding-left: 0.5rem;
+            border-left: grey solid 1px;
         }
-        @keyframes throber {
-            from { left: 0px; }
-            to { left: 480px; }
+        .object-key {
+            color: #41a4a8;
+            margin-right: 0.25rem;
         }
     </style>
-</head>
-<body>
-    <div>
-        <input type="file" name="logs" id="log-file" accept=".json"><br>
-        <label for="logs">skibidi ohio rizz</label>
-    </div>
-    <span id="message"></span>
-    <script>
-        const messageEl = document.getElementById('message');
-        let functionStart = Date.now();
-        let frameNow = null;
-        requestAnimationFrame(function(t) {
-            frameNow = t;
-            const time = t - functionStart
-            if (messageEl.classList.contains('errorMessage')) {
-                messageEl.style.color = `hsl(0, 100%, ${(Math.sin(time / (50 / (1- Math.min(time / 7000, 0.5)))) * 8) + (50 + 8)}%)`;
-            } else messageEl.style.color = 'black';
-            requestAnimationFrame(arguments.callee);
-        });
-        let step = 0;
-        function message(msg) {
-            messageEl.classList.remove('errorMessage');
-            if (msg === '') return messageEl.innerText = '';
-            messageEl.innerText = `${step}: ${msg}`;
-        }
-        function error(msg) {
-            messageEl.classList.add('errorMessage');
-            messageEl.innerText = msg;
-            functionStart = frameNow;
-        }
-    </script>
     <script file="jsx">
+        const styles = document.getElementById('object-inspector-styles');
         class ObjectInspector extends HTMLElement {
             constructor() {
                 super();
                 this.attachShadow({ mode: 'open' });
-                this.data = JSON.parse(this.innerText);
+                this.shadowRoot.appendChild(<style>{styles.textContent}</style>);
+                this.data = JSON.parse(this.textContent);
+                this.initRender();
             }
             initRender() {
-                appendChildren(this.shadowRoot, this.getObjectRender(this.data));
+                appendChildren(this.shadowRoot, [this.getObjectRender(this.data)]);
             }
             getObjectRender(obj) {
                 switch (typeof obj) {
@@ -70,12 +52,13 @@
                 case 'bigint':
                     return <span class="bigint">n{obj}</span>;
                 case 'string':
-                    return <span class="string">{obj}</span>;
+                    return <span class="string">"{obj.length > 400 ? obj.slice(0, 400) + '...' : obj}"</span>;
                 case 'symbol':
                     return <span class="symbol">{obj}</span>;
                 case 'function':
                     return <span class="function">function {obj.name}({new Array(obj.length).fill('$').map((v, i) => v + i)})</span>;
                 case 'object':
+                    if (obj === null) return <span class="undefined">null</span>
                     const renders = [];
                     const entries = Object.entries(obj);
                     for (const [key, value] of entries) {
@@ -85,14 +68,164 @@
                         </div>);
                     }
                     return <div class="object">
-                        <span class="object-preview">{`{ length: ${entries.length} }`}</span>
+                        <span class="object-preview closed" on:click={e => {
+                            e.target.classList.toggle('closed');
+                            const entries = e.target.parentElement.children[1];
+                            entries.hidden = e.target.classList.contains('closed');
+                        }}>{`{ length: ${entries.length} }`}</span>
                         <div class="object-entries" hidden>{renders}</div>
-                    </div>
+                    </div>;
                 }
             }
         }
         customElements.define("object-inspector", ObjectInspector);
     </script>
+    <style>
+        #main { height: 100%; }
+        .loading-front {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .error-message {
+            color: red;
+            font-weight: bold;
+        }
+        @keyframes throber {
+            from { left: 0px; }
+            to { left: 480px; }
+        }
+        .messages {
+            width: 100%;
+            height: 100%;
+            overflow-y: scroll;
+            overflow-x: hidden;
+            word-break: break-all;
+            word-wrap: break-word;
+            padding: 2px;
+            box-sizing: border-box;
+        }
+        .log-message {
+            margin-bottom: 2px;
+            width: 100%;
+        }
+        .log-message:hover { filter: saturate(1.3); }
+        .log-message.log { background-color: #e7e6e6; }
+        .log-message.warn { background-color: #efd8a7; }
+        .log-message.promiseError,
+        .log-message.error { background-color: #efa7a7; }
+        .log-message.info { background-color: #a7b7ef; }
+        .log-message.debug { background-color: #a7efb1; }
+        .log-viewer {
+            width: 100%;
+            height: 100%;
+            overflow-y: scroll;
+            overflow-x: hidden;
+            word-break: break-all;
+            word-wrap: break-word;
+            padding: 2px;
+            box-sizing: border-box;
+        }
+        .code-browser {
+            white-space: preserve nowrap;
+            word-break: keep-all;
+            overflow-x: scroll;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="loading-front" id="loading">
+        <input type="file" name="logs" id="log-file" accept=".json"><br>
+        <span id="message"></span>
+        <script>
+            const messageEl = document.getElementById('message');
+            let functionStart = Date.now();
+            let frameNow = null;
+            requestAnimationFrame(function(t) {
+                frameNow = t;
+                const time = t - functionStart
+                if (messageEl.classList.contains('error-message')) {
+                    messageEl.style.color = `hsl(0, 100%, ${(Math.sin(time / (50 / (1- Math.min(time / 7000, 0.5)))) * 8) + (50 + 8)}%)`;
+                } else messageEl.style.color = 'black';
+                requestAnimationFrame(arguments.callee);
+            });
+            let step = 0;
+            function message(msg) {
+                messageEl.classList.remove('error-message');
+                if (msg === '') return messageEl.innerText = '';
+                messageEl.innerText = `${step}: ${msg}`;
+            }
+            function error(msg) {
+                messageEl.classList.add('error-message');
+                messageEl.innerText = msg;
+                functionStart = frameNow;
+            }
+        </script>
+    </div>
+
+    <div class="messages" id="logbook" style="display: none;"></div>
+    <script>
+        const logbook = document.getElementById('logbook');
+        function renderLogbook() {
+            document.getElementById('loading').style.display = 'none';
+            logbook.style.display = 'inherit';
+            for (const log of logs) {
+                const wrap = document.createElement('div');
+                wrap.classList.add('log-message');
+                wrap.classList.add(log.type);
+                wrap.innerHTML = log.message;
+                wrap.id = log.id; 
+                wrap.onclick = () => inspectLog(wrap);
+                logbook.appendChild(wrap);
+            }
+        }
+    </script>
+
+    <div class="log-viewer" id="log-panel" style="display: none">
+        <div id="log-message"></div>
+        <select id="log-trace"></select>
+        <code class="code-browser" id="code-browser"></code>
+    </div>
+    <script>
+        const logPanel = document.getElementById('log-panel');
+        const logBox = document.getElementById('log-message');
+        const traceView = document.getElementById('log-trace');
+        const codeBrowser = document.getElementById('code-browser');
+        /** @param {HTMLElement} el */
+        function inspectLog(el) {
+            logbook.style.display = 'none';
+            logPanel.style.display = 'inherit';
+            logBox.innerHTML = el.outerHTML;
+            const log = logs.find(log => log.id === el.id);
+            traceView.innerHTML = log.trace
+                .map(trace => `<option value="${trace.id}">${trace.text}</option>`)
+                .join('\n');
+            traceView.value = log.trace[0].id;
+            traceView.onchange = () => {
+                const trace = log.trace.find(trace => trace.id === traceView.value);
+                jumpToCode(trace);
+            }
+            jumpToCode(log.trace[0]);
+        }
+        let keyedElements = {};
+        function jumpToCode(trace) {
+            if (codeBrowser.id !== trace.url) {
+                const src = sources[trace.url];
+                codeBrowser.innerHTML = hljs.highlight(src, { language: 'js' }).value.replaceAll('\n', '<br>');
+                for (const el of document.getElementsByClassName('hljs-comment')) {
+                    const match = el.textContent.match(/\/\*! (?<id>-?[0-9a-f]{8}) line,column\/(?<line>[0-9]+),(?<column>[0-9]+) !\*\//i);
+                    if (!match) continue;
+                    keyedElements[match.groups.id] = el;
+                };
+                codeBrowser.id = trace.url;
+            }
+            keyedElements[trace.id]?.scrollIntoView?.();
+        }
+    </script>
+
     <script>
         message('Awaiting log file');
         let logs = [];
@@ -113,6 +246,7 @@
                     for (const log of logs) {
                         message('Formating log message content');
                         log.message = formatMessage(log.message);
+                        log.id = ((Math.random() * 0xFFFFFFFF) & 0xFFFFFFFF).toString(16);
                         step++;
                         for (const trace of log.trace) {
                             if (!(trace.url in sources)) {
@@ -124,10 +258,10 @@
                                 step++;
                             }
                             message('Adding fragment marker');
-                            const origin = trace.origin;
+                            const origin = [trace.origin[0] -1, trace.origin[1] -1];
                             const line = sources[trace.url][1][origin[0]];
+                            trace.id = ((Math.random() * 0xFFFFFFFF) & 0xFFFFFFFF).toString(16);
                             if (line) {
-                                trace.id = ((Math.random() * 0xFFFFFFFF) & 0xFFFFFFFF).toString(16);
                                 const left = line.slice(0, sources[trace.url][0] + origin[1]);
                                 const right = line.slice(sources[trace.url][0] + origin[1]);
                                 const label = `/*! ${trace.id} line,column/${origin} !*/`;
@@ -148,6 +282,7 @@
                         step++;
                     }
                     message('');
+                    renderLogbook();
                 } catch (err) {
                     error(err.message);
                     console.error(err);
@@ -158,11 +293,12 @@
         }
         function xmlEscape(str) {
             return str
+                .replaceAll('&', '&amp;')
                 .replaceAll('>', '&gt;')
                 .replaceAll('<', '&lt;')
                 .replaceAll("'", '&apos;')
                 .replaceAll('"', '&quot;')
-                .replaceAll('&', '&amp;')
+                .replaceAll('\n', '<br>');
         }
         const matchSubstitute = /%((?<type>[oOdisfc])|\.(?<precision>[0-9]+)f)/g;
         function formatMessage(args) {
@@ -171,13 +307,14 @@
                 let idx = 1;
                 let off = 0;
                 let out = xmlEscape(args[0]);
-                for (const match of args[0].matchAll(matchSubstitute)) {
+                matchSubstitute.lastIndex = -1;
+                for (const match of out.matchAll(matchSubstitute)) {
                     if (!(idx in args)) continue;
                     const item = args[idx++];
                     const len = match[0].length;
-                    off -= len;
                     const left = out.slice(0, match.index + off);
                     const right = out.slice(match.index + len + off);
+                    off -= len;
                     if (match.groups.precision) {
                         const val = Number(item).toFixed(Number((match.groups.precision)));
                         off += val.length;
@@ -195,19 +332,23 @@
                         break;
                     case 's':
                         out = left + item + right;
+                        break;
                     case 'f':
                         out = left + Number(item) + right;
+                        break;
                     case 'c':
                         out = left + `<span style="${xmlEscape(String(item))}">` + right + '</span>';
+                        break;
                     }
                 }
                 return out;
             }
-            return args.map(arg => typeof arg !== 'object' 
-                ? xmlEscape((arg = String(arg)).length > 400 
-                    ? arg.slice(0, 400) + '...'
-                    : arg) 
-                : `<object-inspector>${xmlEscape(arg)}</object-inspector>`);
+            if (args.every(arg => typeof arg !== 'object'))
+                return args
+                    .map(arg => (arg = xmlEscape(String(arg)).length > 400 
+                        ? arg.slice(0, 400) + '...' 
+                        : arg)).join(' ');
+            return args.map(arg => `<object-inspector>${xmlEscape(JSON.stringify(arg))}</object-inspector>`).join(' ');
         }
     </script>
 </body>

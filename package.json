@@ -8,6 +8,7 @@
     "builder": "github:RedMan13/builder#main",
     "cors": "^2.8.5",
     "express": "^4.19.2",
+    "highlight.js": "^11.11.1",
     "js-beautify": "^1.15.4",
     "long": "^5.2.3",
     "marked": "^13.0.0",
