@@ -111,7 +111,7 @@
             margin-bottom: 2px;
             width: 100%;
         }
-        .log-message:hover { filter: saturate(1.3); }
+        .log-message:hover { filter: saturate(1.5); }
         .log-message.log { background-color: #e7e6e6; }
         .log-message.warn { background-color: #efd8a7; }
         .log-message.promiseError,
@@ -133,6 +133,7 @@
             word-break: keep-all;
             overflow-x: scroll;
             width: 100%;
+            height: 100%;
         }
     </style>
 </head>
@@ -187,21 +188,22 @@
     <div class="log-viewer" id="log-panel" style="display: none">
         <div id="log-message"></div>
         <select id="log-trace"></select>
-        <code class="code-browser" id="code-browser"></code>
+        <div class="code-browser"><code id="code-browser"></code></div>
     </div>
     <script>
         const logPanel = document.getElementById('log-panel');
         const logBox = document.getElementById('log-message');
+        logBox.onclick = () => exitInspector();
         const traceView = document.getElementById('log-trace');
         const codeBrowser = document.getElementById('code-browser');
         /** @param {HTMLElement} el */
         function inspectLog(el) {
             logbook.style.display = 'none';
-            logPanel.style.display = 'inherit';
+            logPanel.style.display = 'grid';
             logBox.innerHTML = el.outerHTML;
             const log = logs.find(log => log.id === el.id);
             traceView.innerHTML = log.trace
-                .map(trace => `<option value="${trace.id}">${trace.text}</option>`)
+                .map(trace => `<option value="${trace.id}">${xmlEscape(trace.text)}</option>`)
                 .join('\n');
             traceView.value = log.trace[0].id;
             traceView.onchange = () => {
@@ -214,15 +216,20 @@
         function jumpToCode(trace) {
             if (codeBrowser.id !== trace.url) {
                 const src = sources[trace.url];
+                keyedElements = {};
                 codeBrowser.innerHTML = hljs.highlight(src, { language: 'js' }).value.replaceAll('\n', '<br>');
                 for (const el of document.getElementsByClassName('hljs-comment')) {
-                    const match = el.textContent.match(/\/\*! (?<id>-?[0-9a-f]{8}) line,column\/(?<line>[0-9]+),(?<column>[0-9]+) !\*\//i);
+                    const match = el.textContent.match(/\/\*! line,column\/(?<pos>[0-9]+,[0-9]+) !\*\//i);
                     if (!match) continue;
-                    keyedElements[match.groups.id] = el;
+                    keyedElements[match.groups.pos] = el;
                 };
                 codeBrowser.id = trace.url;
             }
-            keyedElements[trace.id]?.scrollIntoView?.();
+            keyedElements[`${trace.origin}`]?.scrollIntoView?.();
+        }
+        function exitInspector() {
+            logbook.style.display = 'inherit';
+            logPanel.style.display = 'none';
         }
     </script>
 
@@ -251,26 +258,28 @@
                         for (const trace of log.trace) {
                             if (!(trace.url in sources)) {
                                 message(`Fetching source for ${trace.url}`);
-                                sources[trace.url] = [0, (await fetch(trace.url)
-                                    .then(res => res.text())
-                                    .catch(() => ''))
-                                    .split('\n')];
+                                sources[trace.url] = (await fetch(trace.url)
+                                    .then(async res => [!res.ok, await res.text()])
+                                    .catch(() => [true, ''])
+                                    .then(([bad, text]) => bad ? '/*!*!*/' + text : text))
+                                    .split('\n')
+                                    .map(line => line.split(''));
                                 step++;
                             }
                             message('Adding fragment marker');
                             const origin = [trace.origin[0] -1, trace.origin[1] -1];
-                            const line = sources[trace.url][1][origin[0]];
                             trace.id = ((Math.random() * 0xFFFFFFFF) & 0xFFFFFFFF).toString(16);
-                            if (line) {
-                                const left = line.slice(0, sources[trace.url][0] + origin[1]);
-                                const right = line.slice(sources[trace.url][0] + origin[1]);
-                                const label = `/*! ${trace.id} line,column/${origin} !*/`;
-                                sources[trace.url][0] += label.length;
-                                sources[trace.url][1][origin[0]] = left + label + right;
-                            }
+                            const char = sources[trace.url]?.[origin[0]]?.[origin[1]];
+                            if (char?.length <= 1)
+                                sources[trace.url][origin[0]][origin[1]] = `/*! line,column/${trace.origin} !*/` + char;
                             step++;
                             message('Creating trace text');
-                            trace.text = `${trace.name} (${trace.url} ${trace.origin[0]}:${trace.origin[1]})`;
+                            const traceType = trace.url.startsWith('webpack')
+                                ? 'Webpack'
+                                : sources[trace.url][0].slice(0, 7).join('') === '/*!*!*/'
+                                    ? 'NotLoaded'
+                                    : 'External';
+                            trace.text = `${trace.name} (<${traceType}> ${trace.origin[0]}:${trace.origin[1]})`;
                             if (trace.evalType)
                                 trace.text += ` <${trace.evalType}> ${trace.evalOrigin[0]}:${trace.evalOrigin[1]}`;
                             step++;
@@ -278,7 +287,7 @@
                     }
                     for (const url in sources) {
                         message('Beautifying loaded source code');
-                        sources[url] = beautifier.js(sources[url][1].join('\n'));
+                        sources[url] = beautifier.js(sources[url].map(line => line.join('')).join('\n'));
                         step++;
                     }
                     message('');
