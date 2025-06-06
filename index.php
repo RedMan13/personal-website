@@ -70,6 +70,7 @@ if ($visitors > 9 && $visitors < 20) $sufix = 'th';
 <head>
     <title>godslayerakp</title>
     <meta name="description" content="the main page to my website!">
+    <meta name="keywords" content="portfolio">
 
     <style>
         .slideImage {
@@ -260,11 +261,13 @@ if ($visitors > 9 && $visitors < 20) $sufix = 'th';
         requestAnimationFrame(step);
     </script>
 
-    <span title="Since the latest commit to the site">
-        <?= "hie $visitors$sufix visitor!" ?>
-    </span> welcome to mie site of goofy gooberness cause silly good!!!!!! <br>
-    this website is a participant of the <a href="https://steve0greatness.github.io/webring">0greatness webring!</a><br>
-    <h3 class="horizontalCenter">all the projects i have worked on sofar</h3>
+    Welcome! I hope you find this website informative and entertaining! <span title="Since the latest commit to the site">
+        <?= "you are the $visitors$sufix visitor!" ?>
+    </span><br>
+    <h3 class="horizontalCenter">Portfolio</h3>
+    I am 16 years old with four years total experience in Website Development. I know HTML, React, Svelte, CSS, JS, NodeJS, and PHP. I am also highly adaptable, being able to work with languages outside my expertise, such as C#, C, C++, MongoDB, SQLite, and Java.<br>
+    This website is also participant of the <a href="https://steve0greatness.github.io/webring">0greatness webring!</a><br>
+    <h3 class="horizontalCenter">All the projects i have worked on as of now.</h3>
     <?php renderSlideDiv([
         ["PenguinMod", "https://penguinmod.com", "/favicon.ico"],
         ["Scratch For Discord", "https://s4d.discodes.xyz", "/scratch.png"],
@@ -273,7 +276,7 @@ if ($visitors > 9 && $visitors < 20) $sufix = 'th';
         ["DiscordNT", "/discordnt.html", "/../favicon.ico"],
         ["Builder", "https://github.com/RedMan13/builder", ""]
     ]) ?>
-    <h3 class="horizontalCenter">here are some other cool sites you should check out!</h3>
+    <h3 class="horizontalCenter">Here are some other cool sites you should check out!</h3>
     <ul>
         <li><a href="https://gen1x.is-a.dev/">Gen1x's Website (works in XP-era Internet Explorer!)</a></li>
         <li><a href="https://theshovel.rocks/">JodieTheShovel's website! dont forget to check out cofunk (previously penguinfunk) if you like fnf multiplayer!</a></li>
@@ -310,6 +313,6 @@ if ($visitors > 9 && $visitors < 20) $sufix = 'th';
             </div>
         </div>
         <div class="footer-grid-item"></div>
-        <p class="footer-grid-item">btw check out my discord! i will be sending like updates and shizz there</p>
+        <p class="footer-grid-item">btw check out my discord! its where updates for all of my various projects live.</p>
     </div>
 </body>
