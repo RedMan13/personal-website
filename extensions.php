@@ -2,11 +2,16 @@
 <head>
     <title>My Extensions</title>
     <style>
+        #main {
+            text-align: center;
+        }
         .tiles {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 4px;
             padding: 2px;
+            border-top: 1px solid grey;
+            box-shadow: inset 0px -4px 3px black;
         }
         .ext-tile {
             text-align: center;

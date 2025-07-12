@@ -5,3 +5,4 @@ dist/
 tmp/
 visitors.txt
 /builder/register-cmds.js
+built-extensions
