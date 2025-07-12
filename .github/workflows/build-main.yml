@@ -21,6 +21,7 @@ jobs:
           npm i
           echo -e ${{ toJSON(toJSON(github.event.commits)) }} > ./commits.json
           npx build -o ./public_html --no-token-debug true
+          rm -rf ./public_html/node_modules
       - name: Push built to Site
         uses: wlixcc/SFTP-Deploy-Action@v1.2.4
         with:
