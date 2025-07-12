@@ -11,7 +11,7 @@
             gap: 4px;
             padding: 2px;
             border-top: 1px solid grey;
-            box-shadow: inset 0px -4px 3px black;
+            box-shadow: inset -1px 1px 2px black;
         }
         .ext-tile {
             text-align: center;
