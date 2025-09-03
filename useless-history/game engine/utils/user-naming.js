@@ -13,7 +13,7 @@ export const validNameChars = /^[_a-z][a-z0-9_.-]{0,1024}$/i
 const extractLastDigets = /^.*([0-9]+)$/i
 // messages to show according to what the validate function states
 export const validateFailReasons = [
-    'Name is safe, this error message should never have been shown'
+    'Name is safe, this error message should never have been shown',
     'Name is used internally and can not be serialized safely',
     'Name was already used by a previously defined part and cannot be reused',
     'Name is already used by existing parts defined by the program',

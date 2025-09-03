@@ -252,6 +252,11 @@
             position: absolute;
             z-index: 5;
         }
+        .close-browser.close {
+            filter: opacity(0.5);
+            transition: filter 0.15s ease-in;
+        }
+        .close-browser.close:hover { filter: opacity(1); }
         .browser .folder {
             padding-left: 1em;
             cursor: pointer;

@@ -6,3 +6,4 @@ visitors.txt
 README\.md
 .*tmp.*
 server
+app.js
