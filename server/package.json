@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "builder": "^5.0.0",
+    "express": "^5.1.0"
+  }
+}
