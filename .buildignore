@@ -5,3 +5,4 @@ dist
 visitors.txt
 README\.md
 .*tmp.*
+server
