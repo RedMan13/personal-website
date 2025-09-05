@@ -83,7 +83,10 @@ function runPHP(req, file, opt_args = []) {return new Promise((resolve, reject) 
 
     let res = '';
     let err = '';
+    /** @type {child.ChildProcessWithoutNullStreams} */
     const php = child.spawn('php-cgi', opt_args, { env, pwd: path.resolve('.')});
+    php.stdout.pause();
+    php.stderr.pause();
     php.stdout.on('data', function(data) {
         res += data.toString();
     });
@@ -129,6 +132,8 @@ function runPHP(req, file, opt_args = []) {return new Promise((resolve, reject) 
         });
     });
 
+    php.stdout.resume();
+    php.stderr.resume();
     req.pipe(php.stdin);
     req.resume();
 })};
