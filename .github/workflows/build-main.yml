@@ -22,33 +22,31 @@ jobs:
           echo -e ${{ toJSON(toJSON(github.event.commits)) }} > ./commits.json
           npx build -o ./dist --no-token-debug true
           rm -rf ./dist/node_modules
-      - name: Push built to Site
-        uses: wlixcc/SFTP-Deploy-Action@v1.2.4
+      - name: ssh-scp-ssh-pipelines
+        # You may pin to the exact commit or the version.
+        # uses: cross-the-world/ssh-scp-ssh-pipelines@78e864b4890087a58248ff39320406971ca88b89
+        uses: cross-the-world/ssh-scp-ssh-pipelines@v1.1.4
         with:
-          server: 's3.serv00.com'
-          username: 'godslayerakp'
-          password: '${{ secrets.SSH_PASSWORD }}'
-          delete_remote_files: true
-          local_path: './dist'
-          remote_path: '/usr/home/godslayerakp/domains/godslayerakp.serv00.net/public_nodejs/whipeable'
-      - name: Push built to Site
-        uses: wlixcc/SFTP-Deploy-Action@v1.2.4
-        with:
-          server: 's3.serv00.com'
-          username: 'godslayerakp'
-          password: '${{ secrets.SSH_PASSWORD }}'
-          delete_remote_files: false
-          local_path: './server'
-          remote_path: '/usr/home/godslayerakp/domains/godslayerakp.serv00.net/public_nodejs/whipeable'
-      - name: Push built to Site
-        uses: wlixcc/SFTP-Deploy-Action@v1.2.4
-        with:
-          server: 's3.serv00.com'
-          username: 'godslayerakp'
-          password: '${{ secrets.SSH_PASSWORD }}'
-          delete_remote_files: false
-          local_path: './server/package.json'
-          remote_path: '/usr/home/godslayerakp/domains/godslayerakp.serv00.net/public_nodejs'
+          # ssh remote host
+          host: s3.serv00.com
+          # ssh remote user
+          user: godslayerakp
+          # ssh remote password
+          pass: '${{ secrets.SSH_PASSWORD }}'
+          # execute pre-commands before scp
+          first_ssh:
+            cd /usr/home/godslayerakp/domains/godslayerakp.serv00.net/public_nodejs
+            rm -rf ./dist
+            rm -rf ./server
+          # scp from local to remote
+          scp:
+            ./dist/* => /usr/home/godslayerakp/domains/godslayerakp.serv00.net/public_nodejs/dist
+            ./server/* => /usr/home/godslayerakp/domains/godslayerakp.serv00.net/public_nodejs/server
+          # execute post-commands after scp
+          last_ssh:
+            cd /usr/home/godslayerakp/domains/godslayerakp.serv00.net/public_nodejs
+            mv ./server/package.json ./package.json
+            npm i
       - name: Dispatch Extensions
         uses: peter-evans/repository-dispatch@v2.0.1
         with:
