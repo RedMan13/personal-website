@@ -84,16 +84,11 @@ function runPHP(req, file, opt_args = []) {return new Promise((resolve, reject) 
     let res = '';
     let err = '';
     const php = child.spawn('php-cgi', opt_args, { env, pwd: path.resolve('.')});
-    req.pipe(php.stdin);
-    req.resume();
-
     php.stdout.on('data', function(data) {
         res += data.toString();
-        console.log(data);
     });
     php.stderr.on('data', function(data) {
         err += data.toString();
-        console.log(data);
     });
     php.on('error', function(err) {
         console.error("error", err);
@@ -133,5 +128,8 @@ function runPHP(req, file, opt_args = []) {return new Promise((resolve, reject) 
             err
         });
     });
+
+    req.pipe(php.stdin);
+    req.resume();
 })};
 module.exports = runPHP;
