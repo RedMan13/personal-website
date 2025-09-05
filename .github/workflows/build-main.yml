@@ -37,7 +37,9 @@ jobs:
           first_ssh:
             cd /usr/home/godslayerakp/domains/godslayerakp.serv00.net/public_nodejs &&
             rm -rf ./dist &&
-            rm -rf ./server
+            rm -rf ./server &&
+            mkdir ./dist &&
+            mkdir ./server
           # scp from local to remote
           scp:
             ./dist/* => /usr/home/godslayerakp/domains/godslayerakp.serv00.net/public_nodejs/dist
