@@ -27,7 +27,6 @@ function compareFileNames(string, comp) {
     return isReal;
 }
 
-const root = path.resolve('.');
 const pathList = [];
 const servers = {};
 let runningReads = 1;
@@ -43,7 +42,7 @@ const entry = path.resolve('./dist');
 const readRecursive = async dir => {
     if (dir.startsWith('.server.js')) {
         await closeRead();
-        servers[path.relative(path.resolve(root, 'static'), dir)] = require(dir);
+        servers[path.relative(entry, dir)] = require(dir);
         return;
     }
     altsCache._cap += cacheMultiplier;
