@@ -35,8 +35,8 @@ jobs:
           pass: '${{ secrets.SSH_PASSWORD }}'
           # execute pre-commands before scp
           first_ssh:
-            cd /usr/home/godslayerakp/domains/godslayerakp.serv00.net/public_nodejs
-            rm -rf ./dist
+            cd /usr/home/godslayerakp/domains/godslayerakp.serv00.net/public_nodejs &&
+            rm -rf ./dist &&
             rm -rf ./server
           # scp from local to remote
           scp:
@@ -44,8 +44,8 @@ jobs:
             ./server/* => /usr/home/godslayerakp/domains/godslayerakp.serv00.net/public_nodejs/server
           # execute post-commands after scp
           last_ssh:
-            cd /usr/home/godslayerakp/domains/godslayerakp.serv00.net/public_nodejs
-            mv ./server/package.json ./package.json
+            cd /usr/home/godslayerakp/domains/godslayerakp.serv00.net/public_nodejs &&
+            mv ./server/package.json ./package.json &&
             npm i
       - name: Dispatch Extensions
         uses: peter-evans/repository-dispatch@v2.0.1
