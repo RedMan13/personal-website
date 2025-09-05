@@ -5,7 +5,10 @@ const {runPHP} = require('builder');
 const server = new WebSocketExpress();
 const fs = require('fs');
  
-fs.watch(__dirname, () => process.exit(0));
+fs.watch(__dirname, () => {
+    console.log('server changed, killing my self for the new version to take place');
+    process.exit(0);
+});
 console.log('installing cors fuckawayer and request logger');
 server.useHTTP((req, res, next) => {
     // console.log(req, res)
