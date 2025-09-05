@@ -1,7 +1,7 @@
 const handleURL = require('./url-preprosesor.js');
 console.log('creating expressjs server');
 const { WebSocketExpress } = require('websocket-express');
-const {runPHP} = require('builder');
+const runPHP = require('./php-execute.js');
 const server = new WebSocketExpress();
 const fs = require('fs');
  

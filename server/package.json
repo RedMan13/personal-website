@@ -1,6 +1,5 @@
 {
   "dependencies": {
-    "builder": "github:RedMan13/builder#main",
     "express": "^5.1.0"
   }
 }
