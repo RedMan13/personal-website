@@ -89,11 +89,9 @@ function runPHP(req, file, opt_args = []) {return new Promise((resolve, reject) 
 
     php.stdout.on('data', function(data) {
         res += data.toString();
-        console.log(data);
     });
     php.stderr.on('data', function(data) {
         err += data.toString();
-        console.log(data);
     });
     php.on('error', function(err) {
         console.error("error", err);
