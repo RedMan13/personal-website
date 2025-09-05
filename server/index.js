@@ -3,7 +3,9 @@ console.log('creating expressjs server');
 const { WebSocketExpress } = require('websocket-express');
 const {runPHP} = require('builder');
 const server = new WebSocketExpress();
-
+const fs = require('fs');
+ 
+fs.watch(__dirname, () => process.exit(0));
 console.log('installing cors fuckawayer and request logger');
 server.useHTTP((req, res, next) => {
     // console.log(req, res)
