@@ -22,9 +22,6 @@ jobs:
           echo -e ${{ toJSON(toJSON(github.event.commits)) }} > ./commits.json
           npx build -o ./dist --no-token-debug true
           rm -rf ./dist/node_modules
-          cd ./server
-          npm i
-          cd ../
       - name: Push built to Site
         uses: wlixcc/SFTP-Deploy-Action@v1.2.4
         with:
@@ -43,6 +40,15 @@ jobs:
           delete_remote_files: false
           local_path: './server'
           remote_path: '/usr/home/godslayerakp/domains/godslayerakp.serv00.net/public_nodejs/whipeable'
+      - name: Push built to Site
+        uses: wlixcc/SFTP-Deploy-Action@v1.2.4
+        with:
+          server: 's3.serv00.com'
+          username: 'godslayerakp'
+          password: '${{ secrets.SSH_PASSWORD }}'
+          delete_remote_files: false
+          local_path: './server/package.json'
+          remote_path: '/usr/home/godslayerakp/domains/godslayerakp.serv00.net/public_nodejs'
       - name: Dispatch Extensions
         uses: peter-evans/repository-dispatch@v2.0.1
         with:

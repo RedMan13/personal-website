@@ -1,8 +1,7 @@
-const {runPHP} = require('builder');
 const handleURL = require('./url-preprosesor.js');
 console.log('creating expressjs server');
 const { WebSocketExpress } = require('websocket-express');
-const handleReject = require('./handle-reject.js');
+const {runPHP} = require('builder');
 const server = new WebSocketExpress();
 
 console.log('installing cors fuckawayer and request logger');
