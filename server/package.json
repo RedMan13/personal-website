@@ -1,6 +1,5 @@
 {
   "dependencies": {
-    "ejs": "^3.1.10",
     "websocket-express": "^5.1.0"
   }
 }
