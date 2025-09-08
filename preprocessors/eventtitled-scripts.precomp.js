@@ -21,4 +21,4 @@ module.exports = async function(util) {
     }
     return !didThings
 }
-module.exports.matchFile = util => util.matchType('php,html');
+module.exports.matchFile = util => util.matchType('php,html,ejs');

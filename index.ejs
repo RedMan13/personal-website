@@ -1,72 +1,50 @@
 <!TEMPLATE /cardpage.html>
-<?php
-# from https://stackoverflow.com/a/2690541
-function time2str($ts) {
-    if(!ctype_digit($ts))
-        $ts = strtotime($ts);
-
-    $diff = time() - $ts;
-    if($diff == 0)
-        return 'now';
-    elseif($diff > 0) {
-        $day_diff = floor($diff / 86400);
-        if($day_diff == 0)
-        {
-            if($diff < 60) return 'just now';
-            if($diff < 120) return '1 minute ago';
-            if($diff < 3600) return floor($diff / 60) . ' minutes ago';
-            if($diff < 7200) return '1 hour ago';
-            if($diff < 86400) return floor($diff / 3600) . ' hours ago';
-        }
-        if($day_diff == 1) return 'Yesterday';
-        if($day_diff < 7) return $day_diff . ' days ago';
-        if($day_diff < 31) return ceil($day_diff / 7) . ' weeks ago';
-        if($day_diff < 60) return 'last month';
-        return date('F Y', $ts);
-    }
-    else {
-        $diff = abs($diff);
-        $day_diff = floor($diff / 86400);
-        if($day_diff == 0) {
-            if($diff < 120) return 'in a minute';
-            if($diff < 3600) return 'in ' . floor($diff / 60) . ' minutes';
-            if($diff < 7200) return 'in an hour';
-            if($diff < 86400) return 'in ' . floor($diff / 3600) . ' hours';
-        }
-        if($day_diff == 1) return 'Tomorrow';
-        if($day_diff < 4) return date('l', $ts);
-        if($day_diff < 7 + (7 - date('w'))) return 'next week';
-        if(ceil($day_diff / 7) < 4) return 'in ' . ceil($day_diff / 7) . ' weeks';
-        if(date('n', $ts) == date('n') + 1) return 'next month';
-        return date('F Y', $ts);
-    }
+<%
+function relativeTime(date) {
+    const now = new Date();
+    const years = date.getYear() - now.getYear();
+    const ys = years > 1 ? 's' : '';
+    const months = date.getMonth() - now.getMonth();
+    const ns = years > 1 ? 's' : '';
+    const days = date.getDate() - now.getDate();
+    const ds = years > 1 ? 's' : '';
+    const hours = date.getHours() - now.getHours();
+    const hs = years > 1 ? 's' : '';
+    const minutes = date.getMinutes() - now.getMinutes();
+    const ms = years > 1 ? 's' : '';
+    const seconds = date.getSeconds() - now.getSeconds();
+    const ss = years > 1 ? 's' : '';
+    if (years !== 0)        return years >= 0   ? `in ${years} year${ys}`     :     `${Math.abs(years)} year${ys} ago`;
+    else if (months !== 0)  return months >= 0  ? `in ${months} month${ns}`   :   `${Math.abs(months)} month${ns} ago`;
+    else if (days !== 0)    return days >= 0    ? `in ${days} day${ds}`       :       `${Math.abs(days)} day${ds} ago`;
+    else if (hours !== 0)   return hours >= 0   ? `in ${hours} hour${hs}`     :     `${Math.abs(hours)} hour${hs} ago`;
+    else if (minutes !== 0) return minutes >= 0 ? `in ${minutes} minute${ms}` : `${Math.abs(minutes)} minute${ms} ago`;
+    else if (seconds !== 0) return seconds >= 0 ? `in ${seconds} second${ss}` : `${Math.abs(seconds)} second${ss} ago`;
+    return 'now';
 }
 
-function renderSlideDiv($slides) {
-    $slideLength = max(count($slides), 5);
-    echo "<div class=\"slider\" style=\"grid-template-columns: repeat($slideLength, minmax(102px, 1fr));\">";
-    foreach ($slides as [$title, $redirect, $image]) {
-        if ($image == "") $image = '/github.png';
-        else $image = "$redirect$image";
-        echo <<<END
-            <a class="slideContent" href="$redirect">
-                <img src="$image" class="slideImage"></img><br>
-                <p class="slideTitle">$title</p>
+function renderSlideDiv(slides) {
+    let res = ''
+    const slideLength = Math.max(slides.length, 5);
+    res += `<div class="slider" style="grid-template-columns: repeat(${slideLength}, minmax(102px, 1fr));">`;
+    for (const [title, redirect, image] of slides) {
+        res += `
+            <a class="slideContent" href="${redirect}">
+                <img src="${new URL(image, redirect)}" class="slideImage"></img><br>
+                <p class="slideTitle">${title}</p>
             </a>
-        END;
+        `;
     }
-    echo '</div>';
+    res += '</div>';
+    return res;
 }
 
-$visitors = file_exists('./visitors.txt') 
-    ? intval(file_get_contents('./visitors.txt')) +1
-    : 1;
-file_put_contents('./visitors.txt', strval($visitors));
+const visitors = '0';
 
-$numSuf = ['th', 'st', 'nd', 'rd', 'th', 'th', 'th', 'th', 'th', 'th'];
-$sufix = $numSuf[substr($visitors, -1)];
-if ($visitors > 9 && $visitors < 20) $sufix = 'th';
-?>
+const numSuf = ['th', 'st', 'nd', 'rd', 'th', 'th', 'th', 'th', 'th', 'th'];
+let sufix = numSuf[visitors.slice(-1)];
+if (visitors > 9 && visitors < 20) sufix = 'th';
+%>
 <head>
     <title>godslayerakp</title>
     <meta name="description" content="the main page to my website!">
@@ -268,14 +246,14 @@ if ($visitors > 9 && $visitors < 20) $sufix = 'th';
     I am 16 years old with four years total experience in Website Development. I know HTML, React, Svelte, CSS, JS, NodeJS, and PHP. I am also highly adaptable, being able to work with languages outside my expertise, such as C#, C, C++, MongoDB, SQLite, and Java.<br>
     This website is also participant of the <a href="https://steve0greatness.github.io/webring">0greatness webring!</a><br>
     <h3 class="horizontalCenter">All the projects i have worked on as of now.</h3>
-    <?php renderSlideDiv([
+    <%- renderSlideDiv([
         ["PenguinMod", "https://penguinmod.com", "/favicon.ico"],
         ["Scratch For Discord", "https://s4d.discodes.xyz", "/scratch.png"],
-        ["CC:T Discord", "https://github.com/RedMan13/cc-discord", ""],
+        ["CC:T Discord", "https://github.com/RedMan13/cc-discord", "https://godslayerakp.serv00.net/github.png"],
         ["Clamp Coding", "https://clamp-coding.vercel.app", "/favicon.png"],
-        ["DiscordNT", "/discordnt.html", "/../favicon.ico"],
-        ["Builder", "https://github.com/RedMan13/builder", ""]
-    ]) ?>
+        ["DiscordNT", "https://godslayerakp.serv00.net/discordnt.html", "/favicon.ico"],
+        ["Builder", "https://github.com/RedMan13/builder", "https://godslayerakp.serv00.net/github.png"]
+    ]) %>
     <h3 class="horizontalCenter">Here are some other cool sites you should check out!</h3>
     <ul>
         <li><a href="https://gen1x.is-a.dev/">Gen1x's Website (works in XP-era Internet Explorer!)</a></li>
@@ -289,27 +267,25 @@ if ($visitors > 9 && $visitors < 20) $sufix = 'th';
         <div class="commits-box">
             <h4 class="horizontalCenter" style="margin: 0">Commits</h4>
             <div id="commits">
-                <?php 
-                if (file_exists('./commits.json')) {
-                    $commits = json_decode(file_get_contents('./commits.json'), true);
-                    foreach ($commits as $commit) {
-                        $time = time2str($commit['timestamp']);
-                        $name = $commit['author']['name'];
-                        $pfp = "https://github.com/$name.png";
-                        $username = $commit['author']['username'] ?? $commit['author']['name'];
-                        $url = $commit['url'];
-                        $message = $commit['message'];
-                        echo <<<END
-                            <div class="commit">
-                                <img class="commit-user" src="$pfp"/>
-                                <strong>$username</strong>
-                                <span class="commit-time">$time</span>
-                                <a href="$url" class="commit-message">$message</a>
-                            </div>
-                        END;
-                    }
+                <%
+                const fs = require('fs/promises');
+                const path = require('path');
+                let commitsRes = '';
+                const commitsData = await fs.readFile(path.resolve(__dirname, './commits.json'), 'urf8').catch(() => {}); 
+                if (commitsData) {
+                    const commits = JSON.parse(commitsData);
+                    for (const commit of commits)
+                        commitsRes += `
+                        <div class="commit">
+                            <img class="commit-user" src="https://github.com/${commit.author.name}.png"/>
+                            <strong>${commit.author.username ?? $commit.author.name}</strong>
+                            <span class="commit-time">${new Date(commit.timestamp).toTimeString()}</span>
+                            <a href="${commit.url}" class="commit-message">${commit.message}</a>
+                        </div>
+                        `;
                 }
-                ?>
+                %>
+                <%- commitsRes %>
             </div>
         </div>
         <div class="footer-grid-item"></div>

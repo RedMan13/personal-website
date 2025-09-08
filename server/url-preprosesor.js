@@ -28,7 +28,6 @@ function compareFileNames(string, comp) {
 }
 
 const pathList = [];
-const servers = {};
 let runningReads = 1;
 let readyToHandle = false;
 const closeRead = async () => {
@@ -40,11 +39,6 @@ const closeRead = async () => {
 }
 const entry = path.resolve('./dist');
 const readRecursive = async dir => {
-    if (dir.startsWith('.server.js')) {
-        await closeRead();
-        servers[path.relative(entry, dir)] = require(dir);
-        return;
-    }
     altsCache._cap += cacheMultiplier;
     console.log(path.relative(entry, dir));
     const files = await fs.readdir(dir).catch(err => err);
@@ -84,7 +78,7 @@ const mainFileAlts = [
 // does things like replace dashes with spaces so you can use the url "main-page" instead of "main page.html"
 function findRealName(name) {
     const nameData = path.parse(name);
-    if (mainFileAlts.includes(nameData.name)) return '/index.php';
+    if (mainFileAlts.includes(nameData.name)) return pathList.find(path => compareFileNames('/index', path));
     // server isnt ready!?!??!?!?!?!!?!?!?!!?!?!??!?!?! nah it chill this happens alot when in dev testing
     if (!readyToHandle) return name.endsWith(/\.\w+$/i) ? name : name + '.php';
     // if we never find the desired name then assume it just isnt in our list of names and give back the inputed name
@@ -98,7 +92,6 @@ module.exports = async function(req, res, next) {
     const decodedPath = path.resolve(decodeURIComponent(req.path));
     const realName = findRealName(decodedPath);
     const realPath = path.resolve(entry, `.${realName}`);
-    if (realName in servers) return servers[realName]();
     const pathInfo = path.parse(realPath);
     const protectionLevel = getProtLevelOf(realPath, pathInfo);
     const info = await fs.stat(realPath).catch(handleFileError(res));

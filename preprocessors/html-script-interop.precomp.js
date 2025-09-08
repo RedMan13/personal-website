@@ -31,4 +31,4 @@ module.exports = async function(util) {
         util.replace(codeStart, codeEnd, tmpUtil.file);
     }
 }
-module.exports.matchFile = util => util.matchType('php,html');
+module.exports.matchFile = util => util.matchType('php,html,ejs');

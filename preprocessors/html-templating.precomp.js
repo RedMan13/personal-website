@@ -21,4 +21,4 @@ module.exports = async function(util) {
     util.replace(headClose,  bodyLoc +6,   headBody[1]);
     util.replace(bodyClose,  bodyClose +7, headBody[2]);
 }
-module.exports.matchFile = util => util.matchType('.php,.html') && util.file.startsWith('<!TEMPLATE');
+module.exports.matchFile = util => util.matchType('.php,.html,ejs') && util.file.startsWith('<!TEMPLATE');

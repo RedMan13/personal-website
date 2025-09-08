@@ -5,6 +5,7 @@ const runPHP = require('./php-execute.js');
 const server = new WebSocketExpress();
 const fs = require('fs');
  
+console.log(new Date().toUTCString());
 fs.watch(__dirname, () => {
     console.log('server changed, killing my self for the new version to take place');
     process.exit(0);
@@ -33,6 +34,15 @@ server.useHTTP(async (req, res) => {
             res.header(name, value);
         res.status(scriptReturn.status);
         res.send(scriptReturn.html);
+        return;
+    }
+    if (realPath.endsWith('.server.js')) {
+        try {
+            require(realPath)(req, res);
+
+        } catch (err) {
+            console.error(err);
+        }
         return;
     }
     
