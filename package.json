@@ -1,8 +1,8 @@
 {
   "scripts": {
-    "build": "build",
-    "dev": "develop",
-    "start": "develop"
+    "build": "build --no-node true",
+    "dev": "build --develop true",
+    "start": "build --develop true"
   },
   "dependencies": {
     "builder": "github:RedMan13/builder#main",

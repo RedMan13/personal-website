@@ -1,11 +1,28 @@
 const ejs = require('ejs');
+const path = require('path');
 
 module.exports = async function(util) {
     util.file = `
-${String(ejs.compile(util.file, { async: true, client: true }))}
+
+${String(ejs.compile(util.file, {
+    async: true,
+    client: true,
+    filename: path.relative(util.entry, util.path),
+    compileDebug: false
+}))}
 module.exports = async function(req, res) {
     const headers = { status: 200 };
-    const result = await anonymous({ query: req.query, body: req.body, headers }, null, null, null);
+    let res = '';
+    try {
+        result = await anonymous(
+            { query: req.query, body: req.body, headers },
+            null,
+            null,
+            null
+        );
+    } catch (err) {
+        result = err;
+    }
     res.status(headers.status);
     for (const key in headers) {
         if (key === 'status') continue;

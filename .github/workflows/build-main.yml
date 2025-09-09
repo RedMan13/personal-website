@@ -20,7 +20,7 @@ jobs:
         run: |
           npm i
           echo -e ${{ toJSON(toJSON(github.event.commits)) }} > ./commits.json
-          npx build -o ./dist --no-token-debug true
+          npx build -o ./dist --no-token-debug true --no-node true
           rm -rf ./dist/node_modules
       - name: ssh-scp-ssh-pipelines
         # You may pin to the exact commit or the version.
