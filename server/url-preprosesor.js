@@ -12,6 +12,8 @@ function compareFileNames(string, comp) {
     if (altsCache.get(string) === comp) return true;
 
     const folders = string.split('/');
+    // definitly not a valid match, as it has no actual file
+    if (folders.length <= 1 && !folders[1]) return false;
     const Cfolders = comp.split('/');
     // the order required clearly doesnt exist as they arnt the same number of folders
     if (folders.length !== Cfolders.length) return false;
@@ -51,7 +53,7 @@ const readRecursive = async dir => {
     if (!Array.isArray(files)) throw files;
  
     // we do actually kinda need the folder to be in there on its own tho :Trol
-    pathList.push('/' + path.relative(entry, dir));
+    // pathList.push('/' + path.relative(entry, dir));
     for (const name of files) {
         const file = path.resolve(dir, name);
         // the path is pushed as a file if the path isnt a dir
@@ -63,26 +65,17 @@ const readRecursive = async dir => {
 console.log('begining directory read');
 readRecursive(entry);
 
-const mainFileAlts = [
-    '',
-    'main',
-    'index',
-    'main-page',
-    'main_page',
-    'main page',
-    'index-page',
-    'index_page',
-    'index page'
-]
 // find the real file name according to some given name
 // does things like replace dashes with spaces so you can use the url "main-page" instead of "main page.html"
 function findRealName(name) {
-    const nameData = path.parse(name);
-    if (mainFileAlts.includes(nameData.name)) return pathList.find(path => compareFileNames('/index', path));
+    // root always has an index, so load that instead of looking for something that wont exist
+    if (name === '/') return pathList.find(path => compareFileNames('/index', path));
     // server isnt ready!?!??!?!?!?!!?!?!?!!?!?!??!?!?! nah it chill this happens alot when in dev testing
     if (!readyToHandle) return name.endsWith(/\.\w+$/i) ? name : name + '.php';
     // if we never find the desired name then assume it just isnt in our list of names and give back the inputed name
-    return pathList.find(path => compareFileNames(name, path)) ?? name;
+    return pathList.find(path => compareFileNames(name, path)) ??
+        pathList.find(path => compareFileNames(name + '/index', path)) ??
+        name;
 }
 
 module.exports = async function(req, res, next) {
