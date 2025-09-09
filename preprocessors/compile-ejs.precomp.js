@@ -12,7 +12,7 @@ ${String(ejs.compile(util.file, {
 }))}
 module.exports = async function(req, res) {
     const headers = { status: 200 };
-    let res = '';
+    let result = '';
     try {
         result = await anonymous(
             { query: req.query, body: req.body, headers },
@@ -22,6 +22,7 @@ module.exports = async function(req, res) {
         );
     } catch (err) {
         result = err;
+        headers.status = 500;
     }
     res.status(headers.status);
     for (const key in headers) {
