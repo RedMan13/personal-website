@@ -10,20 +10,14 @@ ${String(ejs.compile(util.file, {
     filename: path.relative(util.entry, util.path),
     compileDebug: false
 }))}
-module.exports = async function(req, res) {
-    const headers = { status: 200 };
-    let result = '';
-    try {
-        result = await anonymous(
-            { query: req.query, body: req.body, headers },
-            null,
-            null,
-            null
-        );
-    } catch (err) {
-        result = err;
-        headers.status = 500;
-    }
+module.exports = async function(req, res, handleReject, codes) {
+    const headers = { status: codes.OK };
+    const result = await anonymous(
+        { query: req.query, body: req.body, headers },
+        null,
+        null,
+        null
+    );
     res.status(headers.status);
     for (const key in headers) {
         if (key === 'status') continue;

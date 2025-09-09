@@ -4,6 +4,7 @@ const { WebSocketExpress } = require('websocket-express');
 const runPHP = require('./php-execute.js');
 const server = new WebSocketExpress();
 const fs = require('fs');
+const { handleReject, codes } = require('./handle-reject.js');
  
 console.log(new Date().toUTCString());
 fs.watch(__dirname, () => {
@@ -38,10 +39,10 @@ server.useHTTP(async (req, res) => {
     }
     if (realPath.endsWith('.server.js')) {
         try {
-            require(realPath)(req, res);
-
+            require(realPath)(req, res, handleReject, codes);
         } catch (err) {
             console.error(err);
+            handleReject(codes.InternalServerError, `Could not generate content: ${err}`);
         }
         return;
     }
