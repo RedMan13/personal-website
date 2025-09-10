@@ -21,7 +21,7 @@ module.exports = function(req, res, reject, codes) {
         console.log('Recieved invalid signatures');
         return reject(codes.Unauthorized, 'Invalid signatures', res);
     }
-    const start = new Date(req.headers['x-signature-timestamp']);
+    const start = new Date(Number(req.headers['x-signature-timestamp']) * 1000);
     const event = JSON.parse(req.body.toString('utf8'));
     let result = { type: 0, data: {} };
     switch (event.type) {
