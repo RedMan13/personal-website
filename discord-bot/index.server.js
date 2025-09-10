@@ -10,15 +10,15 @@ const { InteractionType, InteractionCallbackType } = require('./enums');
  */
 module.exports = function(req, res, reject, codes) {
     console.log(req.headers);
-    if (!req.headers['X-Signature-Ed25519'] || !req.headers['X-Signature-Timestamp']) {
+    if (!req.headers['x-signature-ed25519'] || !req.headers['x-signature-timestamp']) {
         console.log('Recieved missing signatures');
         return reject(codes.Unauthorized, 'Missing signatures', res);
     }
-    if (!crypto.verify(null, Buffer.from(req.headers['X-Signature-Timestamp'] + req.body), process.env.botPublicKey, req.headers['X-Signature-Ed25519'])) {
+    if (!crypto.verify(null, Buffer.from(req.headers['x-signature-timestamp'] + req.body), process.env.botPublicKey, req.headers['x-signature-ed25519'])) {
         console.log('Recieved invalid signatures');
         return reject(codes.Unauthorized, 'Invalid signatures', res);
     }
-    const start = new Date(req.headers['X-Signature-Timestamp']);
+    const start = new Date(req.headers['x-signature-timestamp']);
     const event = JSON.parse(req.body);
     let result = { type: 0, data: {} };
     switch (event.type) {
