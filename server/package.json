@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "tweetnacl": "^1.0.3",
     "websocket-express": "^4.0.1"
   }
 }

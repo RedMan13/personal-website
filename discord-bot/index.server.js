@@ -1,4 +1,4 @@
-const crypto = require('crypto');
+const nacl = require('tweetnacl');
 const { InteractionType, InteractionCallbackType } = require('./enums');
 
 /**
@@ -13,7 +13,11 @@ module.exports = function(req, res, reject, codes) {
         console.log('Recieved missing signatures');
         return reject(codes.Unauthorized, 'Missing signatures', res);
     }
-    if (!crypto.verify(null, req.headers['x-signature-timestamp'] + req.body, Buffer.from(process.env.botPublicKey, 'hex'), Buffer.from(req.headers['x-signature-ed25519'], 'hex'))) {
+    if (!nacl.sign.detached.verify(
+        Buffer.from(req.headers['x-signature-timestamp'] + req.body), 
+        Buffer.from(process.env.botPublicKey, 'hex'), 
+        Buffer.from(req.headers['x-signature-ed25519'], 'hex')
+    )) {
         console.log('Recieved invalid signatures');
         return reject(codes.Unauthorized, 'Invalid signatures', res);
     }
