@@ -39,6 +39,8 @@ module.exports = function(req, res, reject, codes) {
         }
         break;
     }
+    res.status(codes.OK);
     res.header('Content-Type', 'application/json');
+    console.log(result);
     res.send(JSON.stringify(result));
 }
