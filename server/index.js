@@ -2,7 +2,7 @@ const handleURL = require('./url-preprosesor.js');
 console.log('creating expressjs server');
 const { WebSocketExpress } = require('websocket-express');
 const runPHP = require('./php-execute.js');
-const express = require('express');
+const read = require('body-parser/lib/read');
 const server = new WebSocketExpress();
 const fs = require('fs');
 const { handleReject, codes } = require('./handle-reject.js');
@@ -12,8 +12,7 @@ fs.watch('.', () => {
     console.log('server changed, killing my self for the new version to take place');
     process.exit(0);
 });
-console.log('installing cors fuckawayer and request logger');
-server.useHTTP(express.raw());
+console.log('installing cors fuckawayer, body parser, and request logger');
 server.useHTTP((req, res, next) => {
     // console.log(req, res)
     console.log(req.method, 'request to', req.path);
@@ -24,7 +23,12 @@ server.useHTTP((req, res, next) => {
     // what even is the point on cors? what the fuck does cors even do?, be an actual pain the mother fucking ass is all it does
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Referrer-Policy', 'unsafe-url');
-    next();
+    read(req, res, next, v => v, console.debug, {
+        encoding: null,
+        inflate: false,
+        limit: 100000,
+        verify: false
+    });
 })
 console.log('setting up main file dealer');
 server.useHTTP(handleURL);
