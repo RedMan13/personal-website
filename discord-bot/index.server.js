@@ -32,7 +32,7 @@ module.exports = function(req, res, reject, codes) {
     case InteractionType.APPLICATION_COMMAND:
         switch (event.data.name) {
         case 'ping':
-            const ttp = Date.now() - start;
+            const ttp = Date.now() - start.getTime();
             result.type = InteractionCallbackType.CHANNEL_MESSAGE_WITH_SOURCE;
             result.data = { content: `pong!!!1!1111!!!111!!\ntook \`${ttp}\` ms to respond` }
             break;
