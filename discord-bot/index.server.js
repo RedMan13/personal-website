@@ -9,12 +9,11 @@ const { InteractionType, InteractionCallbackType } = require('./enums');
  * @param {{ [key: string]: number }} codes 
  */
 module.exports = function(req, res, reject, codes) {
-    console.log(req.headers);
     if (!req.headers['x-signature-ed25519'] || !req.headers['x-signature-timestamp']) {
         console.log('Recieved missing signatures');
         return reject(codes.Unauthorized, 'Missing signatures', res);
     }
-    if (!crypto.verify(null, Buffer.from(req.headers['x-signature-timestamp'] + req.body), process.env.botPublicKey, req.headers['x-signature-ed25519'])) {
+    if (!crypto.verify(null, Buffer.from(req.headers['x-signature-timestamp'] + req.body), process.env.botPublicKey, Buffer.from(req.headers['x-signature-ed25519'], 'hex'))) {
         console.log('Recieved invalid signatures');
         return reject(codes.Unauthorized, 'Invalid signatures', res);
     }
