@@ -2,6 +2,7 @@ const handleURL = require('./url-preprosesor.js');
 console.log('creating expressjs server');
 const { WebSocketExpress } = require('websocket-express');
 const runPHP = require('./php-execute.js');
+const express = require('express');
 const server = new WebSocketExpress();
 const fs = require('fs');
 const { handleReject, codes } = require('./handle-reject.js');
@@ -12,6 +13,7 @@ fs.watch('.', () => {
     process.exit(0);
 });
 console.log('installing cors fuckawayer and request logger');
+server.useHTTP(express.raw());
 server.useHTTP((req, res, next) => {
     // console.log(req, res)
     console.log(req.method, 'request to', req.path);

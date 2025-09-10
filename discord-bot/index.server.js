@@ -14,7 +14,7 @@ module.exports = function(req, res, reject, codes) {
         return reject(codes.Unauthorized, 'Missing signatures', res);
     }
     if (!nacl.sign.detached.verify(
-        Buffer.from(req.headers['x-signature-timestamp'] + req.body), 
+        Buffer.from(req.headers['x-signature-timestamp'] + req.body, 'utf8'), 
         Buffer.from(req.headers['x-signature-ed25519'], 'hex'),
         Buffer.from(process.env.botPublicKey, 'hex')
     )) {
