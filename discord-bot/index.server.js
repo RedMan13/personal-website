@@ -30,7 +30,7 @@ module.exports = function(req, res, reject, codes) {
         result.type = InteractionCallbackType.PONG;
         break;
     case InteractionType.APPLICATION_COMMAND:
-        switch (event.name) {
+        switch (event.data.name) {
         case 'ping':
             const ttp = Date.now() - start;
             result.type = InteractionCallbackType.CHANNEL_MESSAGE_WITH_SOURCE;
@@ -41,6 +41,5 @@ module.exports = function(req, res, reject, codes) {
     }
     res.status(codes.OK);
     res.header('Content-Type', 'application/json');
-    console.log(result);
     res.send(JSON.stringify(result));
 }
