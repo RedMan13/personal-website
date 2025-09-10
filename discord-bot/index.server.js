@@ -15,8 +15,8 @@ module.exports = function(req, res, reject, codes) {
     }
     if (!nacl.sign.detached.verify(
         Buffer.from(req.headers['x-signature-timestamp'] + req.body), 
-        Buffer.from(process.env.botPublicKey, 'hex'), 
-        Buffer.from(req.headers['x-signature-ed25519'], 'hex')
+        Buffer.from(req.headers['x-signature-ed25519'], 'hex'),
+        Buffer.from(process.env.botPublicKey, 'hex')
     )) {
         console.log('Recieved invalid signatures');
         return reject(codes.Unauthorized, 'Invalid signatures', res);
