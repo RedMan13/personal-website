@@ -7,7 +7,7 @@ const fs = require('fs');
 const { handleReject, codes } = require('./handle-reject.js');
   
 console.log(new Date().toUTCString());
-fs.watch(__dirname, () => {
+fs.watch('.', () => {
     console.log('server changed, killing my self for the new version to take place');
     process.exit(0);
 });
