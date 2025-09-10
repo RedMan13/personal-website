@@ -13,6 +13,7 @@ module.exports = function(req, res, reject, codes) {
         console.log('Recieved missing signatures');
         return reject(codes.Unauthorized, 'Missing signatures', res);
     }
+    console.log(req.headers);
     if (!crypto.verify(null, Buffer.from(req.headers['X-Signature-Timestamp'] + req.body), process.env.botPublicKey, req.headers['X-Signature-Ed25519'])) {
         console.log('Recieved invalid signatures');
         return reject(codes.Unauthorized, 'Invalid signatures', res);
