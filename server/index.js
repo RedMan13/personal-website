@@ -42,7 +42,7 @@ server.useHTTP(async (req, res) => {
             require(realPath)(req, res, handleReject, codes);
         } catch (err) {
             console.error(err);
-            handleReject(codes.InternalServerError, `Could not generate content: ${err}`);
+            handleReject(codes.InternalServerError, `Could not generate content: ${err}`, res);
         }
         return;
     }
