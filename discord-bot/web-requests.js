@@ -1,38 +1,3 @@
-function stringifyError(packet, errors, indent = '') {
-    if (errors?.message) {
-        if (!errors.errors) return `${errors.message} (${errors.code})`;
-        let out = '';
-        out += `// ${errors.message} (${errors.code})\n`;
-        out += stringifyError(packet, errors.errors).join('\n');
-        return out;
-    }
-    const lines = [];
-    lines.push(Array.isArray(packet) ? '[' : '{');
-    for (const key in packet) {
-        const member = errors?.[key];
-        if (member?._errors)
-            for (const { message, code } of member._errors) 
-                lines.push(`    // ${message} (${code})`);
-        switch (typeof packet[key]) {
-        case 'object':
-            if (packet[key] === null) { lines.push(`"${key}": null,`); break; }
-            const child = stringifyError(packet[key], errors[key], indent + '    ');
-            child[child.length -1] += ',';
-            lines.push(...child);
-            break;
-        default:
-        case 'boolean': 
-        case 'bigint':
-        case 'number':
-        case 'string':
-        case 'undefined':
-            lines.push(`    ${JSON.stringify(key)}: ${JSON.stringify(packet[key])}`); break;
-        }
-    }
-    lines[lines.length -1] = lines[lines.length -1].slice(0, -1);
-    lines.push(Array.isArray(packet) ? ']' : '}');
-    return lines.map((line, idx) => idx === 0 ? line : indent + line);
-}
 const apiReqs = {};
 const limitedApis = {};
 let globalLimit = NaN;
@@ -73,7 +38,7 @@ function fromApi(callPath, body) {
                 else limitedApis[path] = stamp;
             }
             if ('code' in res) {
-                console.log('Discord API response error:', stringifyError(body, res));
+                console.log('Discord API response error:', res);
                 return Promise.reject(res);
             }
             return res;
