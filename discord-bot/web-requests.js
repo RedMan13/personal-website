@@ -49,7 +49,8 @@ function fromApi(callPath, body) {
         method,
         headers: {
             'Authorization': `Bot ${process.env.botToken}`,
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'User-Agent': `DiscordBot (https://godslayerakp.serv00.net/discord-bot, v1)`
         }
     }
     if (method === 'GET' && body) {
