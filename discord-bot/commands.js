@@ -18,7 +18,7 @@ const commands = fromApi(`PUT /applications/${process.env.botId}/commands`, [
                 type: ApplicationCommandOptionType.SUB_COMMAND,
                 name: 'card',
                 description: 'A card-shaped quote image, mutch like Quote Bot',
-                options: [,
+                options: [
                     {
                         type: ApplicationCommandOptionType.STRING,
                         name: 'message-link',
@@ -37,7 +37,7 @@ const commands = fromApi(`PUT /applications/${process.env.botId}/commands`, [
                 type: ApplicationCommandOptionType.SUB_COMMAND,
                 name: 'message',
                 description: 'Effectively, a screenshot of a discord message or range of messages',
-                options: [,
+                options: [
                     {
                         type: ApplicationCommandOptionType.STRING,
                         name: 'message-link',
@@ -71,7 +71,7 @@ const commands = fromApi(`PUT /applications/${process.env.botId}/commands`, [
                 type: ApplicationCommandOptionType.SUB_COMMAND,
                 name: 'card',
                 description: 'A card-shaped quote image, mutch like Quote Bot',
-                options: [,
+                options: [
                     {
                         type: ApplicationCommandOptionType.STRING,
                         name: 'message-link',
@@ -90,7 +90,7 @@ const commands = fromApi(`PUT /applications/${process.env.botId}/commands`, [
                 type: ApplicationCommandOptionType.SUB_COMMAND,
                 name: 'message',
                 description: 'Effectively, a screenshot of a discord message or range of messages',
-                options: [,
+                options: [
                     {
                         type: ApplicationCommandOptionType.STRING,
                         name: 'message-link',
