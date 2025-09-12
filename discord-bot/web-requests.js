@@ -63,6 +63,7 @@ function fromApi(callPath, body) {
 
     const promise = fetch(url, opts)
         .then(async req => [await req.json(), req.status === 429])
+        .catch(message => [{ message, code: 0 }, false])
         .then(([res, isRatelimit]) => {
             delete this.apiReqs[url];
             if (res.code === 40062 || isRatelimit) {
@@ -75,8 +76,7 @@ function fromApi(callPath, body) {
                 return Promise.reject(res);
             }
             return res;
-        })
-        .catch(message => Promise.reject({ message }));
+        });
     apiReqs[url] = promise;
     return promise;
 }
