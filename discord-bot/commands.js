@@ -65,7 +65,6 @@ const commands = fromApi(`PUT /applications/${process.env.botId}/commands`, [
     {
         type: ApplicationCommandType.MESSAGE,
         name: 'quote',
-        description: 'Quotes a message',
         options: [
             {
                 type: ApplicationCommandOptionType.SUB_COMMAND,
