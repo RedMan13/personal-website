@@ -66,7 +66,7 @@ function fromApi(callPath, body) {
         .then(async req => [await req.json(), req.status === 429])
         .catch(message => [{ message, code: 0 }, false])
         .then(([res, isRatelimit]) => {
-            delete this.apiReqs[url];
+            delete apiReqs[url];
             if (res.code === 40062 || isRatelimit) {
                 const stamp = Date.now() + (res.retry_after * 1000);
                 if (res.global) globalLimit = stamp;
