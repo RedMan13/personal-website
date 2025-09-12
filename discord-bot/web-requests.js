@@ -47,4 +47,4 @@ function fromApi(callPath, body) {
     return promise;
 }
 
-module.exports = { fromApi, stringifyError };
+module.exports = { fromApi };
