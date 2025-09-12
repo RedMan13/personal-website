@@ -1,4 +1,5 @@
 /** @import { PrecompToken } from '../builder/precomp-utils' */
+const { PrecompUtils } = require('builder');
 
 function isUppercase(tag) {
     return 'QWERTYUIOPASDFGHJKLZXCVBNM'.includes(tag[0]);
@@ -124,7 +125,7 @@ function makeJS(token, container, parent) {
             res += `${container}.addEventListener("${key}", ${value.slice(1, -1)}); `;
             break;
         default:
-            res += `setAttribute(${container}, "${key}", ${value 
+            res += `window.setAttribute(${container}, "${key}", ${value 
                 ? value[0] === '{' 
                     ? value.slice(1, -1) 
                     : '`' + value.slice(1, -1).replaceAll('`', '\\`') + '`'
@@ -137,7 +138,7 @@ function makeJS(token, container, parent) {
             continue;
         }
         if (Array.isArray(child)) {
-            res += `appendChildren(${container}, [`;
+            res += `window.appendChildren(${container}, [`;
             for (const part of child) {
                 if (typeof part === 'string') {
                     res += part;
@@ -161,6 +162,8 @@ function makeJS(token, container, parent) {
 }
 
 module.exports = async function(util) {
+    const isWebpack = typeof util === 'string'
+    if (isWebpack) util = new PrecompUtils('', util);
     util.tokenize({
         end: /^(\/>|<\/(?:(?<namespace>[a-z$_][a-z$_0-9-]*):)?(?<tagname>[a-z$_][a-z$_0-9-]*\s*)>)/i,
         _(str) {
@@ -206,12 +209,12 @@ module.exports = async function(util) {
     }, ['start', '*attributes', '?close', '^', 'end']);
     
     for (const usage of parseTokens(util.tokens, util)) {
-        const contMatch = util.file.slice(0, usage.start)
-            .match(/(?<variable>[_$a-z][_$a-z0-9.]*)\s*=\s*$/i);
+        const elStr = util.file.slice(0, usage.start);
+        const contMatch = elStr.match(/(?<variable>[_$a-z][_$a-z0-9.]*)\s*=\s*$/i);
         const container = contMatch?.groups?.variable;
         const start = contMatch?.index ?? usage.start;
         if (usage.tagname === 'define') {
-            let gen = `${container} = defineElement("${fixCustom(container)}", {`;
+            let gen = `${container} = window.defineElement("${fixCustom(container)}", {`;
             for (const [key, value, namespace] of usage.attributes) {
                 gen += `["${namespace ? `${namespace}:` : ''}${key}"]: ${value 
                     ? value[0] === '{' 
@@ -219,18 +222,20 @@ module.exports = async function(util) {
                         : '`' + value.slice(1, -1).replaceAll('`', '\\`') + '`' 
                     : 'true'},`;
             }
-            gen += `}, () => ${makeJS({
+            gen += `}, async function(shadow) {${makeJS({
                 tagname: 'div',
                 isCustom: false,
                 isEmpty: !usage.children.length,
                 attributes: [],
                 children: [...usage.children]
-            })});`;
+            }, null, 'shadow')}});`;
             util.replace(start, usage.end, gen);
             continue;
         }
         util.replace(start, usage.end, makeJS(usage, container));
     }
     util.path = util.path.replace(/jsx$/i, 'js');
+    if (isWebpack) await util.bake();
+    return util.file;
 }
 module.exports.matchFile = util => util.matchType('.jsx');

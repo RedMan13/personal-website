@@ -1,5 +1,6 @@
 const nacl = require('tweetnacl');
 const { InteractionType, InteractionCallbackType } = require('./enums');
+const { commands } = require('./commands');
 
 /**
  * 

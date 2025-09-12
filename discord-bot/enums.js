@@ -25,3 +25,51 @@ module.exports.InteractionCallbackType = {
     /** Launch the Activity associated with the app. Only available for apps with Activities enabled */
     LAUNCH_ACTIVITY: 12
 }
+module.exports.ApplicationCommandType = {
+    /** Slash commands; a text-based command that shows up when a user types `/` */
+    CHAT_INPUT: 1,
+    /** A UI-based command that shows up when you right click or tap on a user */
+    USER: 2,
+    /** A UI-based command that shows up when you right click or tap on a message */
+    MESSAGE: 3,
+    /** A UI-based command that represents the primary way to invoke an app's Activity */
+    PRIMARY_ENTRY_POINT: 4
+}
+module.exports.ApplicationCommandOptionType = {
+    SUB_COMMAND: 1,
+    SUB_COMMAND_GROUP: 2,
+    STRING: 3,
+    /** Any integer between -2^53 and 2^53 */
+    INTEGER: 4,
+    BOOLEAN: 5,
+    USER: 6,
+    /** Includes all channel types + categories */
+    CHANNEL: 7,
+    ROLE: 8,
+    /** Includes users and roles */
+    MENTIONABLE: 9,
+    /** Any double between -2^53 and 2^53 */
+    NUMBER: 10,
+    /** attachment object */
+    ATTACHMENT: 11
+}
+module.exports.ApplicationIntegrationType = {
+    /** App is installable to servers */
+    GUILD_INSTALL: 0,
+    /** App is installable to users */
+    USER_INSTALL: 1
+}
+module.exports.InteractionContextType = {
+    /** Interaction can be used within servers */
+    GUILD: 0,
+    /** Interaction can be used within DMs with the app's bot user */
+    BOT_DM: 1,
+    /** Interaction can be used within Group DMs and DMs other than the app's bot user */
+    PRIVATE_CHANNEL: 2
+}
+module.exports.EntryPointCommandHandlerType = {
+    /** The app handles the interaction using an interaction token */
+    APP_HANDLER: 1,
+    /** Discord handles the interaction by launching an Activity and sending a follow-up message without coordinating with the app */
+    DISCORD_LAUNCH_ACTIVITY: 2
+}
