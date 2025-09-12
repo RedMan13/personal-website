@@ -64,53 +64,13 @@ const commands = fromApi(`PUT /applications/${process.env.botId}/commands`, [
     },
     {
         type: ApplicationCommandType.MESSAGE,
-        name: 'quote',
-        options: [
-            {
-                type: ApplicationCommandOptionType.SUB_COMMAND,
-                name: 'card',
-                description: 'A card-shaped quote image, mutch like Quote Bot',
-                options: [
-                    {
-                        type: ApplicationCommandOptionType.STRING,
-                        name: 'message-link',
-                        description: 'The link to the message to quote',
-                        required: true,
-                    },
-                    {
-                        type: ApplicationCommandOptionType.BOOLEAN,
-                        name: 'hidden',
-                        description: 'If the result should be hidden of not',
-                        required: false
-                    }
-                ]
-            },
-            {
-                type: ApplicationCommandOptionType.SUB_COMMAND,
-                name: 'message',
-                description: 'Effectively, a screenshot of a discord message or range of messages',
-                options: [
-                    {
-                        type: ApplicationCommandOptionType.STRING,
-                        name: 'message-link',
-                        description: 'The link to the message to quote',
-                        required: true,
-                    },
-                    {
-                        type: ApplicationCommandOptionType.INTEGER,
-                        name: 'message-count',
-                        description: 'How many messages around the selected message should be included',
-                        required: false
-                    },
-                    {
-                        type: ApplicationCommandOptionType.BOOLEAN,
-                        name: 'hidden',
-                        description: 'If the result should be hidden of not',
-                        required: false
-                    }
-                ]
-            }
-        ],
+        name: 'quote-card',
+        integration_types: [ApplicationIntegrationType.GUILD_INSTALL, ApplicationIntegrationType.USER_INSTALL],
+        contexts: [InteractionContextType.BOT_DM, InteractionContextType.GUILD, InteractionContextType.PRIVATE_CHANNEL]
+    },
+    {
+        type: ApplicationCommandType.MESSAGE,
+        name: 'quote-message',
         integration_types: [ApplicationIntegrationType.GUILD_INSTALL, ApplicationIntegrationType.USER_INSTALL],
         contexts: [InteractionContextType.BOT_DM, InteractionContextType.GUILD, InteractionContextType.PRIVATE_CHANNEL]
     }
