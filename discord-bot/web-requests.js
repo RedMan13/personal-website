@@ -38,7 +38,7 @@ function fromApi(callPath, body) {
                 else limitedApis[path] = stamp;
             }
             if ('code' in res) {
-                console.log('Discord API response error:', res);
+                console.log('Discord API response error:', JSON.stringify(res, null, 4));
                 return Promise.reject(res);
             }
             return res;

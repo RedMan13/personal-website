@@ -115,6 +115,6 @@ const commands = fromApi(`PUT /applications/${process.env.botId}/commands`, [
         integration_types: [ApplicationIntegrationType.GUILD_INSTALL, ApplicationIntegrationType.USER_INSTALL],
         contexts: [InteractionContextType.BOT_DM, InteractionContextType.GUILD, InteractionContextType.PRIVATE_CHANNEL]
     }
-]);
+]).catch(() => []);
 
 module.exports = { commands }
