@@ -19,7 +19,7 @@ function compareFileNames(string, comp) {
     if (folders.length !== Cfolders.length) return false;
     let isReal = true;
     for (const [idx, folder] of Object.entries(folders)) {
-        const keywords = folder.split(/[^\w.]+/ig);
+        const keywords = folder.split(/[^\w]+/ig);
         for (const keyword of keywords) {
             isReal &&= Cfolders[idx].includes(keyword);
             // exit early, failed to find a valid match
