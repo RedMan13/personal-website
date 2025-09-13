@@ -52,7 +52,7 @@ module.exports = function(req, res, reject, codes) {
                             attachments: [
                                 {
                                     id: '0',
-                                    filename: `quote-${event.data.target_id}`
+                                    filename: `quote-${event.data.target_id}.png`
                                 }
                             ]
                         })
