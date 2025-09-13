@@ -14,7 +14,7 @@ function fromApi(callPath, body) {
         method,
         headers: {
             'Authorization': `Bot ${process.env.botToken}`,
-            'Content-Type': 'application/json',
+            'Content-Type': body instanceof FormData ? 'multipart/form-data' : 'application/json',
             'User-Agent': `DiscordBot (https://godslayerakp.serv00.net/discord-bot, v1)`
         }
     }

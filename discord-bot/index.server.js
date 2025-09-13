@@ -1,7 +1,11 @@
 const nacl = require('tweetnacl');
 const { InteractionType, InteractionCallbackType } = require('./enums');
+const { fromApi } = require('./web-requests');
 const { commands } = require('./commands');
+const crypto = require('crypto');
+const { createQuoteCard, createQuoteMessage } = require('./quote-generator');
 
+const quoteQueue = [];
 /**
  * 
  * @param {import('express').Request} req 
@@ -36,6 +40,15 @@ module.exports = function(req, res, reject, codes) {
             const ttp = Date.now() - start.getTime();
             result.type = InteractionCallbackType.CHANNEL_MESSAGE_WITH_SOURCE;
             result.data = { content: `pong!!!1!1111!!!111!!\ntook \`${ttp}\` ms to respond` }
+            break;
+        case 'Quote (card)':
+            result.type = InteractionCallbackType.DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE;
+            createQuoteCard(event.data.resolved.messages[event.data.target_id])
+                .then(image => {
+                    const data = new FormData();
+                    data.append('files[0]', image);
+                    fromApi(`PATCH /webhooks/${process.env.botId}/${event.token}/messages/@original`, data);
+                });
             break;
         }
         break;
