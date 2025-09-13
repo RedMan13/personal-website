@@ -23,7 +23,7 @@ async function createQuoteCard(message) {
     ctx.fillText(message.content, 460, 180);
     ctx.font = '12px';
     ctx.fillText(message.author.display_name, 460, 270);
-    return new Blob([canvas.toBuffer()], 'image/png');
+    return new Blob([canvas.toBuffer()], { type: 'image/png' });
 }
 async function createQuoteMessage(message, range = 10, direction = 'around') {
 
