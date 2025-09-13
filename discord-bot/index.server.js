@@ -41,7 +41,7 @@ module.exports = function(req, res, reject, codes) {
             result.type = InteractionCallbackType.CHANNEL_MESSAGE_WITH_SOURCE;
             result.data = { content: `pong!!!1!1111!!!111!!\ntook \`${ttp}\` ms to respond` }
             break;
-        case 'Quote (card)':
+        case 'Quote (Card)':
             result.type = InteractionCallbackType.DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE;
             createQuoteCard(event.data.resolved.messages[event.data.target_id])
                 .then(image => {
