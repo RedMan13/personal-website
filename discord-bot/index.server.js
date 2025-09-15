@@ -46,17 +46,16 @@ module.exports = function(req, res, reject, codes) {
             createQuoteCard(event.data.resolved.messages[event.data.target_id])
                 .then(image => {
                     const data = new FormData();
-                    data.append('payload_json', new Blob([
-                        JSON.stringify({
-                            content: 'Here, have your quote',
-                            attachments: [
-                                {
-                                    id: '0',
-                                    filename: `quote-${event.data.target_id}.png`
-                                }
-                            ]
-                        })
-                    ], { type: 'application/json' }));
+                    data.append('payload_json', JSON.stringify({
+                        content: 'Here, have your quote',
+                        attachments: [
+                            {
+                                id: '0',
+                                description: 'The image of the quote that was made',
+                                filename: `quote-${event.data.target_id}.png`
+                            }
+                        ]
+                    }));
                     data.append('files[0]', image);
                     fromApi(`PATCH /webhooks/${process.env.botId}/${event.token}/messages/@original`, data);
                 });
