@@ -24,7 +24,7 @@ function fromApi(callPath, body) {
             url.searchParams.set(key, value);
         }
     } else {
-        opts.body = JSON.stringify(body);
+        opts.body = body instanceof FormData ? body : JSON.stringify(body);
     }
 
     const promise = fetch(url, opts)
