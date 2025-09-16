@@ -13,9 +13,10 @@ Canvas.CanvasRenderingContext2D.prototype.fillTextWrap = function(text, x,y, max
     const measures = this.measureText('abcdefghijklmnopqrstuvwxyz_`|');
     const lineHeight = measures.actualBoundingBoxAscent + measures.actualBoundingBoxDescent;
     let line = '';
+    let lineStart = 0;
     let lastSpace = -1;
     for (let i = 0; i < text.length; i++) {
-        if (text[i] === ' ') lastSpace = i;
+        if (text[i] === ' ') lastSpace = i - lineStart;
         const measures = this.measureText(line + text[i]);
         if (measures.width > maxWidth || text[i] === '\n') {
             switch (this.breakRule) {
@@ -36,6 +37,7 @@ Canvas.CanvasRenderingContext2D.prototype.fillTextWrap = function(text, x,y, max
                 y += lineHeight;
                 line = '';
                 lastSpace = -1;
+                lineStart = i;
                 break;
             case 'break-longest':
                 // rule states we should break normally unbreakable lines the same 
@@ -48,6 +50,7 @@ Canvas.CanvasRenderingContext2D.prototype.fillTextWrap = function(text, x,y, max
                 y += lineHeight;
                 line = '';
                 lastSpace = -1;
+                lineStart = i;
                 break;
             case 'break-anywhere':
                 // rule states that we break here just because the width has been excede,
@@ -56,6 +59,7 @@ Canvas.CanvasRenderingContext2D.prototype.fillTextWrap = function(text, x,y, max
                 y += lineHeight;
                 line = '';
                 lastSpace = -1;
+                lineStart = i;
                 break;
             }
         }
