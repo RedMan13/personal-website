@@ -52,8 +52,7 @@ Canvas.CanvasRenderingContext2D.prototype.fillTextWrap = function(text, x,y, max
                 line = '';
                 lastSpace = -1;
                 lineStart = i;
-                break;
-            }
+            }/*
             case 'break-anywhere': {
                 // rule states that we break here just because the width has been excede,
                 // nomatter what content we are breaking
@@ -61,7 +60,7 @@ Canvas.CanvasRenderingContext2D.prototype.fillTextWrap = function(text, x,y, max
                 y += lineHeight;
                 line = '';
                 break;
-            }
+            }*/
             }
         }
         line += text[i];
