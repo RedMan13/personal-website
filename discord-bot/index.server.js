@@ -61,15 +61,17 @@ module.exports = function(req, res, reject, codes) {
                         return fromApi(`PATCH /webhooks/${process.env.botId}/${event.token}/messages/@original`, data);
                     })
                     .catch(err => {
-                        fromApi(`PATCH /webhooks/${process.env.botId}/${event.token}/messages/@original`, { content: `${JSON.stringify(err)}` });
+                        if (err instanceof Error) err = err.message;
+                        fromApi(`PATCH /webhooks/${process.env.botId}/${event.token}/messages/@original`, { content: `Process failed with error: ${JSON.stringify(err)}` });
                     });
                 break;
             }
             break;
         }
     } catch (err) {
+        if (err instanceof Error) err = err.message;
         result.type = CHANNEL_MESSAGE_WITH_SOURCE;
-        result.data = { content: `${JSON.stringify(err)}` };
+        result.data = { content: `Process failed with error: ${JSON.stringify(err)}` };
     }
     res.status(codes.OK);
     res.header('Content-Type', 'application/json');
