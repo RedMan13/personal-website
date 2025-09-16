@@ -18,7 +18,7 @@ Canvas.CanvasRenderingContext2D.prototype.fillTextWrap = function(text, x,y, max
     for (let i = 0; i < text.length; i++) {
         if (text[i] === ' ') lastSpace = i - lineStart;
         const measures = this.measureText(line + text[i]);
-        if (measures.width > maxWidth || text[i] === '\n') {
+        if (measures.width > maxWidth || text[i] === '\n' || i >= text.length -1) {
             switch (this.breakRule) {
             default:
             case 'preserve-word': {
@@ -52,7 +52,8 @@ Canvas.CanvasRenderingContext2D.prototype.fillTextWrap = function(text, x,y, max
                 line = '';
                 lastSpace = -1;
                 lineStart = i;
-            }/*
+                break;
+            }
             case 'break-anywhere': {
                 // rule states that we break here just because the width has been excede,
                 // nomatter what content we are breaking
@@ -60,7 +61,7 @@ Canvas.CanvasRenderingContext2D.prototype.fillTextWrap = function(text, x,y, max
                 y += lineHeight;
                 line = '';
                 break;
-            }*/
+            }
             }
         }
         line += text[i];
