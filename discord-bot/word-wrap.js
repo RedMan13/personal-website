@@ -27,8 +27,8 @@ Canvas.CanvasRenderingContext2D.prototype.fillTextWrap = function(text, x,y, max
                 if (lastSpace !== -1) {
                     i -= (line.length - (lastSpace +1)) +1;
                     line = line.slice(0, lastSpace);
-                } else {
-                    const end = text.includes(' ', i) ? text.indexOf(' ', i) : text.length;
+                } else if (text[i] !== '\n') {
+                    const end = (text.slice(i).match(/[ \n]/)?.index ?? text.length) + i;
                     line += text.slice(i +1, end);
                     i = end -1;
                 }
