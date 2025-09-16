@@ -16,9 +16,10 @@ async function createQuoteCard(message) {
     ctx.fillRect(0,0, 640,480);
     const avatar = await loadImage(Asset.UserAvatar(message.author, 'png', 360 * imageScale));
     ctx.drawImage(avatar, 0,0, canvas.height, canvas.height);
-    ctx.fillStyle = ctx.createLinearGradient(180,180, 360,180);
+    ctx.fillStyle = ctx.createLinearGradient(0,180, 360,180);
     ctx.fillStyle.addColorStop(0, 'transparent');
     ctx.fillStyle.addColorStop(1, 'black');
+    ctx.fillStyle = 'white';
     ctx.fillRect(0,0, 360,360);
     ctx.fillText(message.content, 460, 180);
     ctx.font = '12px';
