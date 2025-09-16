@@ -48,7 +48,7 @@ Canvas.CanvasRenderingContext2D.prototype.fillTextWrap = function(text, x,y, max
                     line = line.slice(0, lastSpace);
                 }
                 this.fillText(line.trim(), x,y);
-                y += 1;
+                y += lineHeight;
                 line = '';
                 lastSpace = -1;
                 lineStart = i;
@@ -78,22 +78,23 @@ Canvas.CanvasRenderingContext2D.prototype.strokeTextWrap = function(text, x,y, m
     const measures = this.measureText('abcdefghijklmnopqrstuvwxyz_`|');
     const lineHeight = measures.actualBoundingBoxAscent + measures.actualBoundingBoxDescent;
     let line = '';
+    let lineStart = 0;
     let lastSpace = -1;
     for (let i = 0; i < text.length; i++) {
-        if (text[i] === ' ') lastSpace = i;
+        if (text[i] === ' ') lastSpace = i - lineStart;
         const measures = this.measureText(line + text[i]);
-        if (measures.width > maxWidth || text[i] === '\n') {
+        if (measures.width > maxWidth || text[i] === '\n' || i >= text.length -1) {
             switch (this.breakRule) {
             default:
-            case 'preserve-word':
+            case 'preserve-word': {
                 // rule states we must preserve the wod at all cost
                 // if a word isnt broken prior to running off the edge, 
                 // then let it run off the edge
                 if (lastSpace !== -1) {
                     i -= (line.length - (lastSpace +1)) +1;
                     line = line.slice(0, lastSpace);
-                } else {
-                    const end = text.includes(' ', i) ? text.indexOf(' ', i) : text.length;
+                } else if (text[i] !== '\n') {
+                    const end = (text.slice(i).match(/[ \n]/)?.index ?? text.length) + i;
                     line += text.slice(i +1, end);
                     i = end -1;
                 }
@@ -101,8 +102,10 @@ Canvas.CanvasRenderingContext2D.prototype.strokeTextWrap = function(text, x,y, m
                 y += lineHeight;
                 line = '';
                 lastSpace = -1;
+                lineStart = i;
                 break;
-            case 'break-longest':
+            }
+            case 'break-longest': {
                 // rule states we should break normally unbreakable lines the same 
                 // way break-anywhere would have done
                 if (lastSpace !== -1) {
@@ -113,15 +116,17 @@ Canvas.CanvasRenderingContext2D.prototype.strokeTextWrap = function(text, x,y, m
                 y += lineHeight;
                 line = '';
                 lastSpace = -1;
+                lineStart = i;
                 break;
-            case 'break-anywhere':
+            }
+            case 'break-anywhere': {
                 // rule states that we break here just because the width has been excede,
                 // nomatter what content we are breaking
                 this.strokeText(line.trim(), x,y);
                 y += lineHeight;
                 line = '';
-                lastSpace = -1;
                 break;
+            }
             }
         }
         line += text[i];
