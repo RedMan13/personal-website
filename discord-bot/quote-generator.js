@@ -16,14 +16,16 @@ async function createQuoteCard(message) {
     ctx.fillRect(0,0, 640,480);
     const avatar = await loadImage(Asset.UserAvatar(message.author, 'png', 360 * imageScale));
     ctx.drawImage(avatar, 0,0, canvas.height, canvas.height);
-    ctx.fillStyle = ctx.createLinearGradient(0,180, 360,180);
+    ctx.fillStyle = ctx.createLinearGradient(-180,180, 360,180);
     ctx.fillStyle.addColorStop(0, 'transparent');
     ctx.fillStyle.addColorStop(1, 'black');
     ctx.fillRect(0,0, 360,360);
     ctx.fillStyle = 'white';
-    ctx.fillText(message.content, 460, 180);
-    ctx.font = '12px';
-    ctx.fillText(message.author.display_name, 460, 270);
+    ctx.font = '20px sans-serif';
+    ctx.fillTextWrap(message.content, 500, 180, 360);
+    ctx.font = '12px sans-serif';
+    ctx.fillStyle = '#EEE';
+    ctx.fillText(message.author.username, 500, 270, 360);
     return new Blob([canvas.toBuffer()], { type: 'image/png' });
 }
 async function createQuoteMessage(message, range = 10, direction = 'around') {
