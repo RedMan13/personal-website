@@ -19,8 +19,8 @@ async function createQuoteCard(message) {
     ctx.fillStyle = ctx.createLinearGradient(0,180, 360,180);
     ctx.fillStyle.addColorStop(0, 'transparent');
     ctx.fillStyle.addColorStop(1, 'black');
-    ctx.fillStyle = 'white';
     ctx.fillRect(0,0, 360,360);
+    ctx.fillStyle = 'white';
     ctx.fillText(message.content, 460, 180);
     ctx.font = '12px';
     ctx.fillText(message.author.display_name, 460, 270);
