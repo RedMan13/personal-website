@@ -22,10 +22,10 @@ async function createQuoteCard(message) {
     ctx.fillRect(0,0, 360,360);
     ctx.fillStyle = 'white';
     ctx.font = '20px sans-serif';
-    ctx.fillTextWrap(message.content, 500, 180, 360);
+    ctx.fillTextWrap(message.content, 500, 180, 280);
     ctx.font = '12px sans-serif';
     ctx.fillStyle = '#EEE';
-    ctx.fillText(message.author.username, 500, 270, 360);
+    ctx.fillText(message.author.username, 500, 270, 280);
     return new Blob([canvas.toBuffer()], { type: 'image/png' });
 }
 async function createQuoteMessage(message, range = 10, direction = 'around') {

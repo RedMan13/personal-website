@@ -33,7 +33,7 @@ Canvas.CanvasRenderingContext2D.prototype.fillTextWrap = function(text, x,y, max
                     line += text.slice(i +1, end);
                     i = end -1;
                 }
-                this.fillText(i + ':' + text.length + ':' + lineHeight + ':' + line.trim(), x,y);
+                this.fillText(i + ':' + line.length + ':' + text.length + ':' + text.charCodeAt(i).toString(16) + ':' + line.trim(), x,y);
                 y += lineHeight;
                 line = '';
                 lastSpace = -1;
