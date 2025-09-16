@@ -13,10 +13,10 @@ function fromApi(callPath, body) {
         method,
         headers: {
             'Authorization': `Bot ${process.env.botToken}`,
-            'Content-Type': body instanceof FormData ? 'multipart/form-data' : 'application/json',
             'User-Agent': `DiscordBot (https://godslayerakp.serv00.net/discord-bot, v1)`
         }
     }
+    if (!(body instanceof FormData)) opts.headers['Content-Type'] = 'application/json';
     if (method === 'GET' && body) {
         for (const [key, value] of Object.entries(body)) {
             if (!value) continue;
