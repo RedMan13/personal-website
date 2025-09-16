@@ -33,7 +33,7 @@ Canvas.CanvasRenderingContext2D.prototype.fillTextWrap = function(text, x,y, max
                     line += text.slice(i +1, end);
                     i = end -1;
                 }
-                this.fillText(i + ':' + line.length + ':' + text.length + ':' + text.charCodeAt(i).toString(16).toUpperCase().padStart(2, '0') + ':' + line.trim(), x,y);
+                this.fillText(line.trim(), x,y);
                 y += lineHeight;
                 line = '';
                 lastSpace = -1;
@@ -47,7 +47,7 @@ Canvas.CanvasRenderingContext2D.prototype.fillTextWrap = function(text, x,y, max
                     line = line.slice(0, lastSpace);
                 }
                 this.fillText(line.trim(), x,y);
-                y += lineHeight;
+                y += 1;
                 line = '';
                 lastSpace = -1;
                 lineStart = i;
