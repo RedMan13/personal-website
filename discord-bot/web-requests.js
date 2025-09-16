@@ -9,7 +9,6 @@ function fromApi(callPath, body) {
     delete limitedApis[path];
     globalLimit = NaN;
     const url = new URL(`https://discord.com/api/v10${path}`);
-    console.log(method, 'at', url.toString());
     const opts = {
         method,
         headers: {
@@ -26,6 +25,7 @@ function fromApi(callPath, body) {
     } else {
         opts.body = body instanceof FormData ? body : JSON.stringify(body);
     }
+    console.log(method, 'at', url.toString(), 'with body', opts.body);
 
     const promise = fetch(url, opts)
         .then(async req => [await req.json(), req.status === 429])
