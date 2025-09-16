@@ -21,7 +21,7 @@ Canvas.CanvasRenderingContext2D.prototype.fillTextWrap = function(text, x,y, max
         if (measures.width > maxWidth || text[i] === '\n') {
             switch (this.breakRule) {
             default:
-            case 'preserve-word':
+            case 'preserve-word': {
                 // rule states we must preserve the wod at all cost
                 // if a word isnt broken prior to running off the edge, 
                 // then let it run off the edge
@@ -39,7 +39,8 @@ Canvas.CanvasRenderingContext2D.prototype.fillTextWrap = function(text, x,y, max
                 lastSpace = -1;
                 lineStart = i;
                 break;
-            case 'break-longest':
+            }
+            case 'break-longest': {
                 // rule states we should break normally unbreakable lines the same 
                 // way break-anywhere would have done
                 if (lastSpace !== -1) {
@@ -52,13 +53,15 @@ Canvas.CanvasRenderingContext2D.prototype.fillTextWrap = function(text, x,y, max
                 lastSpace = -1;
                 lineStart = i;
                 break;
-            case 'break-anywhere':
+            }
+            case 'break-anywhere': {
                 // rule states that we break here just because the width has been excede,
                 // nomatter what content we are breaking
                 this.fillText(line.trim(), x,y);
                 y += lineHeight;
                 line = '';
                 break;
+            }
             }
         }
         line += text[i];
