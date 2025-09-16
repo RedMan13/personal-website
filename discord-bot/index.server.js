@@ -52,7 +52,7 @@ module.exports = function(req, res, reject, codes) {
                             {
                                 id: '0',
                                 description: 'The image of the quote that was made',
-                                filename: `quote-${event.data.target_id}.png`
+                                filename: `attachment://quote-${event.data.target_id}.png`
                             }
                         ]
                     }));
