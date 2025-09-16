@@ -29,39 +29,47 @@ module.exports = function(req, res, reject, codes) {
     const start = new Date(Number(req.headers['x-signature-timestamp']) * 1000);
     const event = JSON.parse(req.body.toString('utf8'));
     let result = { type: 0, data: {} };
-    switch (event.type) {
-    case InteractionType.PING:
-        console.log('Bot got pinged');
-        result.type = InteractionCallbackType.PONG;
-        break;
-    case InteractionType.APPLICATION_COMMAND:
-        switch (event.data.name) {
-        case 'ping':
-            const ttp = Date.now() - start.getTime();
-            result.type = InteractionCallbackType.CHANNEL_MESSAGE_WITH_SOURCE;
-            result.data = { content: `pong!!!1!1111!!!111!!\ntook \`${ttp}\` ms to respond` }
+    try {
+        switch (event.type) {
+        case InteractionType.PING:
+            console.log('Bot got pinged');
+            result.type = InteractionCallbackType.PONG;
             break;
-        case 'Quote (Card)':
-            result.type = InteractionCallbackType.DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE;
-            createQuoteCard(event.data.resolved.messages[event.data.target_id])
-                .then(image => {
-                    const data = new FormData();
-                    data.append('payload_json', JSON.stringify({
-                        content: 'Here, have your quote',
-                        attachments: [
-                            {
-                                id: '0',
-                                description: 'The image of the quote that was made',
-                                filename: `attachment://quote-${event.data.target_id}.png`
-                            }
-                        ]
-                    }));
-                    data.append('files[0]', image);
-                    fromApi(`PATCH /webhooks/${process.env.botId}/${event.token}/messages/@original`, data);
-                });
+        case InteractionType.APPLICATION_COMMAND:
+            switch (event.data.name) {
+            case 'ping':
+                const ttp = Date.now() - start.getTime();
+                result.type = InteractionCallbackType.CHANNEL_MESSAGE_WITH_SOURCE;
+                result.data = { content: `pong!!!1!1111!!!111!!\ntook \`${ttp}\` ms to respond` }
+                break;
+            case 'Quote (Card)':
+                result.type = InteractionCallbackType.DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE;
+                createQuoteCard(event.data.resolved.messages[event.data.target_id])
+                    .then(image => {
+                        const data = new FormData();
+                        data.append('payload_json', JSON.stringify({
+                            content: 'Here, have your quote',
+                            attachments: [
+                                {
+                                    id: '0',
+                                    description: 'The image of the quote that was made',
+                                    filename: `attachment://quote-${event.data.target_id}.png`
+                                }
+                            ]
+                        }));
+                        data.append('files[0]', image);
+                        return fromApi(`PATCH /webhooks/${process.env.botId}/${event.token}/messages/@original`, data);
+                    })
+                    .catch(err => {
+                        fromApi(`PATCH /webhooks/${process.env.botId}/${event.token}/messages/@original`, { content: `${JSON.stringify(err)}` });
+                    });
+                break;
+            }
             break;
         }
-        break;
+    } catch (err) {
+        result.type = CHANNEL_MESSAGE_WITH_SOURCE;
+        result.data = { content: `${JSON.stringify(err)}` };
     }
     res.status(codes.OK);
     res.header('Content-Type', 'application/json');
