@@ -15,10 +15,10 @@ Canvas.CanvasRenderingContext2D.prototype.fillTextWrap = function(text, x,y, max
     let line = '';
     let lineStart = 0;
     let lastSpace = -1;
-    for (let i = 0; i < text.length; i++) {
+    for (let i = 0; i <= text.length; i++) {
         if (text[i] === ' ') lastSpace = i - lineStart;
         const measures = this.measureText(line + text[i]);
-        if (measures.width > maxWidth || text[i] === '\n' || i >= text.length -1) {
+        if (measures.width > maxWidth || text[i] === '\n' || i >= text.length) {
             switch (this.breakRule) {
             default:
             case 'preserve-word': {
@@ -80,10 +80,10 @@ Canvas.CanvasRenderingContext2D.prototype.strokeTextWrap = function(text, x,y, m
     let line = '';
     let lineStart = 0;
     let lastSpace = -1;
-    for (let i = 0; i < text.length; i++) {
+    for (let i = 0; i <= text.length; i++) {
         if (text[i] === ' ') lastSpace = i - lineStart;
         const measures = this.measureText(line + text[i]);
-        if (measures.width > maxWidth || text[i] === '\n' || i >= text.length -1) {
+        if (measures.width > maxWidth || text[i] === '\n' || i >= text.length) {
             switch (this.breakRule) {
             default:
             case 'preserve-word': {
