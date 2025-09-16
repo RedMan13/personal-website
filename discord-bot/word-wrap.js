@@ -19,6 +19,7 @@ Canvas.CanvasRenderingContext2D.prototype.fillTextWrap = function(text, x,y, max
         const measures = this.measureText(line + text[i]);
         if (measures.width > maxWidth || text[i] === '\n') {
             switch (this.breakRule) {
+            default:
             case 'preserve-word':
                 // rule states we must preserve the wod at all cost
                 // if a word isnt broken prior to running off the edge, 
@@ -31,7 +32,7 @@ Canvas.CanvasRenderingContext2D.prototype.fillTextWrap = function(text, x,y, max
                     line += text.slice(i +1, end);
                     i = end -1;
                 }
-                this.fillText(line.trim(), x,y);
+                this.fillText(i + ':' + text.length + ':' + lineHeight + ':' + line.trim(), x,y);
                 y += lineHeight;
                 line = '';
                 lastSpace = -1;
@@ -78,6 +79,7 @@ Canvas.CanvasRenderingContext2D.prototype.strokeTextWrap = function(text, x,y, m
         const measures = this.measureText(line + text[i]);
         if (measures.width > maxWidth || text[i] === '\n') {
             switch (this.breakRule) {
+            default:
             case 'preserve-word':
                 // rule states we must preserve the wod at all cost
                 // if a word isnt broken prior to running off the edge, 
@@ -90,7 +92,7 @@ Canvas.CanvasRenderingContext2D.prototype.strokeTextWrap = function(text, x,y, m
                     line += text.slice(i +1, end);
                     i = end -1;
                 }
-                this.strokeText(i + ':' + text.length + ':' + lineHeight + ':' + line.trim(), x,y);
+                this.strokeText(line.trim(), x,y);
                 y += lineHeight;
                 line = '';
                 lastSpace = -1;
