@@ -90,7 +90,7 @@ Canvas.CanvasRenderingContext2D.prototype.strokeTextWrap = function(text, x,y, m
                     line += text.slice(i +1, end);
                     i = end -1;
                 }
-                this.strokeText(line.trim(), x,y);
+                this.strokeText(i + ':' + text.length + ':' + lineHeight + ':' + line.trim(), x,y);
                 y += lineHeight;
                 line = '';
                 lastSpace = -1;
