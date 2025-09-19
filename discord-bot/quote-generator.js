@@ -21,7 +21,7 @@ async function createQuoteCard(message) {
     ctx.fillStyle.addColorStop(1, 'black');
     ctx.fillRect(0,0, 360,360);
     ctx.fillStyle = 'white';
-    ctx.breakRule = 'break-longest'
+    ctx.breakRule = 'break-longest';
     ctx.font = '20px sans-serif';
     ctx.fillTextWrap(message.content, 500, 180, 280);
     ctx.font = '12px sans-serif';
