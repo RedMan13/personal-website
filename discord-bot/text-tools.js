@@ -121,7 +121,7 @@ function drawStyled(ctx, breakRule, fill, stroke, components, x, y, maxWidth) {
                 const component = components[i];
                 components.splice(i, 1);
                 for (let i = 0; i < component.value.length; i++) {
-                    if (component.value[i] === ' ') lastSpace = i - lineStart;
+                    if (component.value[i] === ' ' || component.value[i] === '\n') lastSpace = i - lineStart;
                     const tempWidth = ctx.measureText(text).width + width;
                     if (tempWidth > maxWidth || component.value[i] === '\n') {
                         switch (breakRule) {
