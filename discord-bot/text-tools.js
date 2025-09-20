@@ -71,7 +71,9 @@ function applyConfig(ctx, config) {
  * @param {boolean} fill 
  * @param {boolean} stroke 
  */
-function drawComponents(ctx, components, x,y, fill, stroke, lineHeight) {
+function drawComponents(ctx, components, x,y, fill, stroke) {
+    const measures = ctx.measureText('abcdefghijklmnopqrstuvwxyz_`|');
+    let lineHeight = measures.actualBoundingBoxAscent + measures.actualBoundingBoxDescent;
     let height = 0;
     for (let i = 0; i < components.length; i++) {
         switch (components[i].type) {
@@ -83,11 +85,10 @@ function drawComponents(ctx, components, x,y, fill, stroke, lineHeight) {
             if (fill) ctx.fillText(components[i].value, x,y);
             if (stroke) ctx.strokeText(components[i].value, x,y);
             x += components[i].width;
+            lineHeight = measures.actualBoundingBoxAscent + measures.actualBoundingBoxDescent;
             break;
         case 'config': applyConfig(ctx, components[i].value); break;
         }
-        const measures = ctx.measureText('abcdefghijklmnopqrstuvwxyz_`|');
-        const lineHeight = measures.actualBoundingBoxAscent + measures.actualBoundingBoxDescent;
         height = Math.max(height, lineHeight);
     }
     return height;
@@ -104,8 +105,6 @@ function drawComponents(ctx, components, x,y, fill, stroke, lineHeight) {
  * @param {number} maxWidth 
  */
 function drawStyled(ctx, breakRule, fill, stroke, components, x, y, maxWidth) {
-    const measures = ctx.measureText('abcdefghijklmnopqrstuvwxyz_`|');
-    const lineHeight = measures.actualBoundingBoxAscent + measures.actualBoundingBoxDescent;
     let width = 0;
     let line = [];
     for (let i = 0; i < components.length; i++) {
@@ -186,12 +185,12 @@ function drawStyled(ctx, breakRule, fill, stroke, components, x, y, maxWidth) {
                     width: ctx.measureText(component.value.slice(firstLine)),
                     value: component.value.slice(firstLine)
                 });
-                y += drawComponents(ctx, line, x,y, fill, stroke, lineHeight);
+                y += drawComponents(ctx, line, x,y, fill, stroke);
                 width = 0;
                 line = [];
                 break;
             case 'image':
-                y += drawComponents(ctx, line, x,y, fill, stroke, lineHeight);
+                y += drawComponents(ctx, line, x,y, fill, stroke);
                 width = 0;
                 line = [];
                 break;
@@ -199,7 +198,7 @@ function drawStyled(ctx, breakRule, fill, stroke, components, x, y, maxWidth) {
         }
         line.push(components[i]);
     }
-    drawComponents(ctx, line, x,y, fill, stroke, lineHeight);
+    drawComponents(ctx, line, x,y, fill, stroke);
 }
 /**
  * Converts text to a drawable, styled, form, according to some token rules
