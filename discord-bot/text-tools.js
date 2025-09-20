@@ -99,7 +99,7 @@ function drawComponents(ctx, components, x,y, fill, stroke, lineHeight) {
  * @param {number} maxWidth 
  */
 function drawStyled(ctx, breakRule, fill, stroke, components, x, y, maxWidth) {
-    const measures = this.measureText('abcdefghijklmnopqrstuvwxyz_`|');
+    const measures = ctx.measureText('abcdefghijklmnopqrstuvwxyz_`|');
     const lineHeight = measures.actualBoundingBoxAscent + measures.actualBoundingBoxDescent;
     let width = 0;
     let line = [];
