@@ -172,7 +172,7 @@ function drawStyled(ctx, breakRule, fill, stroke, components, x, y, maxWidth) {
                         }
                         }
                     }
-                    text += components[i].value[i];
+                    text += component.value[i];
                 }
                 drawComponents(ctx, line, x,y, fill, stroke, lineHeight);
                 width = 0;
