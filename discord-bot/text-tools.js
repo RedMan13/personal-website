@@ -174,6 +174,7 @@ function drawStyled(ctx, breakRule, fill, stroke, components, x, y, maxWidth) {
                     }
                     text += component.value[i];
                 }
+                line.push(components[i]);
                 drawComponents(ctx, line, x,y, fill, stroke, lineHeight);
                 width = 0;
                 line = [];
