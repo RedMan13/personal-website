@@ -72,6 +72,7 @@ function applyConfig(ctx, config) {
  * @param {boolean} stroke 
  */
 function drawComponents(ctx, components, x,y, fill, stroke, lineHeight) {
+    let height = 0;
     for (let i = 0; i < components.length; i++) {
         switch (components[i].type) {
         case 'image':
@@ -85,7 +86,11 @@ function drawComponents(ctx, components, x,y, fill, stroke, lineHeight) {
             break;
         case 'config': applyConfig(ctx, components[i].value); break;
         }
+        const measures = ctx.measureText('abcdefghijklmnopqrstuvwxyz_`|');
+        const lineHeight = measures.actualBoundingBoxAscent + measures.actualBoundingBoxDescent;
+        height = Math.max(height, lineHeight);
     }
+    return height;
 } 
 /**
  * Draws styled text, including word-wrapping
@@ -181,16 +186,15 @@ function drawStyled(ctx, breakRule, fill, stroke, components, x, y, maxWidth) {
                     width: ctx.measureText(component.value.slice(firstLine)),
                     value: component.value.slice(firstLine)
                 });
-                drawComponents(ctx, line, x,y, fill, stroke, lineHeight);
+                y += drawComponents(ctx, line, x,y, fill, stroke, lineHeight);
                 width = 0;
                 line = [];
-                y += lineHeight;
                 break;
             case 'image':
-                drawComponents(ctx, line, x,y, fill, stroke, lineHeight);
+                y += drawComponents(ctx, line, x,y, fill, stroke, lineHeight);
                 width = 0;
                 line = [];
-                y += lineHeight;
+                break;
             }
         }
         line.push(components[i]);
