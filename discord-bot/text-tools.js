@@ -111,6 +111,7 @@ function drawStyled(ctx, breakRule, fill, stroke, components, x, y, maxWidth) {
                 let text = '';
                 let lastSpace = -1;
                 let lineStart = 0;
+                let firstLine = -1;
                 let nextIdx = i;
                 const component = components[i];
                 components.splice(i, 1);
@@ -118,6 +119,7 @@ function drawStyled(ctx, breakRule, fill, stroke, components, x, y, maxWidth) {
                     if (component.value[i] === ' ') lastSpace = i - lineStart;
                     const tempWidth = ctx.measureText(text).width + width;
                     if (tempWidth > maxWidth || component.value[i] === '\n') {
+                        if (firstLine === -1) firstLine = i;
                         switch (breakRule) {
                         default:
                         case 'preserve-word': {
@@ -174,7 +176,11 @@ function drawStyled(ctx, breakRule, fill, stroke, components, x, y, maxWidth) {
                     }
                     text += component.value[i];
                 }
-                line.push(components[i]);
+                line.push({
+                    type: 'text',
+                    width: ctx.measureText(component.value.slice(firstLine)),
+                    value: component.value.slice(firstLine)
+                });
                 drawComponents(ctx, line, x,y, fill, stroke, lineHeight);
                 width = 0;
                 line = [];
