@@ -85,6 +85,7 @@ function drawComponents(ctx, components, x,y, fill, stroke) {
             if (fill) ctx.fillText(components[i].value, x,y);
             if (stroke) ctx.strokeText(components[i].value, x,y);
             x += components[i].width;
+            const measures = ctx.measureText('abcdefghijklmnopqrstuvwxyz_`|');
             lineHeight = measures.actualBoundingBoxAscent + measures.actualBoundingBoxDescent;
             break;
         case 'config': applyConfig(ctx, components[i].value); break;
