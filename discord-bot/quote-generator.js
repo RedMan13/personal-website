@@ -1,4 +1,4 @@
-const { createCanvas, loadImage } = require('./word-wrap');
+const { createCanvas, loadImage } = require('./text-tools');
 const { Asset } = require('./asset-helper');
 const { fromApi } = require('./web-requests');
 
