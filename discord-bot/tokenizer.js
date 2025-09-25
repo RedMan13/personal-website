@@ -22,7 +22,7 @@ class Tokenizer {
      * @param {{ [key: string]: TokenGenerator }} tokens The indevidual kinds of tokens and there matchers
      */
     constructor(str, tokens, debug = false) {
-        this.debug = debug && !nostd;
+        this.debug = debug && !globalThis.nostd;
         if (this.debug) {
             let i = 0;
             this.colors = Object.fromEntries(Object.keys(tokens)
@@ -57,7 +57,7 @@ class Tokenizer {
      * @returns {Token[]}
      */
     getTokens() { 
-        if (!this.debug && !nostd) {
+        if (!this.debug && !globalThis.nostd) {
             process.stdout.write(`Tokenising file data.\n`);
             process.stdout.write(`[${' '.repeat(process.stdout.columns -2)}]`);
         }
@@ -66,7 +66,7 @@ class Tokenizer {
             for (const name in this.colors) 
                 process.stdout.write(`${this.colors[name]}${name}\x1b[0m\n`);
             for (; this.str.length; this.idx++) {
-                if (!this.debug && !nostd) {
+                if (!this.debug && !globalThis.nostd) {
                     const width = process.stdout.columns -2;
                     const percent = Math.min(Math.round((this.idx / this.length) * 100), 100);
                     const barLen = Math.round((this.idx / this.length) * width);
@@ -86,7 +86,7 @@ class Tokenizer {
                 this.str = this.str.slice(1);
             }
         }
-        if (!this.debug && !nostd)
+        if (!this.debug && !globalThis.nostd)
             process.stdout.write(`\x1b[0G${' '.repeat(process.stdout.columns)}\x1b[0G\x1b[A${' '.repeat(process.stdout.columns)}\x1b[0G`);
         return this.matches; 
     }

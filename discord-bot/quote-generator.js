@@ -2,6 +2,7 @@ const { createCanvas, loadImage, parseText, drawStyled } = require('./text-tools
 const { Asset } = require('./asset-helper');
 const emojiRegex = require('emoji-regex'); // im not dealing with that damn regex being inside here
 
+globalThis.nostd = true;
 const imageScale = 1;
 /** @type {{ [key: string]: import('./tokenizer').TokenGenerator }} */
 const textFormatRules = {
