@@ -81,7 +81,7 @@ module.exports = function(req, res, reject, codes) {
         console.log(err);
         if (err instanceof Error) err = err.stack;
         if (typeof err === 'object') err = JSON.stringify(err);
-        result.type = CHANNEL_MESSAGE_WITH_SOURCE;
+        result.type = InteractionCallbackType.CHANNEL_MESSAGE_WITH_SOURCE;
         result.data = { content: `Process failed with error: \n\`\`\`ansi\n${err}\`\`\`` };
     }
     res.status(codes.OK);
