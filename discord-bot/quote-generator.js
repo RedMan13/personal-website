@@ -1,8 +1,29 @@
-const { createCanvas, loadImage } = require('./text-tools');
+const { createCanvas, loadImage, parseText, drawStyled } = require('./text-tools');
 const { Asset } = require('./asset-helper');
-const { fromApi } = require('./web-requests');
+const emojiRegex = require('emoji-regex'); // im not dealing with that damn regex being inside here
 
 const imageScale = 1;
+/** @type {{ [key: string]: import('./tokenizer').TokenGenerator }} */
+const textFormatRules = {
+    customEmoji: /<(?<animated>a?):(?<emojiName>[a-zA-Z_~0-9]+):(?<id>[0-9]+)>/,
+    emoji: emojiRegex()
+}
+/** @type {[string[], import('./text-tools').GroupStylizer][]} */
+const textFormatStyles = [
+    [['customEmoji'], async ([emoji]) => {
+        const image = await loadImage(Asset.CustomEmoji(emoji, 'png', 16 * imageScale));
+        return {
+            start: emoji.start,
+            end: emoji.end,
+            components: [{ type: 'image', value: image }]
+        };
+    }],
+    [['emoji'], async ([emoji]) => ({
+        start: emoji.start,
+        end: emoji.end,
+        components: [{ type: 'text', width: 10, value: 'idk' }]
+    })]
+]
 async function createQuoteCard(message) {
     /** @type {import('canvas').Canvas} */
     const canvas = createCanvas(640 * imageScale, 360 * imageScale);
@@ -17,16 +38,26 @@ async function createQuoteCard(message) {
     const avatar = await loadImage(Asset.UserAvatar(message.author, 'png', 360 * imageScale));
     ctx.drawImage(avatar, 0,0, canvas.height, canvas.height);
     ctx.fillStyle = ctx.createLinearGradient(0,180, 360,180);
-    ctx.fillStyle.addColorStop(0, 'transparent');
-    ctx.fillStyle.addColorStop(1, 'black');
+    ctx.fillStyle.addColorStop(0, '#00000000');
+    ctx.fillStyle.addColorStop(1, '#000000FF');
     ctx.fillRect(0,0, 360,360);
     ctx.fillStyle = 'white';
     ctx.breakRule = 'break-longest';
     ctx.font = '20px sans-serif';
-    ctx.fillTextWrap(message.content, 500, 180, 280);
+    const components = await parseText(ctx, message.content, textFormatRules, textFormatStyles);
+    drawStyled(ctx, 'break-longest', true, false, components, 500, 180, 280);
     ctx.font = '12px sans-serif';
+    const namePlateY = 320;
+    const measures = ctx.measureText('abcdefghijklmnopqrstuvwxyz_`|');
+    const textHeight = measures.actualBoundingBoxAscent + measures.actualBoundingBoxDescent
+    ctx.fillStyle = ctx.createLinearGradient(500,(namePlateY - (textHeight / 2)) - 20, 500,namePlateY - (textHeight / 2));
+    ctx.fillStyle.addColorStop(0, '#00000000');
+    ctx.fillStyle.addColorStop(1, '#000000FF');
+    ctx.fillRect(360,(namePlateY - (textHeight / 2)) - 20, 280,20);
+    ctx.fillStyle = 'black';
+    ctx.fillRect(360,namePlateY - (textHeight / 2), 280,360 - (namePlateY - (textHeight / 2)));
     ctx.fillStyle = '#EEE';
-    ctx.fillText(message.author.username, 500, 270, 280);
+    ctx.fillText(message.author.username, 500, namePlateY, 280);
     return new Blob([canvas.toBuffer()], { type: 'image/png' });
 }
 async function createQuoteMessage(message, range = 10, direction = 'around') {
