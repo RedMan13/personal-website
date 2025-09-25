@@ -4,6 +4,7 @@ const { fromApi } = require('./web-requests');
 const { commands } = require('./commands');
 const crypto = require('crypto');
 const { createQuoteCard, createQuoteMessage } = require('./quote-generator');
+const os = require('os');
 
 const quoteQueue = [];
 /**
@@ -40,7 +41,13 @@ module.exports = function(req, res, reject, codes) {
             case 'ping':
                 const ttp = Date.now() - start.getTime();
                 result.type = InteractionCallbackType.CHANNEL_MESSAGE_WITH_SOURCE;
-                result.data = { content: `pong!!!1!1111!!!111!!\ntook \`${ttp}\` ms to respond` }
+                result.data = {
+                    content: `pong!!!1!1111!!!111!!\n` + 
+                             `took \`${ttp}\` ms to respond\n` + 
+                             `cpu cores: \`\`\`\n${os.cpus().map(info => info.model).join('\n')}\n\`\`\`\n`
+                             `cpu usage (server only): \`${process.cpuUsage()}%\`\n` +
+                             `ram usage: \`free: ${os.freemem()}B, total: ${os.totalmem()}B\``
+                }
                 break;
             case 'Quote (Card)':
                 result.type = InteractionCallbackType.DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE;

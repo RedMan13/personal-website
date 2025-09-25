@@ -62,7 +62,7 @@ async function createQuoteCard(message) {
     return new Blob([canvas.toBuffer()], { type: 'image/png' });
 }
 async function createQuoteMessage(message, range = 10, direction = 'around') {
-
+    
 }
 
 module.exports = { createQuoteCard, createQuoteMessage }
