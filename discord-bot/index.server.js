@@ -79,6 +79,31 @@ module.exports = function(req, res, reject, codes) {
                         fromApi(`PATCH /webhooks/${process.env.botId}/${event.token}/messages/@original`, { content: `Process failed with error: \n\`\`\`ansi\n${err}\`\`\`` });
                     });
                 break;
+            case 'Quote (Message)':
+                result.type = InteractionCallbackType.DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE;
+                createQuoteMessage(event.data.resolved.messages[event.data.target_id])
+                    .then(image => {
+                        const data = new FormData();
+                        data.append('payload_json', JSON.stringify({
+                            content: 'Here, have your quote',
+                            attachments: [
+                                {
+                                    id: '0',
+                                    description: 'The image of the quote that was made',
+                                    filename: `attachment://quote-${event.data.target_id}.png`
+                                }
+                            ]
+                        }));
+                        data.append('files[0]', image);
+                        return fromApi(`PATCH /webhooks/${process.env.botId}/${event.token}/messages/@original`, data);
+                    })
+                    .catch(err => {
+                        console.log(err);
+                        if (err instanceof Error) err = err.stack;
+                        if (typeof err === 'object') err = JSON.stringify(err);
+                        fromApi(`PATCH /webhooks/${process.env.botId}/${event.token}/messages/@original`, { content: `Process failed with error: \n\`\`\`ansi\n${err}\`\`\`` });
+                    });
+                break;
             }
             break;
         }
