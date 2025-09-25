@@ -290,6 +290,7 @@ function drawStyled(ctx, breakRule, fill, stroke, components, x, y, maxWidth) {
     case 'ideographic':
     case 'bottom': y -= totalHeight; break;
     }
+    y = Math.max(y, 0);
     // dispatch draw for each line
     for (let i = 0; i < lines.length; i++) {
         let cx = x;
