@@ -44,7 +44,7 @@ module.exports = function(req, res, reject, codes) {
                 result.data = {
                     content: `pong!!!1!1111!!!111!!\n` + 
                              `took \`${ttp}\` ms to respond\n` + 
-                             `cpu cores: \`\`\`\n${os.cpus().map(info => info.model)}\n\`\`\`\n`
+                             `cpu cores: \`\`\`\n${os.cpus()}\n\`\`\`\n`
                              `cpu usage (server only): \`${process.cpuUsage()}%\`\n` +
                              `ram usage: \`free: ${os.freemem()}B, total: ${os.totalmem()}B\``
                 }
