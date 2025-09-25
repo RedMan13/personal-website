@@ -51,9 +51,7 @@ module.exports = function(req, res, reject, codes) {
                 result.type = InteractionCallbackType.CHANNEL_MESSAGE_WITH_SOURCE;
                 result.data = {
                     content: `pong!!!1!1111!!!111!!\n` + 
-                             `took \`${ttp}\` ms to respond\n` + 
-                             `cpu usage (server only): \`user: ${process.cpuUsage().user}%, system: ${process.cpuUsage().system}%\`\n` +
-                             `ram usage: \`free: ${MB(os.freemem())}, total: ${MB(os.totalmem())}\``
+                             `took \`${ttp}\` ms to respond\n`
                 }
                 break;
             case 'Quote (Card)':
