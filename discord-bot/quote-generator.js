@@ -45,7 +45,7 @@ async function createQuoteCard(message) {
     ctx.fillStyle = 'white';
     ctx.breakRule = 'break-longest';
     ctx.font = '20px sans-serif';
-    const components = await parseText(ctx, message.content, textFormatRules, textFormatStyles);
+    const components = await parseText(ctx, message.content + '\n', textFormatRules, textFormatStyles);
     drawStyled(ctx, 'break-longest', true, false, components, 500, 180, 280);
     ctx.font = '12px sans-serif';
     const namePlateY = 320;
