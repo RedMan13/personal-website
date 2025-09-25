@@ -6,7 +6,15 @@ const crypto = require('crypto');
 const { createQuoteCard, createQuoteMessage } = require('./quote-generator');
 const os = require('os');
 
-const quoteQueue = [];
+function MB(num) {
+    const Kb = num / 1000;
+    const Mb = num / 1000000;
+    const Gb = num / 1000000000;
+    if (Gb >= 1) return `${Gb.toFixed(2)}GB`;
+    if (Mb >= 1) return `${Mb.toFixed(2)}MB`;
+    if (Kb >= 1) return `${Kb.toFixed(2)}KB`;
+    return `${num}B`;
+}
 /**
  * 
  * @param {import('express').Request} req 
@@ -44,9 +52,8 @@ module.exports = function(req, res, reject, codes) {
                 result.data = {
                     content: `pong!!!1!1111!!!111!!\n` + 
                              `took \`${ttp}\` ms to respond\n` + 
-                             `cpu cores: \`\`\`\n${os.cpus().map(info => info.model).join('\n')}\n\`\`\`\n` +
-                             `cpu usage (server only): \`${process.cpuUsage()}%\`\n` +
-                             `ram usage: \`free: ${os.freemem()}B, total: ${os.totalmem()}B\``
+                             `cpu usage (server only): \`user: ${process.cpuUsage().user}%, system: ${process.cpuUsage().system}%\`\n` +
+                             `ram usage: \`free: ${MB(os.freemem())}, total: ${MB(os.totalmem())}\``
                 }
                 break;
             case 'Quote (Card)':
