@@ -63,9 +63,28 @@ async function createQuoteCard(message) {
 }
 async function createQuoteMessage(message, range = 10, direction = 'around') {
     /** @type {import('canvas').Canvas} */
-    const canvas = createCanvas(1800 * imageScale, 360 * imageScale);
+    const canvas = createCanvas(3600 * imageScale, 360 * imageScale);
     /** @type {import('canvas').CanvasRenderingContext2D} */
     const ctx = canvas.getContext('2d');
+    ctx.scale(imageScale);
+    ctx.fillStyle = '#323339';
+    ctx.fillRect(0,0, 3600, 360);
+    const avatar = await loadImage(Asset.UserAvatar(message.author, 'png', 360 * imageScale));
+    ctx.drawImage(avatar, 0,0, 360,360);
+    ctx.globalCompositeOperation = 'destination-in';
+    ctx.fillStyle = 'black';
+    ctx.beginPath();
+    ctx.moveTo(180,0);
+    ctx.arcTo(360,0, 360,180, 180);
+    ctx.arcTo(360,360, 180,360, 180);
+    ctx.arcTo(0,360, 0,180, 180);
+    ctx.arcTo(0,0, 180,0, 180);
+    ctx.fill();
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.fillStyle = 'white';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillText(message.author.username, 360, 0);
     return new Blob([canvas.toBuffer()], { type: 'image/png' });
 }
 
