@@ -1,0 +1,204 @@
+<!TEMPLATE /cardpage.html>
+<head>
+    <title>Obamnify (obamify remake)</title>
+    <meta name="description" content="I wanted an obamify but like on my phone, and can do video transformation aswell">
+</head>
+<body>
+    <form id="input" style="display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 10px;" method="dialog">
+        <div>
+            <label>File to transform</label><br>
+            <input id="source" type="file" accept="image/*">
+        </div>
+
+        <div>
+            <label>File to become</label><br>
+            <input id="target" type="file" accept="image/*,video/*">
+        </div>
+
+        <div>
+            <label for="use-previous">Use previous frames</label>
+            <input id="use-previous" type="checkbox" title="If the previous video frame should be used">
+        </div>
+
+        <button onclick="transform()">Generate</button>
+    </form><br>
+    <span>video progress:</span>
+    <progress id="video-progress" min="0" max="100"></progress><br>
+    <span>conversion progresses:</span>
+    <div id="conversion-progress"></div><br>
+    <canvas hidden style="width: 100%; height: 100%; object-fit: fill; image-rendering: pixelated;" id="preview"></canvas>
+    <script file="jsx">
+        const fps = 30;
+        /** @type {HTMLDivElement} */
+        const conversionProgress = document.getElementById('conversion-progress');
+        /** @type {HTMLProgressElement} */
+        const videoProgress = document.getElementById('video-progress');
+        /** @type {HTMLFormElement} */
+        const inputForm = document.getElementById('input');
+        /** @type {HTMLInputElement} */
+        const sourceInput = document.getElementById('source');
+        /** @type {HTMLInputElement} */
+        const targetInput = document.getElementById('target');
+        /** @type {HTMLInputElement} */
+        const usePreviousInput = document.getElementById('use-previous');
+        /** @type {HTMLCanvasElement} */
+        const canvas = document.getElementById('preview');
+        const dim = canvas.getBoundingClientRect();
+        const ctx = canvas.getContext('2d');
+        function playFrames(frames) {
+            let i = 0;
+            canvas.width = frames[0].width;
+            canvas.height = frames[0].height;
+            setInterval(() => ctx.putImageData(frames[i = (i +1) & frames.length], 0,0), 1000 / fps)
+        }
+        async function transform() {
+            inputForm.hidden = true;
+            canvas.hidden = false;
+            conversionProgress.hidden = false;
+            const keepPrevious = usePreviousInput.checked;
+            const sourceFile = URL.createObjectURL(sourceInput.files[0]);
+            const source = await loadImage(sourceFile);
+            canvas.width = source.width;
+            canvas.height = source.height;
+            ctx.drawImage(source, 0,0);
+            const sourceData = ctx.getImageData(0,0, canvas.width, canvas.height);
+
+            const isVideo = targetInput.files[0].type.startsWith('video');
+            const targetFile = URL.createObjectURL(targetInput.files[0]);
+            if (!isVideo) {
+                const target = await loadImage(targetFile);
+                canvas.width = source.width;
+                canvas.height = source.height;
+                ctx.drawImage(target, 0,0, canvas.width, canvas.height);
+                const targetData = ctx.getImageData(0,0, canvas.width, canvas.height);
+                transformFrame(sourceData, targetData);
+                return;
+            }
+            videoProgress.hidden = false;
+            const video = await loadVideo(targetFile)
+            // workaround chromium metadata bug (https://stackoverflow.com/q/38062864/993683)
+            while (
+                (video.duration === Infinity || isNaN(video.duration)) &&
+                video.readyState < 2
+            ) {
+                await new Promise((r) => setTimeout(r, 1000));
+                video.currentTime = 10000000 * Math.random();
+            }
+            const duration = video.duration;
+            videoProgress.max = duration;
+            const interval = 1 / fps;
+            let currentTime = 0;
+            const frames = [];
+            let i = 0;
+            async function captureFrame() {
+                if (currentTime >= duration) return playFrames(frames);
+
+                canvas.width = source.width;
+                canvas.height = source.height;
+                ctx.drawImage(video, 0,0, canvas.width, canvas.height);
+                const targetData = ctx.getImageData(0,0, canvas.width, canvas.height);
+                const idx = i;
+                transformFrame(usePreviousInput.checked ? frames.at(-1) ?? sourceData : sourceData, targetData)
+                    .then(frame => frames[idx] = frame);
+                i++;
+
+                videoProgress.value = currentTime;
+                currentTime += interval;
+                video.currentTime = currentTime;
+            }
+            video.addEventListener("seeked", captureFrame);
+            video.currentTime = 0;
+            captureFrame();
+        }
+        function transformFrame(source, target) {
+            return new Promise(resolve => {
+                const sourceColors = new Array(source.data.length / 4).fill(0);
+                const targetColors = new Array(target.data.length / 4).fill(0);
+                const sourcePallete = [...source.data]
+                    .reduce((pallet, color, idx, arr) => {
+                        if (!(idx % 4)) {
+                            const color = BigInt(arr[idx +3]) |
+                                (BigInt(arr[idx +2]) << 8n) |
+                                (BigInt(arr[idx +1]) << 16n) |
+                                (BigInt(arr[idx +0]) << 24n);
+                            if (!pallet.includes(color)) pallet.push(color);
+                            sourceColors[idx / 4] = pallet.indexOf(color);
+                            return pallet;
+                        }
+                        return pallet;
+                    }, []);
+                const targetPallete = [...target.data]
+                    .reduce((pallet, color, idx, arr) => {
+                        if (!(idx % 4)) {
+                            const color = BigInt(arr[idx +3]) |
+                                (BigInt(arr[idx +2]) << 8n) |
+                                (BigInt(arr[idx +1]) << 16n) |
+                                (BigInt(arr[idx +0]) << 24n);
+                            if (!pallet.includes(color)) pallet.push(color);
+                            targetColors[idx / 4] = pallet.indexOf(color);
+                            return pallet;
+                        }
+                        return pallet;
+                    }, []);
+                canvas.width = source.width;
+                canvas.height = source.height;
+                ctx.putImageData(source, 0,0);
+                conversionProgress.max = targetColors.length;
+                let off = 0;
+                const progress = document.createElement('progress');
+                progress.min = 0;
+                progress.max = targetColors.length;
+                conversionProgress.appendChild(progress);
+                const intr = setInterval(() => {
+                    let i = off;
+                    for (let j = 0; j < 10000; j++) {
+                        if (i >= targetColors.length) {
+                            clearInterval(intr);
+                            resolve(ctx.getImageData(0,0, canvas.width, canvas.height));
+                            progress.remove();
+                            break;
+                        }
+                        progress.value = i;
+                        const nearest = sourcePallete
+                            .map((color, idx) => [Math.abs(Number(color - targetPallete[targetColors[i]])), idx])
+                            .sort((a,b) => a[0] - b[0]);
+                        const toUse = findRandom(sourceColors, nearest[0][1]);
+                        if (toUse === -1) return;
+                        const toSwap = sourceColors[i];
+                        sourceColors[i] = sourceColors[toUse];
+                        sourceColors[toUse] = toSwap;
+                        ctx.fillStyle = '#' + sourcePallete[sourceColors[i]].toString(16).padStart(8, '0');
+                        ctx.fillRect(i % canvas.width, Math.floor(i / canvas.width), 1,1);
+                        ctx.fillStyle = '#' + sourcePallete[sourceColors[toUse]].toString(16).padStart(8, '0');
+                        ctx.fillRect(toUse % canvas.width, Math.floor(toUse / canvas.width), 1,1);
+                        i++;
+                    }
+                    off = i;
+                }, 0);
+            });
+        }
+        function loadImage(url) {
+            return new Promise((resolve, reject) => {
+                const image = new Image();
+                image.onload = () => resolve(image);
+                image.onerror = reject;
+                image.src = url;
+            });
+        }
+        function loadVideo(videoUrl, fps = 25) {
+            return new Promise((resolve, reject) => {
+                const video = document.createElement("video");
+                video.oncanplaythrough = () => resolve(video);
+                video.onerror = reject;
+                video.src = videoUrl;
+            });
+        }
+        function findRandom(array, item) {
+            const pos = Math.floor(Math.random() * array.length);
+            const forward = array.indexOf(item, pos);
+            if (forward !== -1) return forward;
+            const backward = array.lastIndexOf(item, pos);
+            return backward;
+        }
+    </script>
+</body>
