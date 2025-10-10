@@ -30,4 +30,4 @@ module.exports.generator = anonymous;
     util.path = util.path.replace('.ejs', '.server.js')
 };
 module.exports.matchFile = util => util.matchType('.ejs');
-module.exports.weight = 5;
+module.exports.weight = 1;

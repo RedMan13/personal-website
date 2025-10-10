@@ -239,4 +239,4 @@ module.exports = async function(util) {
     return util.file;
 }
 module.exports.matchFile = util => util.matchType('.jsx');
-module.exports.weight = 4;
+module.exports.weight = 2;

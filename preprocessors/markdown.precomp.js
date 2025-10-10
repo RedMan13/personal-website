@@ -43,4 +43,4 @@ module.exports = function(util) {
     return implementTemplate(util);
 }
 module.exports.matchFile = util => util.matchType('.md');
-module.exports.weight = -1;
+module.exports.weight = 8;
