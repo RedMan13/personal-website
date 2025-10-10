@@ -32,3 +32,4 @@ module.exports = async function(util) {
     }
 }
 module.exports.matchFile = util => util.matchType('php,html,ejs');
+module.exports.weight = 3;

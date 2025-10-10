@@ -20,4 +20,4 @@ module.exports = async function(util) {
     util.path = destPath;
 };
 module.exports.matchFile = util => util.matchType('.const.php');
-module.exports.weight = Infinity;
+module.exports.weight = 0;

@@ -22,3 +22,4 @@ module.exports = async function(util) {
     util.replace(bodyClose,  bodyClose +7, headBody[2]);
 }
 module.exports.matchFile = util => util.matchType('.php,.html,ejs') && util.file.startsWith('<!TEMPLATE');
+module.exports.weight = 2;

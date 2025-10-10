@@ -22,3 +22,4 @@ module.exports = async function(util) {
     return !didThings
 }
 module.exports.matchFile = util => util.matchType('php,html,ejs');
+module.exports.weight = 1;

@@ -112,11 +112,18 @@
         }
         function transformFrame(source, target) {
             return new Promise(resolve => {
+                const progress = document.createElement('progress');
+                progress.min = 0;
+                conversionProgress.appendChild(progress);
                 const sourceColors = new Array(source.data.length / 4).fill(0);
                 const targetColors = new Array(target.data.length / 4).fill(0);
+                console.log('generating source pallet, total pixels to process:', source.data.length / 4);
+                progress.max = source.data.length;
                 const sourcePallete = [...source.data]
                     .reduce((pallet, color, idx, arr) => {
                         if (!(idx % 4)) {
+                            console.log('source pixel');
+                            progress.value = idx;
                             const color = BigInt(arr[idx +3]) |
                                 (BigInt(arr[idx +2]) << 8n) |
                                 (BigInt(arr[idx +1]) << 16n) |
@@ -127,9 +134,13 @@
                         }
                         return pallet;
                     }, []);
+                console.log('generating target pallet, total pixels to process:', target.data.length / 4);
+                progress.max = target.data.length;
                 const targetPallete = [...target.data]
                     .reduce((pallet, color, idx, arr) => {
                         if (!(idx % 4)) {
+                            progress.value = idx;
+                            console.log('target pixel');
                             const color = BigInt(arr[idx +3]) |
                                 (BigInt(arr[idx +2]) << 8n) |
                                 (BigInt(arr[idx +1]) << 16n) |
@@ -143,22 +154,20 @@
                 canvas.width = source.width;
                 canvas.height = source.height;
                 ctx.putImageData(source, 0,0);
-                conversionProgress.max = targetColors.length;
-                let off = 0;
-                const progress = document.createElement('progress');
-                progress.min = 0;
                 progress.max = targetColors.length;
-                conversionProgress.appendChild(progress);
+                let off = 0;
+                console.log('sorting/drawing pixels, total pixels to process:', targetColors.length);
                 const intr = setInterval(() => {
-                    let i = off;
-                    for (let j = 0; j < 10000; j++) {
-                        if (i >= targetColors.length) {
+                    for (let j = 0; j < 1000; j++) {
+                        if (off >= targetColors.length) {
                             clearInterval(intr);
                             resolve(ctx.getImageData(0,0, canvas.width, canvas.height));
                             progress.remove();
                             break;
                         }
-                        progress.value = i;
+                        const i = Math.floor(Math.random() * targetColors.length);
+                        progress.value = off;
+                        console.log('sorted pixel');
                         const nearest = sourcePallete
                             .map((color, idx) => [Math.abs(Number(color - targetPallete[targetColors[i]])), idx])
                             .sort((a,b) => a[0] - b[0]);
@@ -171,10 +180,9 @@
                         ctx.fillRect(i % canvas.width, Math.floor(i / canvas.width), 1,1);
                         ctx.fillStyle = '#' + sourcePallete[sourceColors[toUse]].toString(16).padStart(8, '0');
                         ctx.fillRect(toUse % canvas.width, Math.floor(toUse / canvas.width), 1,1);
-                        i++;
+                        off++;
                     }
-                    off = i;
-                }, 0);
+                }, 1000 / fps);
             });
         }
         function loadImage(url) {

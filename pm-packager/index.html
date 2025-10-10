@@ -1,0 +1,50 @@
+<!TEMPLATE /cardpage.html>
+<head>
+    <title>PenguinMod Packager</title>
+    <meta name="description" content="A version of the penguinmod packager that *should* make smaller, faster, outputs than the normal one.">
+    <style>
+        .submit-button {
+            width: calc(100% - 10px);
+            box-sizing: border-box;
+            margin: 0 5px;
+        }
+    </style>
+</head>
+<body>
+    <form id="config">
+        <fieldset>
+            <legend>Save File</legend>
+            <input type="file" name="save">
+        </fieldset>
+
+        <fieldset>
+            <legend>Settings</legend>
+            <label for="username-template">Username Template: </label>
+            <input type="text" name="username-template" value="user####" placeholder="Super User ####"><br>
+            <br>
+            <input type="radio" name="display-sizing" id="display-fixed" checked>
+            <label for="display-fixed">Fixed Stage Ratio</label><br>
+            <input type="radio" name="display-sizing" id="display-fill">
+            <label for="display-fill">Match Window Ratio</label><br>
+            <input type="radio" name="display-sizing" id="display-cover">
+            <label for="display-cover">Stretch to Window Ratio</label>
+        </fieldset>
+        <hr>
+        <button class="submit-button" onclick="packageProject(new FormData(config))">Generate Package</button>
+    </form>
+    <script file="jsx">
+        const config = document.getElementById('config');
+        const fileInput = document.querySelector('input[name=save]');
+        /**
+         * @param {FormData} data
+         */
+        function packageProject(data) {
+            let document = '<!DOCTYPE html>';
+            const blob = URL.createObjectURL(new Blob([document], { type: 'text/html' }));
+            config.appendChild(<div>
+                <hr></hr>
+                <a href={blob}>Click here to download.</a>
+            </div>);
+        }
+    </script>
+</body>

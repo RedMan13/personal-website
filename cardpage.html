@@ -318,9 +318,29 @@
             object-fit: fill;
             vertical-align: sub;
         }
+        body {
+            margin: 0;
+            height: 100%;
+            font-family: 'Open Sans', serif;
+        }
+        .exit-to-source {
+            position: absolute;
+            left: 0;
+            top: 0;
+            color: blue;
+            transition: all 200ms ease-in;
+            cursor: pointer;
+            width: 1rem;
+            height: 1rem;
+            text-align: center;
+        }
+        .exit-to-source:hover {
+            color: red;
+            font-weight: bold;
+        }
     </style>
 </head>
-<body style="margin: 0; height: 100%; font-family: 'Open Sans', serif;" class="card-wrapper">
+<body class="card-wrapper">
     <div class="card">
         <noscript>Dont be allarmed! it looks like you have scripts dissabled, this site uses scripts to make certain renders (like scaling this card) work and display correctly</noscript>
         <div class="browser close" style="width: 180px; left: -180px; box-shadow: 0 0 0px black;" id="browser" hidden>{filejson}</div>
@@ -574,6 +594,7 @@
             <div id="main">{body}</div>
         </div>
     </div>
+    <div class="exit-to-source" id="exit-to-source" onclick="openGithubCode()" title="View source code">X</div>
     <script>
         const scaleOffset = 0.20
 
@@ -677,6 +698,21 @@
                     last = rot;
                 }
             }
+        }
+
+        function openGithubCode() {
+            const cardDiv = document.getElementsByClassName('card')[0];
+            const siteSourceMeta = document.getElementById('site-source');
+            const siteSource = `https://github.com/RedMan13/personal-website/blob/main/${siteSourceMeta.getAttribute('content')}`;
+            const start = Date.now();
+            const loop = () => {
+                const progress = (Date.now() - start) / 6000;
+                document.body.style.transform = `scale(${(1- Math.max((Math.max((progress * 2) -1, 0) * 2) -1, 0))})`;
+                cardDiv.style.transform = `scale(${window.scale}) rotate(${((Date.now() - start) / (1500 * (Math.max(1- (progress * 2), 0.00001))))}deg)`;
+                if (progress >= 1) return open(siteSource, '_self');
+                requestAnimationFrame(loop);
+            }
+            loop();
         }
     </script>
 </body>
