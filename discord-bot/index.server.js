@@ -159,7 +159,6 @@ module.exports = function(req, res, reject, codes) {
                             }
                             page = folder[1];
                         }
-                        page.push(file);
                     }
                     buttons[instance].pages = pages
                         .map(page => {
