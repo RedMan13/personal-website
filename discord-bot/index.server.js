@@ -21,8 +21,13 @@ function MB(num) {
 // clear checking interval, at this interval we check for things that need to be cleared
 setInterval(() => {
     for (const id in buttons) {
-        if (Date.now() > buttons[id].expires)
+        if (Date.now() > buttons[id].expires) {
+            fromApi(`PATCH /webhooks/${process.env.botId}/messages/${buttons[id].message}`, {
+                content: buttons[id].pages[buttons[id].page] + '\n' +
+                         '-# This search query has expired',
+            });
             delete buttons[id];
+        }
     }
 }, 8000);
 /**
@@ -57,6 +62,7 @@ module.exports = function(req, res, reject, codes) {
             break;
         case InteractionType.MESSAGE_COMPONENT:
             const [instance, command, button] = event.data.custom_id.split('.');
+            if (!instance) return;
             switch (command) {
             case 'search':
                 switch (button) {
