@@ -165,7 +165,7 @@ module.exports = function(req, res, reject, codes) {
                             const recurGen = (folder, level) => {
                                 let res = '';
                                 for (const file of folder) {
-                                    res += `${level}- ${file[0]}\n`;
+                                    res += `${level}- [${file[0]}](<https://godslayerakp.serv00.net/${file[0]}>)\n`;
                                     if (file[1].length) recurGen(file[1], `${level}  `);
                                 }
 
@@ -257,5 +257,6 @@ module.exports = function(req, res, reject, codes) {
     }
     res.status(codes.OK);
     res.header('Content-Type', 'application/json');
+    console.log('Replying with', JSON.stringify(result))
     res.send(JSON.stringify(result));
 }
