@@ -47,6 +47,7 @@ module.exports = function(req, res, reject, codes) {
     }
     const start = new Date(Number(req.headers['x-signature-timestamp']) * 1000);
     const event = JSON.parse(req.body.toString('utf8'));
+    console.log('Received event type', event.type, 'from discord');
     let result = { type: 0, data: {} };
     try {
         switch (event.type) {
