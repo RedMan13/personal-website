@@ -99,7 +99,7 @@ module.exports = function(req, res, reject, codes) {
                                 {
                                     type: MessageComponentType.Button,
                                     style: ComponentButtonStyle.Secondary,
-                                    label: '0/' + pages.length,
+                                    label: buttons[instance].page + '/' + buttons[instance].pages.length,
                                     custom_id: `${instance}.search.pageCount`,
                                     disabled: true
                                 },
