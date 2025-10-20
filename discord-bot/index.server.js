@@ -56,7 +56,7 @@ module.exports = function(req, res, reject, codes) {
             result.type = InteractionCallbackType.PONG;
             break;
         case InteractionType.MESSAGE_COMPONENT:
-            const [instance, command, button] = event.data.custom_id;
+            const [instance, command, button] = event.data.custom_id.split('.');
             switch (command) {
             case 'search':
                 switch (button) {
