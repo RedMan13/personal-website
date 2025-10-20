@@ -73,3 +73,53 @@ module.exports.EntryPointCommandHandlerType = {
     /** Discord handles the interaction by launching an Activity and sending a follow-up message without coordinating with the app */
     DISCORD_LAUNCH_ACTIVITY: 2
 }
+module.exports.MessageComponentType = {
+    /** Container to display a row of interactive components */
+    ActionRow: 1,
+    /** Button object */
+    Button: 2,
+    /** Select menu for picking from defined text options */
+    StringSelect: 3,
+    /** Text input object */
+    TextInput: 4,
+    /** Select menu for users */
+    UserSelect: 5,
+    /** Select menu for roles */
+    RoleSelect: 6,
+    /** Select menu for mentionables (users and roles) */
+    MentionableSelect: 7,
+    /** Select menu for channels */
+    ChannelSelect: 8,
+    /** Container to display text alongside an accessory component */
+    Section: 9,
+    /** Markdown text */
+    TextDisplay: 10,
+    /** Small image that can be used as an accessory */
+    Thumbnail: 11,
+    /** Display images and other media */
+    MediaGallery: 12,
+    /** Displays an attached file */
+    File: 13,
+    /** Component to add vertical padding between other components */
+    Separator: 14,
+    /** Container that visually groups a set of components */
+    Container: 17,
+    /** Container associating a label and description with a component */
+    Label: 18,
+    /** Component for uploading files */
+    FileUpload: 19
+}
+module.exports.ComponentButtonStyle = {
+    /** The most important or recommended action in a group of options */
+    Primary: 1,
+    /** Alternative or supporting actions */
+    Secondary: 2,
+    /** Positive confirmation or completion actions */
+    Success: 3,
+    /** An action with irreversible consequences */
+    Danger: 4,
+    /** Navigates to a URL */
+    Link: 5,
+    /** Purchase */
+    Premium: 6
+}

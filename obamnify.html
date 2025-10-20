@@ -49,7 +49,12 @@
             let i = 0;
             canvas.width = frames[0].width;
             canvas.height = frames[0].height;
-            setInterval(() => ctx.putImageData(frames[i = (i +1) & frames.length], 0,0), 1000 / fps)
+            videoProgress.max = frames.length;
+            console.log('playing back', frames);
+            setInterval(() => {
+                ctx.putImageData(frames[i = (i +1) % frames.length], 0,0);
+                videoProgress.value = i;
+            }, 1000 / fps);
         }
         async function transform() {
             inputForm.hidden = true;
@@ -58,19 +63,23 @@
             const keepPrevious = usePreviousInput.checked;
             const sourceFile = URL.createObjectURL(sourceInput.files[0]);
             const source = await loadImage(sourceFile);
-            canvas.width = source.width;
-            canvas.height = source.height;
-            ctx.drawImage(source, 0,0);
-            const sourceData = ctx.getImageData(0,0, canvas.width, canvas.height);
+            const w = 20;
+            const h = 20;
+            canvas.width = w * 3;
+            canvas.height = h;
+            ctx.drawImage(source, 0,0, w,h);
+            const sourceData = ctx.getImageData(0,0, w,h);
 
             const isVideo = targetInput.files[0].type.startsWith('video');
             const targetFile = URL.createObjectURL(targetInput.files[0]);
             if (!isVideo) {
                 const target = await loadImage(targetFile);
-                canvas.width = source.width;
-                canvas.height = source.height;
-                ctx.drawImage(target, 0,0, canvas.width, canvas.height);
-                const targetData = ctx.getImageData(0,0, canvas.width, canvas.height);
+                canvas.width = sourceData.width;
+                canvas.height = sourceData.height;
+                ctx.drawImage(target, 0,0, w,h);
+                const targetData = ctx.getImageData(0,0, w,h);
+                ctx.putImageData(targetData, 40,0);
+                ctx.putImageData(sourceData, 20,0);
                 transformFrame(sourceData, targetData);
                 return;
             }
@@ -88,17 +97,19 @@
             videoProgress.max = duration;
             const interval = 1 / fps;
             let currentTime = 0;
-            const frames = [];
+            const frames = [sourceData];
             let i = 0;
             async function captureFrame() {
                 if (currentTime >= duration) return playFrames(frames);
-
-                canvas.width = source.width;
-                canvas.height = source.height;
-                ctx.drawImage(video, 0,0, canvas.width, canvas.height);
-                const targetData = ctx.getImageData(0,0, canvas.width, canvas.height);
+                
+                ctx.drawImage(video, 0,0, w,h);
+                const targetData = ctx.getImageData(0,0, w,h);
                 const idx = i;
-                transformFrame(usePreviousInput.checked ? frames.at(-1) ?? sourceData : sourceData, targetData)
+                const source = usePreviousInput.checked ? frames.at(-1) : sourceData;
+                ctx.clearRect(0,0, canvas.width, canvas.height);
+                ctx.putImageData(targetData, 40,0);
+                ctx.putImageData(source, 20,0);
+                await transformFrame(source, targetData, w,h)
                     .then(frame => frames[idx] = frame);
                 i++;
 
@@ -110,7 +121,7 @@
             video.currentTime = 0;
             captureFrame();
         }
-        function transformFrame(source, target) {
+        function transformFrame(source, target, w,h) {
             return new Promise(resolve => {
                 const progress = document.createElement('progress');
                 progress.min = 0;
@@ -151,38 +162,33 @@
                         }
                         return pallet;
                     }, []);
-                canvas.width = source.width;
-                canvas.height = source.height;
                 ctx.putImageData(source, 0,0);
                 progress.max = targetColors.length;
                 let off = 0;
                 console.log('sorting/drawing pixels, total pixels to process:', targetColors.length);
-                const intr = setInterval(() => {
-                    for (let j = 0; j < 1000; j++) {
-                        if (off >= targetColors.length) {
-                            clearInterval(intr);
-                            resolve(ctx.getImageData(0,0, canvas.width, canvas.height));
-                            progress.remove();
-                            break;
-                        }
-                        const i = Math.floor(Math.random() * targetColors.length);
-                        progress.value = off;
-                        console.log('sorted pixel');
-                        const nearest = sourcePallete
-                            .map((color, idx) => [Math.abs(Number(color - targetPallete[targetColors[i]])), idx])
-                            .sort((a,b) => a[0] - b[0]);
-                        const toUse = findRandom(sourceColors, nearest[0][1]);
-                        if (toUse === -1) return;
-                        const toSwap = sourceColors[i];
-                        sourceColors[i] = sourceColors[toUse];
-                        sourceColors[toUse] = toSwap;
-                        ctx.fillStyle = '#' + sourcePallete[sourceColors[i]].toString(16).padStart(8, '0');
-                        ctx.fillRect(i % canvas.width, Math.floor(i / canvas.width), 1,1);
-                        ctx.fillStyle = '#' + sourcePallete[sourceColors[toUse]].toString(16).padStart(8, '0');
-                        ctx.fillRect(toUse % canvas.width, Math.floor(toUse / canvas.width), 1,1);
-                        off++;
+                while (true) {
+                    if (off >= targetColors.length) {
+                        resolve(ctx.getImageData(0,0, w,h));
+                        progress.remove();
+                        return;
                     }
-                }, 1000 / fps);
+                    const i = off % targetColors.length;
+                    progress.value = off;
+                    console.log('sorted pixel');
+                    const nearest = sourcePallete
+                        .map((color, idx) => [Math.abs(Number(color - targetPallete[targetColors[i]])), idx])
+                        .sort((a,b) => a[0] - b[0]);
+                    const toUse = findRandom(sourceColors, nearest[0][1]);
+                    if (toUse === -1) return;
+                    const toSwap = sourceColors[i];
+                    sourceColors[i] = sourceColors[toUse];
+                    sourceColors[toUse] = toSwap;
+                    ctx.fillStyle = '#' + sourcePallete[sourceColors[i]].toString(16).padStart(8, '0');
+                    ctx.fillRect(i % w, Math.floor(i / w), 1,1);
+                    ctx.fillStyle = '#' + sourcePallete[sourceColors[toUse]].toString(16).padStart(8, '0');
+                    ctx.fillRect(toUse % w, Math.floor(toUse / w), 1,1);
+                    off++;
+                }
             });
         }
         function loadImage(url) {

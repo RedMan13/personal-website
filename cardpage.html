@@ -700,13 +700,22 @@
             }
         }
 
-        function openGithubCode() {
+        async function openGithubCode() {
+            /** @type {HTMLAudioElement} */
+            const toiletAudio = document.createElement('audio');
+            await new Promise(resolve => {
+                toiletAudio.oncanplaythrough = resolve;
+                toiletAudio.onerror = resolve;
+                toiletAudio.src = '/toilet-flush.wav';
+                document.body.appendChild(toiletAudio);
+            });
+            toiletAudio.play();
             const cardDiv = document.getElementsByClassName('card')[0];
             const siteSourceMeta = document.getElementById('site-source');
             const siteSource = `https://github.com/RedMan13/personal-website/blob/main/${siteSourceMeta.getAttribute('content')}`;
             const start = Date.now();
             const loop = () => {
-                const progress = (Date.now() - start) / 6000;
+                const progress = (Date.now() - start) / (toiletAudio.duration * 1000);
                 document.body.style.transform = `scale(${(1- Math.max((Math.max((progress * 2) -1, 0) * 2) -1, 0))})`;
                 cardDiv.style.transform = `scale(${window.scale}) rotate(${((Date.now() - start) / (1500 * (Math.max(1- (progress * 2), 0.00001))))}deg)`;
                 if (progress >= 1) return open(siteSource, '_self');

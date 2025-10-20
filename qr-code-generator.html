@@ -1,0 +1,44 @@
+<!TEMPLATE /cardpage.html>
+<head>
+    <title>QR Code Generator</title>
+    <script>
+        const positionMarker = new ImageData([
+            0,0,0,0,0,0,0,0,
+            0,1,1,1,1,1,1,0,
+            0,1,0,0,0,0,1,0,
+            0,1,0,1,1,0,1,0,
+            0,1,0,1,1,0,1,0,
+            0,1,0,0,0,0,1,0,
+            0,1,1,1,1,1,1,0,
+            0,0,0,0,0,0,0,0
+        ].reduce((c,v) => c.push(255 * v, 255 * v, 255 * v, 255), []), 8,8);
+        const alignmentMarker = new ImageData([
+            1,1,1,1,1,
+            1,0,0,0,1,
+            1,0,1,0,1,
+            1,0,0,0,1,
+            1,1,1,1,1
+        ].reduce((c,v) => c.push(255 * v, 255 * v, 255 * v, 255 * v), []), 5,5);
+    </script>
+</head>
+<body>
+    <canvas style="image-rendering: pixelated; width: 100%; height: 100%; object-fit: contain;" id="qr-code"></canvas>
+    <script>
+        /** @type {HTMLCanvasElement} */
+        const canvas = document.getElementById('qr-code');
+        const ctx = canvas.getContext('2d');
+        const w = canvas.width = 43;
+        const h = canvas.height = 43;
+        ctx.putImageData(positionMarker, -1,-1);
+        ctx.putImageData(positionMarker, -1,h -7);
+        ctx.putImageData(positionMarker, w -7,-1);
+        for (let i = 0; i < w; i++) {
+            ctx.fillStyle = i % 2 ? 'white' : 'black';
+            ctx.fillRect(i,5, 1,1);
+        }
+        for (let i = 0; i < w; i++) {
+            ctx.fillStyle = i % 2 ? 'white' : 'black';
+            ctx.fillRect(5,i, 1,1);
+        }
+    </script>
+</body>

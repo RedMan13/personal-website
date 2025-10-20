@@ -9,21 +9,24 @@ const commands = fromApi(`PUT /applications/${process.env.botId}/commands`, [
         integration_types: [ApplicationIntegrationType.GUILD_INSTALL, ApplicationIntegrationType.USER_INSTALL],
         contexts: [InteractionContextType.BOT_DM, InteractionContextType.GUILD, InteractionContextType.PRIVATE_CHANNEL]
     },
-    {
-        type: ApplicationCommandType.MESSAGE,
-        name: 'Quote (Card)',
+    {   
+        type: ApplicationCommandType.CHAT_INPUT,
+        name: 'search',
+        description: 'Searches for an arbitrary page on the website.',
+        options: [
+            {
+                type: ApplicationCommandOptionType.STRING,
+                optional: true,
+                name: 'file',
+                description: 'The keywords to search for on the site, if not provided then the entire site index is reported.'
+            }
+        ],
         integration_types: [ApplicationIntegrationType.GUILD_INSTALL, ApplicationIntegrationType.USER_INSTALL],
         contexts: [InteractionContextType.BOT_DM, InteractionContextType.GUILD, InteractionContextType.PRIVATE_CHANNEL]
     },
     {
         type: ApplicationCommandType.MESSAGE,
-        name: 'Quote (Message)',
-        integration_types: [ApplicationIntegrationType.GUILD_INSTALL, ApplicationIntegrationType.USER_INSTALL],
-        contexts: [InteractionContextType.BOT_DM, InteractionContextType.GUILD, InteractionContextType.PRIVATE_CHANNEL]
-    },
-    {
-        type: ApplicationCommandType.MESSAGE,
-        name: 'Quote (Multiple Messages)',
+        name: 'Quote',
         integration_types: [ApplicationIntegrationType.GUILD_INSTALL, ApplicationIntegrationType.USER_INSTALL],
         contexts: [InteractionContextType.BOT_DM, InteractionContextType.GUILD, InteractionContextType.PRIVATE_CHANNEL]
     }

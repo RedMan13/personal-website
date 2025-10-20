@@ -1,0 +1,41 @@
+<!TEMPLATE /cardpage.html>
+<head>
+    <title>Fun Math Game</title>
+</head>
+<body>
+    <canvas width="480" height="360" id="display" style="width: 100%;"></canvas>
+    <script>
+        /** @type {HTMLCanvasElement} */
+        const canvas = document.getElementById('display');
+        const ctx = canvas.getContext('2d');
+        canvas.width *= window.scale || 1;
+        canvas.height *= window.scale || 1;
+        window.oncardrescale = old => {
+            canvas.width /= 2;
+            canvas.height /= 2;
+            canvas.width /= old;
+            canvas.height /= old;
+            canvas.width *= window.scale * 2;
+            canvas.height *= window.scale * 2;
+        }
+        let previous = prompt('Initial value?', 7);
+        const nodes = [previous];
+        const maxNodes = 120;
+        setInterval(() => {
+            if (previous % 2) previous = (previous * 3) +1;
+            else previous /= 2;
+            nodes.push(previous);
+            if (nodes.length > maxNodes) nodes.shift();
+            const verticalScale = Math.min((canvas.height * 2) / nodes.reduce((c,v) => Math.max(c,v), 0), 1);
+            ctx.resetTransform();
+            ctx.clearRect(0,0, canvas.width,canvas.height);
+            ctx.scale(1,-verticalScale);
+            ctx.translate(0,canvas.height);
+            ctx.beginPath();
+            ctx.moveTo(0,nodes[0]);
+            for (let i = 1; i < nodes.length; i++)
+                ctx.lineTo(i * (canvas.width / maxNodes),nodes[i]);
+            ctx.stroke();
+        }, 30);
+    </script>
+</body>
