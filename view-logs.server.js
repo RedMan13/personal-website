@@ -1,3 +1,5 @@
+const path = require('path');
+
 /**
  * 
  * @param {import('express').Request} req 
@@ -6,5 +8,5 @@
  * @param {{ [key: string]: number }} codes 
  */
 module.exports = function(req, res, reject, codes) {
-    res.sendFile('../logs/error.log');
+    res.sendFile(path.resolve('../logs/error.log'));
 }
