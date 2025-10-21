@@ -158,7 +158,7 @@ module.exports = function(req, res, reject, codes) {
                 };
                 result.type = InteractionCallbackType.DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE;
                 (async () => {
-                    const search = event.data.options[0]?.value;
+                    const search = event.data.options?.[0]?.value;
                     const files = await fs.readdir('./dist')
                     const sorted = search ? files : files
                         .map(file => [[...file].filter(char => search.includes(char)).length, file])
@@ -166,10 +166,10 @@ module.exports = function(req, res, reject, codes) {
                         .map(file => file[1]);
                     const pages = [''];
                     for (const file of sorted) {
-                        let page = pages.at(-1);
-                        if (page.length >= 2000) pages.push(page = '');
-                        page += `[${file}](<https://godslayerakp.serv00.net/${file.replace(/[^a-z0-9.]+/gi, '-')}>) ; `;
-                        pages[pages.length -1] = page;
+                        const append = `[${file}](<https://godslayerakp.serv00.net/${file.replace(/[^a-z0-9.]+/gi, '-')}>) ; `;
+                        if ((pages.at(-1).length + append.length) >= 2000)
+                            pages.push('');
+                        pages[pages.length -1] += append;
                     }
                     console.log(pages);
                     buttons[instance].pages = pages
