@@ -98,14 +98,14 @@ module.exports = function(req, res, reject, codes) {
                                 {
                                     type: MessageComponentType.Button,
                                     style: ComponentButtonStyle.Success,
-                                    label: '⏮️',
+                                    label: '⏮',
                                     custom_id: `${instance}.search.toFirstPage`,
                                     disabled: buttons[instance].page <= 0
                                 },
                                 {
                                     type: MessageComponentType.Button,
                                     style: ComponentButtonStyle.Success,
-                                    label: '⏪',
+                                    label: '❮',
                                     custom_id: `${instance}.search.toPreviousPage`,
                                     disabled: buttons[instance].page <= 0
                                 },
@@ -119,14 +119,14 @@ module.exports = function(req, res, reject, codes) {
                                 {
                                     type: MessageComponentType.Button,
                                     style: ComponentButtonStyle.Success,
-                                    label: '⏩',
+                                    label: '❯',
                                     custom_id: `${instance}.search.toNextPage`,
                                     disabled: buttons[instance].page >= (buttons[instance].pages.length -1)
                                 },
                                 {
                                     type: MessageComponentType.Button,
                                     style: ComponentButtonStyle.Success,
-                                    label: '⏭️',
+                                    label: '⏭',
                                     custom_id: `${instance}.search.toLastPage`,
                                     disabled: buttons[instance].page >= (buttons[instance].pages.length -1)
                                 }
@@ -197,14 +197,14 @@ module.exports = function(req, res, reject, codes) {
                                     {
                                         type: MessageComponentType.Button,
                                         style: ComponentButtonStyle.Success,
-                                        label: '⏮️',
+                                        label: '⏮',
                                         custom_id: `${instance}.search.toFirstPage`,
                                         disabled: buttons[instance].page <= 0
                                     },
                                     {
                                         type: MessageComponentType.Button,
                                         style: ComponentButtonStyle.Success,
-                                        label: '⏪',
+                                        label: '❮',
                                         custom_id: `${instance}.search.toPreviousPage`,
                                         disabled: buttons[instance].page <= 0
                                     },
@@ -218,14 +218,14 @@ module.exports = function(req, res, reject, codes) {
                                     {
                                         type: MessageComponentType.Button,
                                         style: ComponentButtonStyle.Success,
-                                        label: '⏩',
+                                        label: '❯',
                                         custom_id: `${instance}.search.toNextPage`,
                                         disabled: buttons[instance].page >= (buttons[instance].pages.length -1)
                                     },
                                     {
                                         type: MessageComponentType.Button,
                                         style: ComponentButtonStyle.Success,
-                                        label: '⏭️',
+                                        label: '⏭',
                                         custom_id: `${instance}.search.toLastPage`,
                                         disabled: buttons[instance].page >= (buttons[instance].pages.length -1)
                                     }
