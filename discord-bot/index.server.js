@@ -22,7 +22,7 @@ function MB(num) {
 setInterval(() => {
     for (const id in buttons) {
         if (Date.now() > buttons[id].expires) {
-            fromApi(`PATCH /webhooks/${process.env.botId}/messages/${buttons[id].message}`, {
+            fromApi(`PATCH /webhooks/${process.env.botId}/${buttons[id].message}/messages/@original`, {
                 content: buttons[id].pages[buttons[id].page] + '\n' +
                          '-# This search query has expired',
                 components: []
@@ -38,7 +38,7 @@ setInterval(() => {
  * @param {(code: number, message: string, res: import('express').Response, retry: boolean) => void} reject 
  * @param {{ [key: string]: number }} codes 
  */
-module.exports = function(req, res, reject, codes) {
+module.exports = async function(req, res, reject, codes) {
     if (!req.headers['x-signature-ed25519'] || !req.headers['x-signature-timestamp']) {
         console.log('Recieved missing signatures');
         return reject(codes.Unauthorized, 'Missing signatures', res);
@@ -156,72 +156,68 @@ module.exports = function(req, res, reject, codes) {
                     page: 0,
                     id: null
                 };
-                result.type = InteractionCallbackType.DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE;
-                (async () => {
-                    // most likely wont take very long for discord state to update
-                    await new Promise(resolve => setTimeout(resolve, 1000));
-                    const search = event.data.options?.[0]?.value;
-                    const files = await fs.readdir('./dist')
-                    const sorted = !search ? files : files
-                        .map(file => [[...file].filter(char => search.includes(char)).length, file])
-                        .sort((a,b) => a[0] - b[0])
-                        .map(file => file[1]);
-                    const pages = [''];
-                    for (const file of sorted) {
-                        const append = `[${file}](<https://godslayerakp.serv00.net/${file.replace(/[^a-z0-9.]+/gi, '-')}>) ; `;
-                        if ((pages.at(-1).length + append.length) >= 2000)
-                            pages.push('');
-                        pages[pages.length -1] += append;
-                    }
-                    console.log(pages);
-                    buttons[instance].pages = pages
-                    const response = await fromApi(`PATCH /webhooks/${process.env.botId}/${event.token}/messages/@original`, {
-                        content: buttons[instance].pages[0],
-                        components: [
-                            {
-                                type: MessageComponentType.ActionRow,
-                                components: [
-                                    {
-                                        type: MessageComponentType.Button,
-                                        style: ComponentButtonStyle.Success,
-                                        label: '⏮',
-                                        custom_id: `${instance}.search.toFirstPage`,
-                                        disabled: buttons[instance].page <= 0
-                                    },
-                                    {
-                                        type: MessageComponentType.Button,
-                                        style: ComponentButtonStyle.Success,
-                                        label: '❮',
-                                        custom_id: `${instance}.search.toPreviousPage`,
-                                        disabled: buttons[instance].page <= 0
-                                    },
-                                    {
-                                        type: MessageComponentType.Button,
-                                        style: ComponentButtonStyle.Secondary,
-                                        label: buttons[instance].page +1 + '/' + buttons[instance].pages.length,
-                                        custom_id: `${instance}.search.pageCount`,
-                                        disabled: true
-                                    },
-                                    {
-                                        type: MessageComponentType.Button,
-                                        style: ComponentButtonStyle.Success,
-                                        label: '❯',
-                                        custom_id: `${instance}.search.toNextPage`,
-                                        disabled: buttons[instance].page >= (buttons[instance].pages.length -1)
-                                    },
-                                    {
-                                        type: MessageComponentType.Button,
-                                        style: ComponentButtonStyle.Success,
-                                        label: '⏭',
-                                        custom_id: `${instance}.search.toLastPage`,
-                                        disabled: buttons[instance].page >= (buttons[instance].pages.length -1)
-                                    }
-                                ]
-                            }
-                        ]
-                    });
-                    buttons[instance].message = response.id;
-                })();
+                const search = event.data.options?.[0]?.value;
+                const files = await fs.readdir('./dist')
+                const sorted = !search ? files : files
+                    .map(file => [[...file].filter(char => search.includes(char)).length, file])
+                    .sort((a,b) => a[0] - b[0])
+                    .map(file => file[1]);
+                const pages = [''];
+                for (const file of sorted) {
+                    const append = `[${file}](<https://godslayerakp.serv00.net/${file.replace(/[^a-z0-9.]+/gi, '-')}>) ; `;
+                    if ((pages.at(-1).length + append.length) >= 2000)
+                        pages.push('');
+                    pages[pages.length -1] += append;
+                }
+                console.log(pages);
+                buttons[instance].pages = pages
+                buttons[instance].message = event.token;
+                result.type = InteractionCallbackType.CHANNEL_MESSAGE_WITH_SOURCE;
+                result.data = {
+                    content: buttons[instance].pages[0],
+                    components: [
+                        {
+                            type: MessageComponentType.ActionRow,
+                            components: [
+                                {
+                                    type: MessageComponentType.Button,
+                                    style: ComponentButtonStyle.Success,
+                                    label: '⏮',
+                                    custom_id: `${instance}.search.toFirstPage`,
+                                    disabled: buttons[instance].page <= 0
+                                },
+                                {
+                                    type: MessageComponentType.Button,
+                                    style: ComponentButtonStyle.Success,
+                                    label: '❮',
+                                    custom_id: `${instance}.search.toPreviousPage`,
+                                    disabled: buttons[instance].page <= 0
+                                },
+                                {
+                                    type: MessageComponentType.Button,
+                                    style: ComponentButtonStyle.Secondary,
+                                    label: buttons[instance].page +1 + '/' + buttons[instance].pages.length,
+                                    custom_id: `${instance}.search.pageCount`,
+                                    disabled: true
+                                },
+                                {
+                                    type: MessageComponentType.Button,
+                                    style: ComponentButtonStyle.Success,
+                                    label: '❯',
+                                    custom_id: `${instance}.search.toNextPage`,
+                                    disabled: buttons[instance].page >= (buttons[instance].pages.length -1)
+                                },
+                                {
+                                    type: MessageComponentType.Button,
+                                    style: ComponentButtonStyle.Success,
+                                    label: '⏭',
+                                    custom_id: `${instance}.search.toLastPage`,
+                                    disabled: buttons[instance].page >= (buttons[instance].pages.length -1)
+                                }
+                            ]
+                        }
+                    ]
+                }
                 break;
             case 'Quote':
                 result.type = InteractionCallbackType.DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE;
