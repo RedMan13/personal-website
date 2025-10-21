@@ -66,11 +66,12 @@ module.exports = function(req, res, reject, codes) {
             switch (command) {
             case 'search':
                 if (!buttons[instance]) {
-                    fromApi(`PATCH /webhooks/${process.env.botId}/messages/${buttons[id].message}`, {
-                        content: '## This search query has been lost',
+                    result.type = InteractionCallbackType.UPDATE_MESSAGE;
+                    result.data = {
+                        content: '## This query has been lost',
                         components: []
-                    });
-                    return;
+                    }
+                    break;
                 }
                 switch (button) {
                 case 'toFirstPage':
