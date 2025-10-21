@@ -175,13 +175,15 @@ module.exports = function(req, res, reject, codes) {
                             page = folder[1];
                         }
                     }
+                    console.log(pages);
                     buttons[instance].pages = pages
                         .map(page => {
                             const recurGen = (folder, level) => {
                                 let res = '';
                                 for (const file of folder) {
-                                    res += `${level}- [${file[0]}](<https://godslayerakp.serv00.net/${file[0].replace(/[^a-z0-9]+/gi, '')}>)\n`;
-                                    if (file[1].length) res += recurGen(file[1], `${level}  `);
+                                    res += `${level}- [${file[0]}](<https://godslayerakp.serv00.net/${file[0].replace(/[^a-z0-9.]+/gi, '-')}>)\n`;
+                                    if (file[1].length)
+                                        res += recurGen(file[1], `${level}  `);
                                 }
 
                                 return res;
