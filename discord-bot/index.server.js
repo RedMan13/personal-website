@@ -179,7 +179,7 @@ module.exports = function(req, res, reject, codes) {
                             const recurGen = (folder, level) => {
                                 let res = '';
                                 for (const file of folder) {
-                                    res += `${level}- [${file[0]}](<https://godslayerakp.serv00.net/${file[0]}>)\n`;
+                                    res += `${level}- [${file[0]}](<https://godslayerakp.serv00.net/${file[0].replace(/[^a-z0-9]+/gi, '')}>)\n`;
                                     if (file[1].length) res += recurGen(file[1], `${level}  `);
                                 }
 
