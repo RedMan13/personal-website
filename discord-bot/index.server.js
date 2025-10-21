@@ -158,6 +158,8 @@ module.exports = function(req, res, reject, codes) {
                 };
                 result.type = InteractionCallbackType.DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE;
                 (async () => {
+                    // most likely wont take very long for discord state to update
+                    await new Promise(resolve => setTimeout(resolve, 200));
                     const search = event.data.options?.[0]?.value;
                     const files = await fs.readdir('./dist')
                     const sorted = search ? files : files
