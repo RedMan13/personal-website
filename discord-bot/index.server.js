@@ -168,7 +168,7 @@ module.exports = function(req, res, reject, codes) {
                     for (const file of sorted) {
                         let page = pages.at(-1);
                         if (page.length >= 2000) pages.push(page = '');
-                        page += `[${file[0]}](<https://godslayerakp.serv00.net/${file[0].replace(/[^a-z0-9.]+/gi, '-')}>) ; `;
+                        page += `[${file}](<https://godslayerakp.serv00.net/${file.replace(/[^a-z0-9.]+/gi, '-')}>) ; `;
                         pages[pages.length -1] = page;
                     }
                     console.log(pages);
