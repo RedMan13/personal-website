@@ -25,6 +25,7 @@ setInterval(() => {
             fromApi(`PATCH /webhooks/${process.env.botId}/messages/${buttons[id].message}`, {
                 content: buttons[id].pages[buttons[id].page] + '\n' +
                          '-# This search query has expired',
+                components: []
             });
             delete buttons[id];
         }
@@ -62,9 +63,15 @@ module.exports = function(req, res, reject, codes) {
             break;
         case InteractionType.MESSAGE_COMPONENT:
             const [instance, command, button] = event.data.custom_id.split('.');
-            if (!instance) return;
             switch (command) {
             case 'search':
+                if (!buttons[instance]) {
+                    fromApi(`PATCH /webhooks/${process.env.botId}/messages/${buttons[id].message}`, {
+                        content: '## This search query has been lost',
+                        components: []
+                    });
+                    return;
+                }
                 switch (button) {
                 case 'toFirstPage':
                     buttons[instance].page = 0;
@@ -187,41 +194,41 @@ module.exports = function(req, res, reject, codes) {
                             {
                                 type: MessageComponentType.ActionRow,
                                 components: [
-                                {
-                                    type: MessageComponentType.Button,
-                                    style: ComponentButtonStyle.Success,
-                                    label: '⏮️',
-                                    custom_id: `${instance}.search.toFirstPage`,
-                                    disabled: buttons[instance].page <= 0
-                                },
-                                {
-                                    type: MessageComponentType.Button,
-                                    style: ComponentButtonStyle.Success,
-                                    label: '⏪',
-                                    custom_id: `${instance}.search.toPreviousPage`,
-                                    disabled: buttons[instance].page <= 0
-                                },
-                                {
-                                    type: MessageComponentType.Button,
-                                    style: ComponentButtonStyle.Secondary,
-                                    label: buttons[instance].page +1 + '/' + buttons[instance].pages.length,
-                                    custom_id: `${instance}.search.pageCount`,
-                                    disabled: true
-                                },
-                                {
-                                    type: MessageComponentType.Button,
-                                    style: ComponentButtonStyle.Success,
-                                    label: '⏩',
-                                    custom_id: `${instance}.search.toNextPage`,
-                                    disabled: buttons[instance].page >= (buttons[instance].pages.length -1)
-                                },
-                                {
-                                    type: MessageComponentType.Button,
-                                    style: ComponentButtonStyle.Success,
-                                    label: '⏭️',
-                                    custom_id: `${instance}.search.toLastPage`,
-                                    disabled: buttons[instance].page >= (buttons[instance].pages.length -1)
-                                }
+                                    {
+                                        type: MessageComponentType.Button,
+                                        style: ComponentButtonStyle.Success,
+                                        label: '⏮️',
+                                        custom_id: `${instance}.search.toFirstPage`,
+                                        disabled: buttons[instance].page <= 0
+                                    },
+                                    {
+                                        type: MessageComponentType.Button,
+                                        style: ComponentButtonStyle.Success,
+                                        label: '⏪',
+                                        custom_id: `${instance}.search.toPreviousPage`,
+                                        disabled: buttons[instance].page <= 0
+                                    },
+                                    {
+                                        type: MessageComponentType.Button,
+                                        style: ComponentButtonStyle.Secondary,
+                                        label: buttons[instance].page +1 + '/' + buttons[instance].pages.length,
+                                        custom_id: `${instance}.search.pageCount`,
+                                        disabled: true
+                                    },
+                                    {
+                                        type: MessageComponentType.Button,
+                                        style: ComponentButtonStyle.Success,
+                                        label: '⏩',
+                                        custom_id: `${instance}.search.toNextPage`,
+                                        disabled: buttons[instance].page >= (buttons[instance].pages.length -1)
+                                    },
+                                    {
+                                        type: MessageComponentType.Button,
+                                        style: ComponentButtonStyle.Success,
+                                        label: '⏭️',
+                                        custom_id: `${instance}.search.toLastPage`,
+                                        disabled: buttons[instance].page >= (buttons[instance].pages.length -1)
+                                    }
                                 ]
                             }
                         ]
