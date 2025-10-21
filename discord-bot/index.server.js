@@ -162,7 +162,7 @@ module.exports = function(req, res, reject, codes) {
                     await new Promise(resolve => setTimeout(resolve, 200));
                     const search = event.data.options?.[0]?.value;
                     const files = await fs.readdir('./dist')
-                    const sorted = search ? files : files
+                    const sorted = !search ? files : files
                         .map(file => [[...file].filter(char => search.includes(char)).length, file])
                         .sort((a,b) => a[0] - b[0])
                         .map(file => file[1]);
