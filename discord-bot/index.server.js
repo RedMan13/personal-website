@@ -160,7 +160,7 @@ module.exports = async function(req, res, reject, codes) {
                 const files = await fs.readdir('./dist')
                 const sorted = !search ? files : files
                     .map(file => [[...file].filter(char => search.includes(char)).length, file])
-                    .sort((a,b) => a[0] - b[0])
+                    .sort((a,b) => b[0] - a[0])
                     .map(file => file[1]);
                 const pages = [''];
                 for (const file of sorted) {
@@ -169,7 +169,6 @@ module.exports = async function(req, res, reject, codes) {
                         pages.push('');
                     pages[pages.length -1] += append;
                 }
-                console.log(pages);
                 buttons[instance].pages = pages
                 buttons[instance].message = event.token;
                 result.type = InteractionCallbackType.CHANNEL_MESSAGE_WITH_SOURCE;
