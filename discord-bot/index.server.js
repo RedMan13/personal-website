@@ -180,7 +180,7 @@ module.exports = function(req, res, reject, codes) {
                                 let res = '';
                                 for (const file of folder) {
                                     res += `${level}- [${file[0]}](<https://godslayerakp.serv00.net/${file[0]}>)\n`;
-                                    if (file[1].length) recurGen(file[1], `${level}  `);
+                                    if (file[1].length) res += recurGen(file[1], `${level}  `);
                                 }
 
                                 return res;
