@@ -119,6 +119,35 @@ if (visitors > 9 && visitors < 20) sufix = 'th';
             grid-template-columns: calc(1.75lh + 2px) 1fr max-content;
             grid-template-rows: 1lh .75lh;
         }
+        .gnome {
+            position: absolute;
+            height: 365px;
+            top: calc(calc(50vh - 182.5px) - 1px);
+            cursor: pointer;
+            transition: all 200ms ease-out;
+            z-index: 0;
+        }
+        .gnome:hover {
+            top: calc(calc(50vh - 182.5px) - 40px);
+        }
+        @keyframes reveal {
+            0% {
+                top: calc(calc(50vh - 182.5px) - 40px);
+                z-index: 0;
+            }
+            50% {
+                top: calc(75px - 365px);
+                z-index: 2;
+            }
+            100% {
+                top: calc(calc(50vh - 182.5px) - 1px);
+                z-index: 2;
+            }
+        }
+        .gnome.show {
+            animation: reveal 700ms;
+            z-index: 2;
+        }
     </style>
 </head>
 <body><br>
@@ -237,10 +266,30 @@ if (visitors > 9 && visitors < 20) sufix = 'th';
             requestAnimationFrame(step);
         }
         requestAnimationFrame(step);
+        document.addEventListener('DOMContentLoaded', () => {
+            const body = document.getElementsByClassName('card')[0];
+            const image = new Image();
+            image.classList.add('gnome');
+            document.body.insertBefore(image, body);
+            image.src = '/home-gnome.webp';
+            image.onclick = () => {
+                image.classList.add('show');
+                pushAchievement('Gnome', 'Wait, when did that get here?');
+            }
+            image.style.transform = `scale(${window.scale})`;
+            window.oncardrescale = () => {
+                image.style.transform = `scale(${window.scale})`;
+            }
+        })
     </script>
 
     Welcome! I hope you find this website informative and entertaining! <span title="Since the latest commit to the site">
-        <?= "you are the $visitors$sufix visitor!" ?>
+    you are the <span id="visitors"><%= visitors %></span><%= sufix %> visitor!
+    <script>
+        const visitorsDiv = document.getElementById('visitors');
+        if (visitorsDiv.innerText === '100')
+            pushAchievement('Centennial', 'Wonder how long thats going to last...');
+    </script>
     </span><br>
     <h3 class="horizontalCenter">Portfolio</h3>
     I am 16 years old with four years total experience in Website Development. I know HTML, React, Svelte, CSS, JS, NodeJS, and PHP. I am also highly adaptable, being able to work with languages outside my expertise, such as C#, C, C++, MongoDB, SQLite, and Java.<br>

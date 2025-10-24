@@ -29,6 +29,14 @@
         const ctx = canvas.getContext('2d');
         const w = canvas.width = 43;
         const h = canvas.height = 43;
+        for (let i = 0; i < w; i++) {
+            ctx.fillStyle = i % 2 ? 'white' : 'black';
+            ctx.fillRect(i,5, 1,1);
+        }
+        for (let i = 0; i < w; i++) {
+            ctx.fillStyle = i % 2 ? 'white' : 'black';
+            ctx.fillRect(5,i, 1,1);
+        }
         ctx.putImageData(positionMarker, -1,-1);
         ctx.putImageData(positionMarker, -1,h -7);
         ctx.putImageData(positionMarker, w -7,-1);

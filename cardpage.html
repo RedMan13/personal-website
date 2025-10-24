@@ -571,16 +571,18 @@
             }
             requestAnimationFrame(tick);
 
-            /** @type {BrowserFolder} */
-            const files = JSON.parse(browser.innerText);
-            /** @type {Array<string>} */
-            const pages = (localStorage.pages || location.pathname).split(',');
-            if (!pages.includes(location.pathname)) pages.push(location.pathname);
-            if (files.pages <= pages.length || true) {
+            try {
+                /** @type {BrowserFolder} */
+                const files = JSON.parse(browser.innerText);
+                window.files = files;
+                /** @type {Array<string>} */
+                const pages = (localStorage.pages || location.pathname).split(',');
+                window.pages = pages;
+                if (!pages.includes(location.pathname)) pages.push(location.pathname);
                 enableBrowser();
                 updateBrowser(files);
-            }
-            localStorage.pages = pages.join();
+                localStorage.pages = pages.join();
+            } catch (err) { console.warn(err); }
             setBrowserWidth(+localStorage.broswerLeft || 180);
         </script>
         <div style="
@@ -594,6 +596,7 @@
             <div id="main">{body}</div>
         </div>
     </div>
+    <canvas style="right: 0; top: 0; position: absolute;" width="178" height="100" id="achievements"></canvas>
     <div class="exit-to-source" id="exit-to-source" onclick="openGithubCode()" title="View source code">X</div>
     <script>
         const scaleOffset = 0.20
@@ -645,16 +648,78 @@
                     document.body.innerHTML = ''
                     video.style.display = ''
                     document.body.appendChild(video)
-                    await waitTime(1000)
+                    await waitTime(1000);
+                    pushAchievement('Expload', 'How dare you do that.');
                     video.play().catch(() => {
                         video.style.display = 'none'
                         document.body.style.backgroundColor = 'white'
                         document.body.innerHTML = `man your no fun >:(. <br> how dare you block auto video playback making it so i cant play <a href="./finally your awake.mp4">finally your awake.mp4</a>`
-                    })
+                    });
+                    video.onend = () =>
+                        pushAchievement('Lengthy', 'You really watched the whole thing?');
                     clearInterval(timerInt)
                 }
             }, 1000)
         }
+        const achievements = document.getElementById('achievements');
+        localStorage.titles ??= '{}';
+        const titles = JSON.parse(localStorage.titles);
+        function pushAchievement(title, comment) {
+            titles[title] = comment;
+            localStorage.titles = JSON.stringify(titles);
+            /** @type {CanvasRenderingContext2D} */
+            const ctx = achievements.getContext('2d');
+            ctx.font = `20px sans-serif`;
+            const text = title + ' : ' + comment;
+            ctx.strokeText(text, achievements.width -5, 0);
+            ctx.fillText(text, achievements.width -5, 0);
+        }
+        const titlePos = Object.fromEntries(Object.keys(titles).map(title => [title, 0]));
+        let lastScroll = 0;
+        let scrollPos = 0;
+        let running = false;
+        function drawAchievements() {
+            running = true;
+            /** @type {CanvasRenderingContext2D} */
+            const ctx = achievements.getContext('2d');
+            ctx.resetTransform();
+            achievements.width = window.innerWidth;
+            ctx.filStyle = 'black';
+            ctx.strokeStyle = 'black';
+            ctx.fillStyle = 'white';
+            ctx.textAlign = 'right';
+            ctx.textBaseline = 'top';
+            let y = -lastScroll;
+            lastScroll = (((Math.round(scrollPos / 17) * 17) - lastScroll) * 0.2) + lastScroll;
+            for (const title in titles) {
+                const proximity = Math.min(Math.max(1- (Math.abs(y) / 17), 0), 1);
+                ctx.resetTransform();
+                ctx.scale(1, 0.85 ** (y / 25));
+                ctx.font = `${(5 * proximity) + 15}px sans-serif`;
+                const text = title + ' : ' + titles[title];
+                const measuresTitle = ctx.measureText(title);
+                const measuresPlate = ctx.measureText(text);
+                const targetPos = proximity > 0.5 ? 0 : measuresPlate.width - measuresTitle.width;
+                titlePos[title] = (((targetPos - titlePos[title]) * 0.5) + titlePos[title]) || 0;
+                ctx.strokeText(text, (achievements.width - ((5 * proximity) + 2)) + titlePos[title], y +2);
+                ctx.fillText(text, (achievements.width - ((5 * proximity) + 2)) + titlePos[title], y +2);
+                y += 17;
+            } 
+            requestAnimationFrame(drawAchievements);
+        }
+        achievements.onwheel = e => { scrollPos += (e.deltaY / 100) * 25; }
+        document.onkeydown = e => {
+            if (!running) {
+                drawAchievements();
+                pushAchievement('This', 'Hey look, its the achievements!');
+            }
+            switch (e.key) {
+            case 'ArrowUp': scrollPos -= 17; break;
+            case 'ArrowDown': scrollPos += 17; break;
+            }
+        }
+        if (window.files?.pages <= window.pages?.length)
+            pushAchievement('Explorer', 'I wonder what will happen when new pages get added...');
 
         // i have 0 clue how the fuck im supposed to do the scaling with css, and having it clearly saved is better anyways
         function computeSize() {
@@ -701,6 +766,7 @@
         }
 
         async function openGithubCode() {
+            pushAchievement('Sources', 'The code is surely somewhere...');
             /** @type {HTMLAudioElement} */
             const toiletAudio = document.createElement('audio');
             await new Promise(resolve => {
@@ -723,6 +789,9 @@
             }
             loop();
         }
+        const realFileMeta = document.getElementById('site-distributed');
+        if (!location.pathname.startsWith('/' + realFileMeta.getAttribute('content')))
+            pushAchievement('Hacker', 'Its funny what this server software allows.');
     </script>
 </body>
 </html>

@@ -1,7 +1,23 @@
 function handleReject(status, message, res, retry) {
     res.status(status);
     if (retry) res.header('Retry-After', 2);
-    res.send(`<div style="width: 100%; height: 100%; display: flex; justify-content: center; align-items: center;">${message}</div>`);
+    res.send(`
+        <script>
+            const titles = JSON.parse(localStorage.titles);
+            titles['Error'] = 'Ahh man, that wasnt supposed to happen.';
+            localStorage.titles = JSON.stringify(titles);
+        </script>
+        <div style="
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        ">
+            <h1>${status}</h1>
+            ${message}
+        </div>
+    `);
 }
 const codes = {
     /** This interim response indicates that the client should continue the request or ignore the response if the request is already finished. */
