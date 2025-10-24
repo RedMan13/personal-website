@@ -7,7 +7,7 @@ just a funky little site for my funky little internet sharing things
 # system documention
 ## build exclusions
 see `.buildignore` for a list of all files, files are matched via regex
-## `preprocessors/*.prepcomp.js` files
+## `preprocessors/*.prepcomp.js` files 
 these files transpile certain files ahead of time, allowing for things like e4x or jsx to be added into the dealt code.
 
 here is a list of all currently implemented precomp files
