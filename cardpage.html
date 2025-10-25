@@ -709,7 +709,8 @@
         }
         achievements.onwheel = e => { scrollPos += (e.deltaY / 100) * 25; }
         document.onkeydown = e => {
-            if (!running) {
+            if (e.target !== document.body && e.target !== achievements) return;
+            if (!running && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
                 drawAchievements();
                 pushAchievement('This', 'Hey look, its the achievements!');
             }
