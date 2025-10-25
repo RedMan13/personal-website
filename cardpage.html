@@ -791,7 +791,7 @@
             loop();
         }
         const realFileMeta = document.getElementById('site-distributed');
-        if (!location.pathname.startsWith('/' + realFileMeta.getAttribute('content')))
+        if (!location.pathname.startsWith('/' + realFileMeta.getAttribute('content')) && !/index(\..*)?$/i.test(realFileMeta.getAttribute('content')))
             pushAchievement('Hacker', 'Its funny what this server software allows.');
     </script>
 </body>
