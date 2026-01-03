@@ -91,7 +91,7 @@ module.exports = async function(req, res, next) {
         res.send(`
             <h1>List of files for ${decodedPath}</h1><br>
             <ul>
-                ${(await fs.readdir(decodedPath)).map(file => `<li><a href="${file}">${file}</a></li>`)}
+                ${(await fs.readdir(path.resolve(entry, `.${decodedPath}`))).map(file => `<li><a href="${file}">${file}</a></li>`)}
             </ul>
         `);
     }
