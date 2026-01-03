@@ -87,7 +87,15 @@ module.exports = async function(req, res, next) {
         return handleReject(codes.ServiceUnavailable, 'Server unready to handle requests', res, true);
     // resolve twice, once to remove path escapes (., .. and such) and again to get the actual file path 
     const decodedPath = path.resolve(decodeURIComponent(req.path));
-    const realName = findRealName(decodedPath, 'list' in req.query);
+    if ('list' in req.query) {
+        res.send(`
+            <h1>List of files for ${decodedPath}</h1><br>
+            <ul>
+                ${(await fs.readdir(decodedPath)).map(file => `<li><a href="${file}">${file}</a></li>`)}
+            </ul>
+        `);
+    }
+    const realName = findRealName(decodedPath);
     const realPath = path.resolve(entry, `.${realName}`);
     const pathInfo = path.parse(realPath);
     const protectionLevel = getProtLevelOf(realPath, pathInfo);
@@ -115,17 +123,8 @@ module.exports = async function(req, res, next) {
         return handleFileError(res)({code: 'ENOENT', path: realPath});
     }
 
-    if (info.isDirectory()) {
-        if ('list' in req.query)
-            return handleReject(codes.NotAcceptable, 'Cannot read directory as file', res);
-        res.send(`
-            <h1>List of files for ${realName}</h1><br>
-            <ul>
-                ${(await fs.readdir(realPath)).map(file => `<li><a href="${file}">${file}</a></li>`)}
-            </ul>
-        `);
-        return;
-    }
+    if (info.isDirectory())
+        return handleReject(codes.NotAcceptable, 'Cannot read directory as file', res);
 
     req.realPath = realPath;
     req.pathInfo = pathInfo;
