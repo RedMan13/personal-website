@@ -67,23 +67,27 @@ readRecursive(entry);
 
 // find the real file name according to some given name
 // does things like replace dashes with spaces so you can use the url "main-page" instead of "main page.html"
-function findRealName(name) {
+function findRealName(name, ignoreIndex) {
     // root always has an index, so load that instead of looking for something that wont exist
-    if (name === '/') return pathList.find(path => compareFileNames('/index', path));
+    if (name === '/' && !ignoreIndex) return pathList.find(path => compareFileNames('/index', path));
     // server isnt ready!?!??!?!?!?!!?!?!?!!?!?!??!?!?! nah it chill this happens alot when in dev testing
     if (!readyToHandle) return name.endsWith(/\.\w+$/i) ? name : name + '.php';
     // if we never find the desired name then assume it just isnt in our list of names and give back the inputed name
     return pathList.find(path => compareFileNames(name, path)) ??
-        pathList.find(path => compareFileNames(name + '/index', path)) ??
+        (!ignoreIndex && pathList.find(path => compareFileNames(name + '/index', path))) ??
         name;
 }
 
+/**
+ * @param {import('express').Request} req 
+ * @param {import('express').Response} res
+ */
 module.exports = async function(req, res, next) {
     if (!readyToHandle)
         return handleReject(codes.ServiceUnavailable, 'Server unready to handle requests', res, true);
     // resolve twice, once to remove path escapes (., .. and such) and again to get the actual file path 
     const decodedPath = path.resolve(decodeURIComponent(req.path));
-    const realName = findRealName(decodedPath);
+    const realName = findRealName(decodedPath, req.query.list !== 'true');
     const realPath = path.resolve(entry, `.${realName}`);
     const pathInfo = path.parse(realPath);
     const protectionLevel = getProtLevelOf(realPath, pathInfo);
@@ -111,8 +115,17 @@ module.exports = async function(req, res, next) {
         return handleFileError(res)({code: 'ENOENT', path: realPath});
     }
 
-    if (info.isDirectory())
-        return handleReject(codes.NotAcceptable, 'Cannot read directory as file', res);
+    if (info.isDirectory()) {
+        if (req.query.list !== 'true')
+            return handleReject(codes.NotAcceptable, 'Cannot read directory as file', res);
+        res.send(`
+            <h1>List of files for ${realName}</h1><br>
+            <ul>
+                ${(await fs.readdir(realPath)).map(file => `<li><a href="${file}">${file}</a></li>`)}
+            </ul>
+        `);
+        return;
+    }
 
     req.realPath = realPath;
     req.pathInfo = pathInfo;
