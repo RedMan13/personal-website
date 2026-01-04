@@ -87,13 +87,19 @@ module.exports = async function(req, res, next) {
         return handleReject(codes.ServiceUnavailable, 'Server unready to handle requests', res, true);
     // resolve twice, once to remove path escapes (., .. and such) and again to get the actual file path 
     const decodedPath = path.resolve(decodeURIComponent(req.path));
+    // folders are not included in the name list due to weird confusions that doing so produces
+    // so just expect absolute pathing when listing out a folder
     if ('list' in req.query) {
-        res.send(`
-            <h1>List of files for ${decodedPath}</h1><br>
-            <ul>
-                ${(await fs.readdir(path.resolve(entry, `.${decodedPath}`))).map(file => `<li><a href="${file}">${file}</a></li>`)}
-            </ul>
-        `);
+        const files = await fs.readdir(path.resolve(entry, `.${decodedPath}`)).catch(() => null);
+        if (files?.length) {
+            res.send(`
+                <h1>List of files for ${decodedPath}</h1><br>
+                <ul>
+                    ${files.map(file => `<li><a href="./${file}?list">${file}</a></li>`)}
+                </ul>
+            `);
+            return;
+        }
     }
     const realName = findRealName(decodedPath);
     const realPath = path.resolve(entry, `.${realName}`);
