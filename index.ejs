@@ -43,7 +43,7 @@ const { General } = once(() => {
     const VisitorCountLog = new mongoose.Schema({ isVisitors: Boolean, count: Number });
     const General = storage.model('general', VisitorCountLog);
     return { General };
-});
+}, 'general-database');
 const visitors = General.findOne({ isVisitors: true }) ??
     new General({ isVisitors: true, count: 0 });
 console.log(visitors);

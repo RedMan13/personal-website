@@ -10,7 +10,8 @@ const mongoose = require('mongoose');
   
 console.log(new Date().toUTCString());
 const onces = {};
-function once(ident, generator) {
+function once(ident, generator, override) {
+    if (override) ident = override;
     if (ident in onces) return onces[ident];
     return onces[ident] = generator();
 }
