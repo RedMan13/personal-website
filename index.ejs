@@ -48,7 +48,7 @@ const visitors = General.findOne({ isVisitors: true }) ??
     new General({ isVisitors: true, count: 0 });
 console.log(visitors);
 visitors.count++;
-visitors.save();
+// visitors.save();
 const visitorCount = visitors.count;
 
 const numSuf = ['th', 'st', 'nd', 'rd', 'th', 'th', 'th', 'th', 'th', 'th'];
