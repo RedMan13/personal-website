@@ -46,6 +46,7 @@ const { Visitors } = once(() => {
 });
 const visitors = Visitors.findOne({ page: 'main' }) ??
     new Visitors({ page: 'main', count: 0 });
+console.log(visitors);
 visitors.count++;
 visitors.save();
 const visitorCount = visitors.count;
