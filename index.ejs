@@ -49,7 +49,7 @@ const visitors = General.findOne({ isVisitors: true }) ??
 console.log(visitors);
 visitors.count++;
 // visitors.save();
-const visitorCount = visitors.count;
+const visitorCount = visitors.count.toString();
 
 const numSuf = ['th', 'st', 'nd', 'rd', 'th', 'th', 'th', 'th', 'th', 'th'];
 let sufix = numSuf[visitorCount.slice(-1)];
