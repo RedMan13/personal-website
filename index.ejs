@@ -39,16 +39,16 @@ function renderSlideDiv(slides) {
     return res;
 }
 
-const { General } = once(() => {
-    const VisitorCountLog = new mongoose.Schema({ isVisitors: Boolean, count: Number });
-    const General = storage.model('general', VisitorCountLog);
-    return { General };
-}, 'general-database');
-const visitors = General.findOne({ isVisitors: true }) ??
-    new General({ isVisitors: true, count: 0 });
+const { Visitors } = once(() => {
+    const VisitorCountLog = new mongoose.Schema({ page: String, count: Number });
+    const Visitors = storage.model('visitors', VisitorCountLog);
+    return { Visitors };
+});
+const visitors = Visitors.findOne({ page: 'main' }) ??
+    new Visitors({ page: 'main', count: 0 });
 console.log(visitors);
 visitors.count++;
-// visitors.save();
+visitors.save();
 const visitorCount = visitors.count.toString();
 
 const numSuf = ['th', 'st', 'nd', 'rd', 'th', 'th', 'th', 'th', 'th', 'th'];
