@@ -10,7 +10,7 @@ ${String(ejs.compile(util.file, {
     filename: path.relative(util.entry, util.path),
     compileDebug: false
 }))}
-module.exports = async function(req, res, handleReject, codes) {
+module.exports = async function(req, res, handleReject, codes, once, storage, mongoose) {
     const headers = { status: codes.OK };
     const result = await anonymous(
         { query: req.query, body: req.body, headers },

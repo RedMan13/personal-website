@@ -39,11 +39,20 @@ function renderSlideDiv(slides) {
     return res;
 }
 
-const visitors = '0';
+const { Visitors } = once(() => {
+    const VisitorCountLog = new mongoose.Schema({ page: String, count: Number });
+    const Visitors = storage.model('visitors', VisitorCountLog);
+    return { Visitors };
+});
+const visitors = Visitors.findOne({ page: 'main' }) ??
+    new Visitors({ page: 'main', count: 0 });
+visitors.count++;
+visitors.save();
+const visitorCount = visitors.count;
 
 const numSuf = ['th', 'st', 'nd', 'rd', 'th', 'th', 'th', 'th', 'th', 'th'];
-let sufix = numSuf[visitors.slice(-1)];
-if (visitors > 9 && visitors < 20) sufix = 'th';
+let sufix = numSuf[visitorCount.slice(-1)];
+if (visitorCount > 9 && visitorCount < 20) sufix = 'th';
 %>
 <head>
     <title>godslayerakp</title>
@@ -284,7 +293,7 @@ if (visitors > 9 && visitors < 20) sufix = 'th';
     </script>
 
     Welcome! I hope you find this website informative and entertaining! <span title="Since the latest commit to the site">
-    you are the <span id="visitors"><%= visitors %></span><%= sufix %> visitor!
+    you are the <span id="visitors"><%= visitorCount %></span><%= sufix %> visitor!
     <script>
         const visitorsDiv = document.getElementById('visitors');
         if (visitorsDiv.innerText === '100')
@@ -292,7 +301,7 @@ if (visitors > 9 && visitors < 20) sufix = 'th';
     </script>
     </span><br>
     <h3 class="horizontalCenter">Portfolio</h3>
-    I am 16 years old with four years total experience in Website Development. I know HTML, React, Svelte, CSS, JS, NodeJS, and PHP. I am also highly adaptable, being able to work with languages outside my expertise, such as C#, C, C++, MongoDB, SQLite, and Java.<br>
+    I am <% Math.floor((Date.now() - new Date('08/17/2008').getTime()) / 1000 / 60 / 60 /24 / 365) %> years old with four years total experience in Website Development. I know HTML, React, Svelte, CSS, JS, NodeJS, and PHP. I am also highly adaptable, being able to work with languages outside my expertise, such as C#, C, C++, MongoDB, SQLite, and Java.<br>
     This website is also participant of the <a href="https://steve0greatness.github.io/webring">0greatness webring!</a><br>
     <h3 class="horizontalCenter">All the projects i have worked on as of now.</h3>
     <%- renderSlideDiv([

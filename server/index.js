@@ -6,8 +6,15 @@ const read = require('body-parser/lib/read');
 const server = new WebSocketExpress();
 const fs = require('fs');
 const { handleReject, codes } = require('./handle-reject.js');
+const mongoose = require('mongoose');
   
 console.log(new Date().toUTCString());
+const onces = {};
+function once(ident, generator) {
+    if (ident in onces) return onces[ident];
+    return onces[ident] = generator();
+}
+const storage = mongoose.createConnection(process.env.mdbUrl.toString());
 fs.watch('.', () => {
     console.log('server changed, killing my self for the new version to take place');
     process.exit(0);
@@ -45,7 +52,7 @@ server.useHTTP(async (req, res) => {
     }
     if (realPath.endsWith('.server.js')) {
         try {
-            require(realPath)(req, res, handleReject, codes);
+            require(realPath)(req, res, handleReject, codes, once.bind(null, realPath), storage, mongoose);
         } catch (err) {
             console.error(err);
             handleReject(codes.InternalServerError, `Could not generate content: ${err}`, res);
