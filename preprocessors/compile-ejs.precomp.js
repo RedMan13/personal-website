@@ -13,7 +13,7 @@ ${String(ejs.compile(util.file, {
 module.exports = async function(req, res, handleReject, codes, once, storage, mongoose) {
     const headers = { status: codes.OK };
     const result = await anonymous(
-        { query: req.query, body: req.body, headers },
+        { query: req.query, body: req.body, headers, once, storage, mongoose, handleReject },
         null,
         null,
         null
