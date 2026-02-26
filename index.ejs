@@ -46,7 +46,6 @@ const { Visitors } = once(() => {
 });
 const visitors = (await Visitors.findOne({ page: 'main' })) ??
     new Visitors({ page: 'main', count: 0 });
-console.log(visitors, Object.getPrototypeOf(visitors));
 visitors.count++;
 visitors.save();
 const visitorCount = visitors.count.toString();
@@ -302,7 +301,7 @@ if (visitorCount > 9 && visitorCount < 20) sufix = 'th';
     </script>
     </span><br>
     <h3 class="horizontalCenter">Portfolio</h3>
-    I am <% Math.floor((Date.now() - new Date('08/17/2008').getTime()) / 1000 / 60 / 60 /24 / 365) %> years old with four years total experience in Website Development. I know HTML, React, Svelte, CSS, JS, NodeJS, and PHP. I am also highly adaptable, being able to work with languages outside my expertise, such as C#, C, C++, MongoDB, SQLite, and Java.<br>
+    I am <%= Math.floor((Date.now() - new Date('08/17/2008').getTime()) / 1000 / 60 / 60 /24 / 365) %> years old with four years total experience in Website Development. I know HTML, React, Svelte, CSS, JS, NodeJS, and PHP. I am also highly adaptable, being able to work with languages outside my expertise, such as C#, C, C++, MongoDB, SQLite, and Java.<br>
     This website is also participant of the <a href="https://steve0greatness.github.io/webring">0greatness webring!</a><br>
     <h3 class="horizontalCenter">All the projects i have worked on as of now.</h3>
     <%- renderSlideDiv([
