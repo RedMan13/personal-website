@@ -14,7 +14,7 @@ function once(ident, generator) {
     if (ident in onces) return onces[ident];
     return onces[ident] = generator();
 }
-const storage = mongoose.createConnection(process.env.mdbUrl.toString());
+const storage = mongoose.createConnection(process.env.mdbUrl);
 fs.watch('.', () => {
     console.log('server changed, killing my self for the new version to take place');
     process.exit(0);
