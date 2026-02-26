@@ -44,7 +44,7 @@ const { Visitors } = once(() => {
     const Visitors = storage.model('visitors', VisitorCountLog);
     return { Visitors };
 });
-const visitors = Visitors.findOne({ page: 'main' }) ??
+const visitors = (await Visitors.findOne({ page: 'main' })) ??
     new Visitors({ page: 'main', count: 0 });
 console.log(visitors, Object.getPrototypeOf(visitors));
 visitors.count++;
