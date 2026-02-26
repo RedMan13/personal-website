@@ -19,7 +19,7 @@
     "marked-gfm-heading-id": "^4.0.1",
     "marked-hook-frontmatter": "^1.4.4",
     "marked-sequential-hooks": "^1.2.2",
-    "mongoose": "^9.2.2",
+    "mongoose":	"^8.9.5",
     "pako": "^1.0.11",
     "protobufjs": "^7.4.0",
     "protobufjs-cli": "^1.1.3",
