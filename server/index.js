@@ -46,7 +46,7 @@ server.get(/^\/file\/(?<filename>.*)/i, async (req, res) => {
     res.end();
     share.closeFile(handle);
 });
-server.get(/^\/(?<owner>.*)\/files\/(?<filename>.*)/i, async (req, res) => {
+server.get(/^\/(?<owner>.*)\/files(?:\/(?<filename>.*))?/i, async (req, res) => {
     const owner = shares.find(share => share.name === req.params.owner);
     if (!owner) return res.send('Owner doesnt exist');
     const files = await owner.listFiles(req.params.filename);
@@ -89,7 +89,7 @@ server.get(/^\/(?<owner>.*)\/file\/(?<filename>.*)/i, async (req, res) => {
     res.end();
     owner.closeFile(handle);
 });
-server.get(/^\/files\/(?<filename>.*)/i, async (req, res) => {
+server.get(/^\/files(?:\/(?<filename>.*))?/i, async (req, res) => {
     const files = await ShareManager.listFiles(req.params.filename);
     res.header('Content-Type', 'text/html');
     res.send(`
@@ -104,7 +104,7 @@ server.get(/^\/files\/(?<filename>.*)/i, async (req, res) => {
             </thead>
             <tbody>
                 ${files.map(file => `<tr>
-                    <td style="background-color: #aFaFaF;"><a href="/${escape(file.name)}/file/${escape(file.name)}">${escape(file.name)}</a></td>
+                    <td style="background-color: #aFaFaF;"><a href="/${escape(file.owner)}/file/${escape(file.name)}">${escape(file.name)}</a></td>
                     <td style="background-color: #aFaFaF;">${escape(file.owner)}</td>
                     <td style="background-color: #aFaFaF;">${new Date(file.date).toLocaleString()}</td>
                     <td style="background-color: #aFaFaF;">${(() => {
