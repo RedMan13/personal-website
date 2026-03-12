@@ -1,4 +1,3 @@
-const bcrypt = require('bcrypt');
 const path = require('path');
 const fs = require('fs');
 const WebSocket = require('ws');
@@ -67,7 +66,7 @@ class ShareManager {
             if (this.isClient) return this.reply(ShareManager.Error, nonce, 'Must Be Server');
             // if we werent given a string password, dont bother saying anything, just exit immediately
             if (typeof passcode !== 'string') return this.exit();
-            const isGood = await bcrypt.compare(passcode, passhash);
+            const isGood = passcode === passhash;
             this.loggedIn = isGood;
             // dont keep the socket open on auth fail, we dont really want them to be able to slam this method in what ever way they want
             if (!isGood) return this.exit(); 
@@ -84,7 +83,7 @@ class ShareManager {
         [ShareManager.SetPassword]: async (newPass, nonce) => {
             if (this.isClient) return this.reply(ShareManager.Error, nonce, 'Must Be Server').done();
             if (typeof newPass !== 'string') return this.reply(ShareManager.Error, nonce, 'Input Must Be String').done();
-            passhash = await bcrypt.hash(newPass, 10);
+            passhash = newPass;
             fs.writeFileSync('../passcode-hash.hex', passhash);
             this.reply(ShareManager.Reply, nonce).done();
         },
