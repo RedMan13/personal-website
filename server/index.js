@@ -26,7 +26,7 @@ fs.watch('.', () => {
 process.on('uncaughtException', err => console.error(err));
 process.on('unhandledRejection', err => console.error(err));
 function escape(str) {
-    return str.replace(/[<>&'"]/g, c => {
+    return String(str).replace(/[<>&'"]/g, c => {
         switch (c) {
         case '<': return '&lt;';
         case '>': return '&gt;';
