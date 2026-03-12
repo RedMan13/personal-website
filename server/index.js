@@ -52,10 +52,10 @@ server.get(/^\/(?<owner>.*)\/files\/(?<filename>.*)/i, async (req, res) => {
     const files = await owner.listFiles(req.params.filename);
     res.header('Content-Type', 'text/html');
     res.send(`
-        <table style="width: 100%;">
+        <table style="width: 100vw;">
             <thead>
                 <tr style="background-color: grey;">
-                    <th scope="col">Name</th>
+                    <th scope="col" style="width: 75vw">Name</th>
                     <th scope="col">Owner</th>
                     <th scope="col" style="width: 200px">Date</th>
                     <th scope="col" style="width: 0px">Size</th>
@@ -93,10 +93,10 @@ server.get(/^\/files\/(?<filename>.*)/i, async (req, res) => {
     const files = await ShareManager.listFiles(req.params.filename);
     res.header('Content-Type', 'text/html');
     res.send(`
-        <table style="width: 100%;">
+        <table style="width: 100vw;">
             <thead>
                 <tr style="background-color: grey;">
-                    <th scope="col">Name</th>
+                    <th scope="col" style="width: 75vw">Name</th>
                     <th scope="col">Owner</th>
                     <th scope="col" style="width: 200px">Date</th>
                     <th scope="col" style="width: 0px">Size</th>
@@ -104,7 +104,7 @@ server.get(/^\/files\/(?<filename>.*)/i, async (req, res) => {
             </thead>
             <tbody>
                 ${files.map(file => `<tr>
-                    <td style="background-color: #aFaFaF;"><a href="/${escape(file.owner)}/file/${escape(file.name)}">${escape(file.name)}</a></td>
+                    <td style="background-color: #aFaFaF;"><a href="/${escape(owner.name)}/file/${escape(file.name)}">${escape(file.name)}</a></td>
                     <td style="background-color: #aFaFaF;">${escape(file.owner)}</td>
                     <td style="background-color: #aFaFaF;">${new Date(file.date).toLocaleString()}</td>
                     <td style="background-color: #aFaFaF;">${(() => {

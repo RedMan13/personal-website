@@ -266,7 +266,7 @@ class ShareManager {
                 return this.reply(1, nonce, 'Unhandled Syntax Error').done();
             }
             try {
-                console.log('Running request for', opcode);
+                console.log('Running request for', opcode, 'with', ...args);
                 this.methods[opcode].call(this, ...args, nonce);
             } catch (err) {
                 console.error(err);
@@ -305,7 +305,7 @@ class ShareManager {
      * @returns {{ [key: string]: any, opcode: number, done: () => void, promise: () => Promise<any> }} The in-flight state container for this message
      */
     reply(opcode, nonce, ...args) {
-        console.log('Sending', opcode);
+        console.log('Sending', opcode, 'with', ...args);
         const encoded = [];
         // opcode + nonce
         let totalLength = 3;
