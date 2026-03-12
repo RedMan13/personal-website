@@ -1,6 +1,7 @@
 const path = require('path');
 const fs = require('fs');
 const WebSocket = require('ws');
+const { createCanvas, loadImage } = require('canvas');
 let passhash = fs.existsSync('../passcode-hash.hex') ? fs.readFileSync('../passcode-hash.hex', 'utf8').trim() : '';
 
 global.shares = []; // global, as thats kinda the point
