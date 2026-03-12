@@ -36,7 +36,7 @@ function escape(str) {
     });
 }
 server.ws('/share-port', ShareManager.openSharePort);
-server.get(/^file\/(?<filename>.*)/i, async (req, res) => {
+server.get(/^\/file\/(?<filename>.*)/i, async (req, res) => {
     const [share, size, name, handle] = await ShareManager.openFileRead(req.params.filename);
     res.header('Content-Length', size);
     let chunk;
@@ -44,8 +44,9 @@ server.get(/^file\/(?<filename>.*)/i, async (req, res) => {
     res.end();
     share.closeFile(handle);
 });
-server.get(/^(?<owner>.*)\/files\/(?<filename>.*)/i, async (req, res) => {
+server.get(/^\/(?<owner>.*)\/files\/(?<filename>.*)/i, async (req, res) => {
     const owner = shares.find(share => share.name === req.params.owner);
+    if (!owner) return res.send('Owner doesnt exist');
     const files = await owner.listFiles(req.params.filename);
     res.header('Content-Type', 'text/html');
     res.send(`
@@ -75,8 +76,9 @@ server.get(/^(?<owner>.*)\/files\/(?<filename>.*)/i, async (req, res) => {
         </table>    
     `);
 });
-server.get(/^(?<owner>.*)\/file\/(?<filename>.*)/i, async (req, res) => {
+server.get(/^\/(?<owner>.*)\/file\/(?<filename>.*)/i, async (req, res) => {
     const owner = shares.find(share => share.name === req.params.owner);
+    if (!owner) return res.send('Owner doesnt exist');
     const [type, size, name, handle] = await owner.openFileRead(req.params.filename);
     res.header('Content-Length', size);
     let chunk;
@@ -84,7 +86,7 @@ server.get(/^(?<owner>.*)\/file\/(?<filename>.*)/i, async (req, res) => {
     res.end();
     owner.closeFile(handle);
 });
-server.get(/^files\/(?<filename>.*)/i, async (req, res) => {
+server.get(/^\/files\/(?<filename>.*)/i, async (req, res) => {
     const files = await ShareManager.listFiles(req.params.filename);
     res.header('Content-Type', 'text/html');
     res.send(`
