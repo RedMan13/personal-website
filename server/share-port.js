@@ -292,7 +292,7 @@ class ShareManager {
         this.socket.onopen = () => {
             console.log('Connected to server successfully');
             this.attempts = 0;
-            if (this.passcode) this.authorize(this.passcode);
+            if (this.passcode !== null) this.authorize(this.passcode);
             // clients shouldnt timeout
             if (!this.isClient) this.timeout = setTimeout(this.exit.bind(this), 4000);
         }

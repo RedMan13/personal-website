@@ -59,7 +59,7 @@ server.get('/:owner/files/:filename', async (req, res) => {
                 </tr>
             </thead>
             <tbody>
-                ${files.map(file => `
+                ${files.map(file => `<tr>
                     <td style="background-color: #aFaFaF;"><a href="/${escape(file.owner)}/file/${escape(file.name)}">${escape(file.name)}</a></td>
                     <td style="background-color: #aFaFaF;">${escape(file.owner)}</td>
                     <td style="background-color: #aFaFaF;">${new Date(file.date).toLocaleString()}</td>
@@ -70,7 +70,7 @@ server.get('/:owner/files/:filename', async (req, res) => {
                         if (file.size / 1000 >= 1) return `${(file.size / 1000).toFixed(2)}KB`;
                         return `${file.size}B`;
                     })()}</td>
-                `)}
+                </tr>`)}
             </tbody>
         </table>    
     `);
@@ -98,7 +98,7 @@ server.get('/files/:filename', async (req, res) => {
                 </tr>
             </thead>
             <tbody>
-                ${files.map(file => `
+                ${files.map(file => `<tr>
                     <td style="background-color: #aFaFaF;"><a href="/${escape(file.owner)}/file/${escape(file.name)}">${escape(file.name)}</a></td>
                     <td style="background-color: #aFaFaF;">${escape(file.owner)}</td>
                     <td style="background-color: #aFaFaF;">${new Date(file.date).toLocaleString()}</td>
@@ -109,7 +109,7 @@ server.get('/files/:filename', async (req, res) => {
                         if (file.size / 1000 >= 1) return `${(file.size / 1000).toFixed(2)}KB`;
                         return `${file.size}B`;
                     })()}</td>
-                `)}
+                </tr>`)}
             </tbody>
         </table>    
     `);
