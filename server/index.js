@@ -8,6 +8,7 @@ const server = new WebSocketExpress();
 const fs = require('fs');
 const { handleReject, codes } = require('./handle-reject.js');
 const mongoose = require('mongoose');
+const mime = require('mime');
   
 console.log(new Date().toUTCString());
 const onces = {};
@@ -39,6 +40,7 @@ server.ws('/share-port', ShareManager.openSharePort);
 server.get(/^\/file\/(?<filename>.*)/i, async (req, res) => {
     const [share, size, name, handle] = await ShareManager.openFileRead(req.params.filename);
     res.header('Content-Length', size);
+    res.header('Content-Type', mime.lookup(name));
     let chunk;
     while (chunk = await share.readChunk(handle).catch(() => null)) res.write(chunk);
     res.end();
@@ -80,6 +82,7 @@ server.get(/^\/(?<owner>.*)\/file\/(?<filename>.*)/i, async (req, res) => {
     const owner = shares.find(share => share.name === req.params.owner);
     if (!owner) return res.send('Owner doesnt exist');
     const [type, size, name, handle] = await owner.openFileRead(req.params.filename);
+    res.header('Content-Type', mime.lookup(name));
     res.header('Content-Length', size);
     let chunk;
     while (chunk = await owner.readChunk(handle).catch(() => null)) res.write(chunk);
