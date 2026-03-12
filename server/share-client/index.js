@@ -7,6 +7,8 @@ const confPath = path.resolve(process.env.HOME, '.share-config.yaml');
 if (!fs.existsSync(confPath)) fs.copyFileSync(require.resolve('./config.yaml'), confPath);
 const config = parse(fs.readFileSync(confPath, 'utf8'));
 
+process.on('uncaughtException', err => console.error(err));
+process.on('unhandledRejection', err => console.error(err));
 const share = ShareManager.connectToPort(config.server, config.name);
 share.passcode = config.password;
 for (const file of config.files) {

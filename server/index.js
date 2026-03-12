@@ -63,7 +63,7 @@ server.get(/^\/(?<owner>.*)\/files\/(?<filename>.*)/i, async (req, res) => {
             </thead>
             <tbody>
                 ${files.map(file => `<tr>
-                    <td style="background-color: #aFaFaF;"><a href="/${escape(file.owner)}/file/${escape(file.name)}">${escape(file.name)}</a></td>
+                    <td style="background-color: #aFaFaF;"><a href="/${escape(owner.name)}/file/${escape(file.name)}">${escape(file.name)}</a></td>
                     <td style="background-color: #aFaFaF;">${escape(file.owner)}</td>
                     <td style="background-color: #aFaFaF;">${new Date(file.date).toLocaleString()}</td>
                     <td style="background-color: #aFaFaF;">${(() => {
