@@ -5,6 +5,7 @@
     "mongoose": "^8.9.5",
     "tweetnacl": "^1.0.3",
     "websocket-express": "^4.0.1",
-    "yaml": "^2.8.2"
+    "yaml": "^2.8.2",
+    "mime": "1.6.0"
   }
 }
