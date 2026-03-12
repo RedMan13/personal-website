@@ -1,0 +1,8 @@
+server: wss://godslayerakp.serv00.net/share-port
+name: ''
+password: ''
+default-dir: 'Downloads'
+files:
+  # - file.mp4
+  # - name: file.mp4
+  #   path: ./file.mp4

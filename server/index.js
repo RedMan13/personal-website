@@ -1,4 +1,5 @@
 const handleURL = require('./url-preprosesor.js');
+const ShareManager = require('./share-port.js');
 console.log('creating expressjs server');
 const { WebSocketExpress } = require('websocket-express');
 const runPHP = require('./php-execute.js');
@@ -20,9 +21,101 @@ fs.watch('.', () => {
     console.log('server changed, killing my self for the new version to take place');
     process.exit(0);
 });
+// avoid crashing on failures, if we were to crash it could corrupt some shit like....... irreperably
+process.on('uncaughtException', err => console.error(err));
+process.on('unhandledRejection', err => console.error(err));
+function escape(str) {
+    return str.replace(/[<>&'"]/g, c => {
+        switch (c) {
+        case '<': return '&lt;';
+        case '>': return '&gt;';
+        case '&': return '&amp;';
+        case '\'': return '&apos;';
+        case '"': return '&quot;';
+        }
+    });
+}
+server.ws('/share-port', ShareManager.openSharePort);
+server.get('/file/:filename', async (req, res) => {
+    const [share, size, name, handle] = await ShareManager.openFileRead(req.params.filename);
+    res.header('Content-Length', size);
+    let chunk;
+    while (chunk = await share.readChunk(handle).catch(() => null)) res.write(chunk);
+    res.end();
+    share.closeFile(handle);
+});
+server.get('/:owner/files/:filename', async (req, res) => {
+    const owner = shares.find(share => share.name === req.params.owner);
+    const files = await owner.listFiles(req.params.filename);
+    res.header('Content-Type', 'text/html');
+    res.send(`
+        <table style="width: 100%;">
+            <thead>
+                <tr style="background-color: grey;">
+                    <th scope="col">Name</th>
+                    <th scope="col">Owner</th>
+                    <th scope="col" style="width: 200px">Date</th>
+                    <th scope="col" style="width: 0px">Size</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${files.map(file => `
+                    <td style="background-color: #aFaFaF;"><a href="/${escape(file.owner)}/file/${escape(file.name)}">${escape(file.name)}</a></td>
+                    <td style="background-color: #aFaFaF;">${escape(file.owner)}</td>
+                    <td style="background-color: #aFaFaF;">${new Date(file.date).toLocaleString()}</td>
+                    <td style="background-color: #aFaFaF;">${(() => {
+                        if (file.size / 1000_000_000_000 >= 1) return `${(file.size / 1000_000_000_000).toFixed(2)}TB`;
+                        if (file.size / 1000_000_000 >= 1) return `${(file.size / 1000_000_000).toFixed(2)}GB`;
+                        if (file.size / 1000_000 >= 1) return `${(file.size / 1000_000).toFixed(2)}MB`;
+                        if (file.size / 1000 >= 1) return `${(file.size / 1000).toFixed(2)}KB`;
+                        return `${file.size}B`;
+                    })()}</td>
+                `)}
+            </tbody>
+        </table>    
+    `);
+});
+server.get('/:owner/file/:filename', async (req, res) => {
+    const owner = shares.find(share => share.name === req.params.owner);
+    const [type, size, name, handle] = await owner.openFileRead(req.params.filename);
+    res.header('Content-Length', size);
+    let chunk;
+    while (chunk = await owner.readChunk(handle).catch(() => null)) res.write(chunk);
+    res.end();
+    owner.closeFile(handle);
+});
+server.get('/files/:filename', async (req, res) => {
+    const files = await ShareManager.listFiles(req.params.filename);
+    res.header('Content-Type', 'text/html');
+    res.send(`
+        <table style="width: 100%;">
+            <thead>
+                <tr style="background-color: grey;">
+                    <th scope="col">Name</th>
+                    <th scope="col">Owner</th>
+                    <th scope="col" style="width: 200px">Date</th>
+                    <th scope="col" style="width: 0px">Size</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${files.map(file => `
+                    <td style="background-color: #aFaFaF;"><a href="/${escape(file.owner)}/file/${escape(file.name)}">${escape(file.name)}</a></td>
+                    <td style="background-color: #aFaFaF;">${escape(file.owner)}</td>
+                    <td style="background-color: #aFaFaF;">${new Date(file.date).toLocaleString()}</td>
+                    <td style="background-color: #aFaFaF;">${(() => {
+                        if (file.size / 1000_000_000_000 >= 1) return `${(file.size / 1000_000_000_000).toFixed(2)}TB`;
+                        if (file.size / 1000_000_000 >= 1) return `${(file.size / 1000_000_000).toFixed(2)}GB`;
+                        if (file.size / 1000_000 >= 1) return `${(file.size / 1000_000).toFixed(2)}MB`;
+                        if (file.size / 1000 >= 1) return `${(file.size / 1000).toFixed(2)}KB`;
+                        return `${file.size}B`;
+                    })()}</td>
+                `)}
+            </tbody>
+        </table>    
+    `);
+})
 console.log('installing cors fuckawayer, body parser, and request logger');
 server.useHTTP((req, res, next) => {
-    // console.log(req, res)
     console.log(req.method, 'request to', req.path);
     // fuck cors
     // i fucking hate that cors is PERMANENTLY ENFORCED on webbrowsers making it so you HAVE to only use resources with cors systems

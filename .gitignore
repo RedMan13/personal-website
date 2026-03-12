@@ -6,3 +6,4 @@ tmp/
 visitors.txt
 /builder/register-cmds.js
 built-extensions
+passcode-hash.hex
