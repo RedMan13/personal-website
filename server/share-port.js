@@ -289,12 +289,12 @@ class ShareManager {
             console.log('Connection requested closure');
             this.exit();
         }
-        // clients shouldnt timeout
-        if (!this.isClient) this.socket.onopen = () => {
+        this.socket.onopen = () => {
             console.log('Connected to server successfully');
             this.attempts = 0;
             if (this.passcode) this.authorize(this.passcode);
-            this.timeout = setTimeout(this.exit.bind(this), 4000);
+            // clients shouldnt timeout
+            if (!this.isClient) this.timeout = setTimeout(this.exit.bind(this), 4000);
         }
     }
     /**
@@ -305,6 +305,7 @@ class ShareManager {
      * @returns {{ [key: string]: any, opcode: number, done: () => void, promise: () => Promise<any> }} The in-flight state container for this message
      */
     reply(opcode, nonce, ...args) {
+        console.log('Sending', opcode);
         const encoded = [];
         // opcode + nonce
         let totalLength = 3;
