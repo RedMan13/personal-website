@@ -70,7 +70,7 @@ server.get('/:owner/files/:filename', async (req, res) => {
                         if (file.size / 1000 >= 1) return `${(file.size / 1000).toFixed(2)}KB`;
                         return `${file.size}B`;
                     })()}</td>
-                </tr>`)}
+                </tr>`).join('')}
             </tbody>
         </table>    
     `);
@@ -109,7 +109,7 @@ server.get('/files/:filename', async (req, res) => {
                         if (file.size / 1000 >= 1) return `${(file.size / 1000).toFixed(2)}KB`;
                         return `${file.size}B`;
                     })()}</td>
-                </tr>`)}
+                </tr>`).join('')}
             </tbody>
         </table>    
     `);

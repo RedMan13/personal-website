@@ -14,10 +14,11 @@ for (const file of config.files) {
     const name = file.name ?? path.basename(file.path);
     const stat = fs.statSync(target);
     if (stat.isDirectory()) {
+        const folder = name;
         for (const name of fs.readdirSync(target)) {
             const file = path.resolve(target, name);
             console.log('Adding file', file);
-            share._addFile(file, `${name}/${path.basename(file)}`);
+            share._addFile(file, `${folder}/${path.basename(file)}`);
         }
         continue;
     }
