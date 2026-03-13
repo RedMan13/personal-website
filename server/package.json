@@ -2,10 +2,11 @@
   "dependencies": {
     "canvas": "^3.2.0",
     "emoji-regex": "^10.5.0",
+    "ffmpeg": "^0.0.4",
+    "mime": "1.6.0",
     "mongoose": "^8.9.5",
     "tweetnacl": "^1.0.3",
     "websocket-express": "^4.0.1",
-    "yaml": "^2.8.2",
-    "mime": "1.6.0"
+    "yaml": "^2.8.2"
   }
 }

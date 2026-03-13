@@ -2,6 +2,7 @@ const path = require('path');
 const fs = require('fs');
 const WebSocket = require('ws');
 const { createCanvas, loadImage } = require('canvas');
+const ffmpeg = require('ffmpeg');
 let passhash = fs.existsSync('../passcode-hash.hex') ? fs.readFileSync('../passcode-hash.hex', 'utf8').trim() : '';
 
 global.shares = []; // global, as thats kinda the point
@@ -38,6 +39,7 @@ class ShareManager {
     static MoveChunkPosition = 13;
     static HasHandle = 14;
     static ForwardMessage = 15;
+    static GetFileIcon = 16;
     static FileModeRead = 0;
     static FileModeWrite = 1;
     methods = {
@@ -219,8 +221,24 @@ class ShareManager {
             }
             this.reply(ShareManager.Reply, nonce, handle.position).done();
         },
-        [ShareManager.HasHandle]: (handle, nonce) => this.reply(ShareManager.Reply, nonce, !!this.handles[handle]).done()
+        [ShareManager.HasHandle]: (handle, nonce) => this.reply(ShareManager.Reply, nonce, !!this.handles[handle]).done(),
+        [ShareManager.GetFileIcon]: async (filename, nonce) => {
+            if (!this.isClient) return this.reply(ShareManager.Error, nonce, 'Cannot read from server').done();
+            if (this.iconCache[filename]) return fs.readFile(this.iconCache[filename], (err, file) => this.reply(ShareManager.Reply, nonce, file).done());
+            const file = this.sharedFiles.find(this._filterFiles(filename));
+            const processor = await new ffmpeg(file.path);
+            const temp = await new Promise(r => fs.mkdtemp('icon-factory', (e,f) => r(f)));
+            processor.fnExtractFrameToJPG(temp, { number: 1, file_name: 'icon' });
+            const icon = await loadImage(path.resolve(temp, 'icon_1.jpg'));
+            const scale = Math.max(32 / icon.width, 32 / icon.height);
+            const canvas = createCanvas(icon.width * scale, icon.height * scale);
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(icon, canvas.width, canvas.height);
+            // webp isnt supported for exporting from canvas /sad   
+            this.reply(ShareManager.Reply, nonce, canvas.toBuffer('image/jpeg')).done();
+        }
     }
+    iconCache = {};
     inFlights = {};
 
     constructor(isClient, socket) {
@@ -513,6 +531,12 @@ class ShareManager {
      * @returns {Promise<number>} The new position inside the file
      */
     movePosition(handle, offset) { return this.reply(ShareManager.MoveChunkPosition, null, handle, offset).promise(); }
+    /**
+     * Gets any given files icon image
+     * @param {string} filename The name of the file to get an icon for
+     * @returns {Promise<Buffer>} The icon image
+     */
+    getFileIcon(filename) { return this.reply(ShareManager.GetFileIcon, null, filename).promise(); }
 
     /**
      * @param {import('express').Request} req 
@@ -543,6 +567,14 @@ class ShareManager {
             const [type, size, name, handle] = await share.openFileRead(filename).catch(() => []);
             if (typeof name !== 'string') continue;
             return [share, size, name, handle];
+        }
+        throw new Error(`File ${filename} not found`);
+    }
+    static async getFileIcon(filename) {
+        for (const share of shares) {
+            const icon = await share.getFileIcon(filename).catch(() => {});
+            if (!icon) continue;
+            return icon;
         }
         throw new Error(`File ${filename} not found`);
     }
