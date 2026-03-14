@@ -69,7 +69,7 @@ function generateFileList(files, displayOwner, owner) {
             <script>
                 const files = [...document.getElementsByClassName('icon')];
                 window.onscroll = () => files.forEach(file => {
-                    if (typeof file.firstChild !== 'object') return;
+                    if (file.firstChild !== null) return;
                     const bound = file.getBoundingClientRect();
                     if (bound.top < -70 && bound.bottom > window.innerHeight +70) {
                         const image = new Image();
