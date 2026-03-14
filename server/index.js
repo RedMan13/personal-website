@@ -46,6 +46,10 @@ server.get(/^\/file\/(?<filename>.*)/i, async (req, res) => {
     res.end();
     share.closeFile(handle);
 });
+server.get(/^\/icon\/(?<filename>.*)/i, async (req, res) => {
+    res.header('Content-Type', 'image/jpeg');
+    res.send(await ShareManager.getFileIcon(req.params.filename));
+});
 server.get(/^\/(?<owner>.*)\/files(?:\/(?<filename>.*))?/i, async (req, res) => {
     const owner = shares.find(share => share.name === req.params.owner);
     if (!owner) return res.send('Owner doesnt exist');
@@ -88,6 +92,12 @@ server.get(/^\/(?<owner>.*)\/file\/(?<filename>.*)/i, async (req, res) => {
     while (chunk = await owner.readChunk(handle).catch(() => null)) res.write(chunk);
     res.end();
     owner.closeFile(handle);
+});
+server.get(/^\/(?<owner>.*)\/icon\/(?<filename>.*)/i, async (req, res) => {
+    const owner = shares.find(share => share.name === req.params.owner);
+    if (!owner) return res.send('Owner doesnt exist');
+    res.header('Content-Type', 'image/jpeg');
+    res.send(await owner.getFileIcon(req.params.filename));
 });
 server.get(/^\/files(?:\/(?<filename>.*))?/i, async (req, res) => {
     const files = await ShareManager.listFiles(req.params.filename);
