@@ -75,6 +75,8 @@ function generateFileList(files, displayOwner, owner) {
                         if (bound.top < -70) continue;
                         if (bound.bottom > window.innerHeight +70) break;
                         const image = new Image();
+                        image.style.height = image.style.width = '100%';
+                        image.style.objectFit = 'contain';
                         image.src = files[i].getAttribute('src');
                         files[i].appendChild(image);
                     }

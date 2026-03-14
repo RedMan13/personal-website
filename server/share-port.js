@@ -2,7 +2,6 @@ const path = require('path');
 const fs = require('fs');
 const WebSocket = require('ws');
 const { createCanvas, loadImage } = require('canvas');
-const ffmpeg = require('ffmpeg');
 const child = require('child_process');
 let passhash = fs.existsSync('../passcode-hash.hex') ? fs.readFileSync('../passcode-hash.hex', 'utf8').trim() : '';
 let ffmpegSupport = [];
@@ -245,21 +244,25 @@ class ShareManager {
                 if (data) return this.reply(ShareManager.Reply, nonce, data).done();
             }
 
+            const ext = path.extname(filename).slice(1);
             let iconData;
-            if (['.png', '.jpeg', '.svg', '.pdf']) {
+            if (['png', 'jpeg', 'jpg', 'svg', 'pdf'].includes(ext)) {
                 iconData = await new Promise((g,b) => fs.readFile(file.path, (e,d) => e ? b(e) : g(d)));
-            } else if (ffmpegSupport.includes(path.extname(filename).slice(1))) {
-                const processor = await new ffmpeg(file.path);
+            } else if (ffmpegSupport.includes(ext)) {
                 const temp = await new Promise(r => fs.mkdtemp('icon-factory', (e,f) => r(f)));
-                const [iconPath] = await processor.fnExtractFrameToJPG(temp, { number: 1, file_name: 'icon' });
-                iconData = await new Promise((g,b) => fs.readFile(iconPath, (e,d) => e ? b(e) : g(d)));
+                const iconPath = path.resolve(temp, 'icon.jpg');
+                await new Promise(r => child.exec(`ffmpeg -i '${file.path.replaceAll('\'', '\\\'')}' -frames:v 1 '${iconPath.replaceAll('\'', '\\\'')}'`, r));
+                iconData = await new Promise(g => fs.readFile(iconPath, (e,d) => g(d)));
+                if (!iconData) return this.reply(ShareManager.Error, nonce, 'File Cant Be Iconned').done();
                 fs.rm(temp, { recursive: true, force: true }, () => {});
             } else {
                 this.reply(ShareManager.Error, nonce, 'File Type Not Supported');
                 return;
             }
 
-            const icon = await loadImage(iconData);
+            if (!iconData) return this.reply(ShareManager.Error, nonce, 'File Cant Be Iconned').done();
+            const icon = await loadImage(iconData).catch(() => {});
+            if (!icon) return this.reply(ShareManager.Error, nonce, 'File Cant Be Iconned').done();
             const scale = Math.min(32 / icon.width, 32 / icon.height);
             const canvas = createCanvas(Math.round(icon.width * scale), Math.round(icon.height * scale));
             const ctx = canvas.getContext('2d');
