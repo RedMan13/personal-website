@@ -61,7 +61,6 @@ server.get(/^\/(?<owner>.*)\/files(?:\/(?<filename>.*))?/i, async (req, res) => 
                 <thead>
                     <tr style="background-color: grey;">
                         <th scope="col" style="width: 75vw">Name</th>
-                        <th scope="col">Owner</th>
                         <th scope="col" style="width: 200px">Date</th>
                         <th scope="col" style="width: 0px">Size</th>
                     </tr>
@@ -77,7 +76,6 @@ server.get(/^\/(?<owner>.*)\/files(?:\/(?<filename>.*))?/i, async (req, res) => 
                             ></img>
                             ${escape(file.name)}
                         </a></td>
-                        <td style="background-color: #aFaFaF;">${escape(file.owner)}</td>
                         <td style="background-color: #aFaFaF;">${new Date(file.date).toLocaleString()}</td>
                         <td style="background-color: #aFaFaF;">${(() => {
                             if (file.size / 1000_000_000_000 >= 1) return `${(file.size / 1000_000_000_000).toFixed(2)}TB`;
@@ -125,9 +123,9 @@ server.get(/^\/files(?:\/(?<filename>.*))?/i, async (req, res) => {
                 </thead>
                 <tbody>
                     ${files.map(file => `<tr>
-                        <td style="background-color: #aFaFaF; word-break: break-word;"><a href="/${escape(owner.name)}/file/${escape(file.name)}">
+                        <td style="background-color: #aFaFaF; word-break: break-word;"><a href="/${escape(file.owner)}/file/${escape(file.name)}">
                             <img
-                                src="/${escape(owner.name)}/icon/${escape(file.name)}"
+                                src="/${escape(file.owner)}/icon/${escape(file.name)}"
                                 align="middle"
                                 decoding="async"
                                 fetchpriority="low"
