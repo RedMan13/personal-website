@@ -50,8 +50,8 @@ function generateFileList(files, displayOwner, owner) {
                 </thead>
                 <tbody>
                     ${files.map(file => `<tr>
-                        <td style="background-color: #aFaFaF; word-break: break-word; vertical-align: middle;"><a href="/${escape(file.owner ?? owner)}/file/${escape(file.name)}">
-                            <div class="icon" style="width: 32px; height: 32px; display: inline-block" src="/${escape(file.owner ?? owner)}/icon/${escape(file.name)}"></div>
+                        <td style="background-color: #aFaFaF; word-break: break-word;"><a href="/${escape(file.owner ?? owner)}/file/${escape(file.name)}">
+                            <div class="icon" style="width: 32px; height: 32px; display: inline-block; vertical-align: middle;" src="/${escape(file.owner ?? owner)}/icon/${escape(file.name)}"></div>
                             ${escape(file.name)}
                         </a></td>
                         ${displayOwner ? `<td style="background-color: #aFaFaF;">${escape(file.owner ?? owner)}</td>` : ''}
