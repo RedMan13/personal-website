@@ -67,13 +67,8 @@ server.get(/^\/(?<owner>.*)\/files(?:\/(?<filename>.*))?/i, async (req, res) => 
                 </thead>
                 <tbody>
                     ${files.map(file => `<tr>
-                        <td style="background-color: #aFaFaF; word-break: break-word;"><a href="/${escape(owner.name)}/file/${escape(file.name)}">
-                            <img
-                                src="/${escape(owner.name)}/icon/${escape(file.name)}"
-                                align="middle"
-                                decoding="async"
-                                fetchpriority="low"
-                            ></img>
+                        <td style="background-color: #aFaFaF; word-break: break-word; vertical-align: middle;"><a href="/${escape(owner.name)}/file/${escape(file.name)}">
+                            <div class="icon" style="width: 32px; height: 32px; display: inline-block" src="/${escape(owner.name)}/icon/${escape(file.name)}"></div>
                             ${escape(file.name)}
                         </a></td>
                         <td style="background-color: #aFaFaF;">${new Date(file.date).toLocaleString()}</td>
@@ -87,6 +82,18 @@ server.get(/^\/(?<owner>.*)\/files(?:\/(?<filename>.*))?/i, async (req, res) => 
                     </tr>`).join('')}
                 </tbody>
             </table>    
+            <script>
+                const files = document.getElementsByClassName('icon');
+                window.onscroll = () => files.forEach(file => {
+                    if (typeof file.firstChild !== 'object') return;
+                    const bound = file.getBoundingClientRect();
+                    if (bound.top < -70 && bound.bottom > window.innerHeight +70) {
+                        const image = new Image();
+                        image.src = file.getAttribute('src');
+                        file.appendChild(image);
+                    }
+                }); 
+            </script>
         </body>
     `);
 });
@@ -123,13 +130,8 @@ server.get(/^\/files(?:\/(?<filename>.*))?/i, async (req, res) => {
                 </thead>
                 <tbody>
                     ${files.map(file => `<tr>
-                        <td style="background-color: #aFaFaF; word-break: break-word;"><a href="/${escape(file.owner)}/file/${escape(file.name)}">
-                            <img
-                                src="/${escape(file.owner)}/icon/${escape(file.name)}"
-                                align="middle"
-                                decoding="async"
-                                fetchpriority="low"
-                            ></img>
+                        <td style="background-color: #aFaFaF; word-break: break-word; vertical-align: middle;"><a href="/${escape(file.owner)}/file/${escape(file.name)}">
+                            <div class="icon" style="width: 32px; height: 32px; display: inline-block" src="/${escape(file.owner)}/icon/${escape(file.name)}"></div>
                             ${escape(file.name)}
                         </a></td>
                         <td style="background-color: #aFaFaF;">${escape(file.owner)}</td>
@@ -144,6 +146,18 @@ server.get(/^\/files(?:\/(?<filename>.*))?/i, async (req, res) => {
                     </tr>`).join('')}
                 </tbody>
             </table>    
+            <script>
+                const files = document.getElementsByClassName('icon');
+                window.onscroll = () => files.forEach(file => {
+                    if (typeof file.firstChild !== 'object') return;
+                    const bound = file.getBoundingClientRect();
+                    if (bound.top < -70 && bound.bottom > window.innerHeight +70) {
+                        const image = new Image();
+                        image.src = file.getAttribute('src');
+                        file.appendChild(image);
+                    }
+                }); 
+            </script>
         </body>
     `);
 })
