@@ -68,15 +68,17 @@ function generateFileList(files, displayOwner, owner) {
             </table>    
             <script>
                 const files = [...document.getElementsByClassName('icon')];
-                window.onscroll = () => files.forEach(file => {
-                    if (file.firstChild !== null) return;
-                    const bound = file.getBoundingClientRect();
-                    if (bound.top < -70 && bound.bottom > window.innerHeight +70) {
+                window.onscroll = () => {
+                    for (let i = 0; i < files.length; i++) {
+                        if (files[i].firstChild !== null) continue;
+                        const bound = files[i].getBoundingClientRect();
+                        if (bound.top < -70) continue;
+                        if (bound.bottom > window.innerHeight +70) break;
                         const image = new Image();
-                        image.src = file.getAttribute('src');
-                        file.appendChild(image);
+                        image.src = files[i].getAttribute('src');
+                        files[i].appendChild(image);
                     }
-                }); 
+                }
                 window.onscroll();
             </script>
         </body>
