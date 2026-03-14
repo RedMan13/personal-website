@@ -56,30 +56,40 @@ server.get(/^\/(?<owner>.*)\/files(?:\/(?<filename>.*))?/i, async (req, res) => 
     const files = await owner.listFiles(req.params.filename);
     res.header('Content-Type', 'text/html');
     res.send(`
-        <table style="width: 100vw;">
-            <thead>
-                <tr style="background-color: grey;">
-                    <th scope="col" style="width: 75vw">Name</th>
-                    <th scope="col">Owner</th>
-                    <th scope="col" style="width: 200px">Date</th>
-                    <th scope="col" style="width: 0px">Size</th>
-                </tr>
-            </thead>
-            <tbody>
-                ${files.map(file => `<tr>
-                    <td style="background-color: #aFaFaF;"><a href="/${escape(owner.name)}/file/${escape(file.name)}">${escape(file.name)}</a></td>
-                    <td style="background-color: #aFaFaF;">${escape(file.owner)}</td>
-                    <td style="background-color: #aFaFaF;">${new Date(file.date).toLocaleString()}</td>
-                    <td style="background-color: #aFaFaF;">${(() => {
-                        if (file.size / 1000_000_000_000 >= 1) return `${(file.size / 1000_000_000_000).toFixed(2)}TB`;
-                        if (file.size / 1000_000_000 >= 1) return `${(file.size / 1000_000_000).toFixed(2)}GB`;
-                        if (file.size / 1000_000 >= 1) return `${(file.size / 1000_000).toFixed(2)}MB`;
-                        if (file.size / 1000 >= 1) return `${(file.size / 1000).toFixed(2)}KB`;
-                        return `${file.size}B`;
-                    })()}</td>
-                </tr>`).join('')}
-            </tbody>
-        </table>    
+        <body style="margin: 0px;">
+            <table style="width: 100vw;">
+                <thead>
+                    <tr style="background-color: grey;">
+                        <th scope="col" style="width: 75vw">Name</th>
+                        <th scope="col">Owner</th>
+                        <th scope="col" style="width: 200px">Date</th>
+                        <th scope="col" style="width: 0px">Size</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${files.map(file => `<tr>
+                        <td style="background-color: #aFaFaF; word-break: break-word;"><a href="/${escape(owner.name)}/file/${escape(file.name)}">
+                            <img
+                                src="/${escape(owner.name)}/icon/${escape(file.name)}"
+                                align="middle"
+                                decoding="async"
+                                fetchpriority="low"
+                            ></img>
+                            ${escape(file.name)}
+                        </a></td>
+                        <td style="background-color: #aFaFaF;">${escape(file.owner)}</td>
+                        <td style="background-color: #aFaFaF;">${new Date(file.date).toLocaleString()}</td>
+                        <td style="background-color: #aFaFaF;">${(() => {
+                            if (file.size / 1000_000_000_000 >= 1) return `${(file.size / 1000_000_000_000).toFixed(2)}TB`;
+                            if (file.size / 1000_000_000 >= 1) return `${(file.size / 1000_000_000).toFixed(2)}GB`;
+                            if (file.size / 1000_000 >= 1) return `${(file.size / 1000_000).toFixed(2)}MB`;
+                            if (file.size / 1000 >= 1) return `${(file.size / 1000).toFixed(2)}KB`;
+                            return `${file.size}B`;
+                        })()}</td>
+                    </tr>`).join('')}
+                </tbody>
+            </table>    
+        </body>
     `);
 });
 server.get(/^\/(?<owner>.*)\/file\/(?<filename>.*)/i, async (req, res) => {
@@ -103,30 +113,40 @@ server.get(/^\/files(?:\/(?<filename>.*))?/i, async (req, res) => {
     const files = await ShareManager.listFiles(req.params.filename);
     res.header('Content-Type', 'text/html');
     res.send(`
-        <table style="width: 100vw;">
-            <thead>
-                <tr style="background-color: grey;">
-                    <th scope="col" style="width: 75vw">Name</th>
-                    <th scope="col">Owner</th>
-                    <th scope="col" style="width: 200px">Date</th>
-                    <th scope="col" style="width: 0px">Size</th>
-                </tr>
-            </thead>
-            <tbody>
-                ${files.map(file => `<tr>
-                    <td style="background-color: #aFaFaF;"><a href="/${escape(file.owner)}/file/${escape(file.name)}">${escape(file.name)}</a></td>
-                    <td style="background-color: #aFaFaF;">${escape(file.owner)}</td>
-                    <td style="background-color: #aFaFaF;">${new Date(file.date).toLocaleString()}</td>
-                    <td style="background-color: #aFaFaF;">${(() => {
-                        if (file.size / 1000_000_000_000 >= 1) return `${(file.size / 1000_000_000_000).toFixed(2)}TB`;
-                        if (file.size / 1000_000_000 >= 1) return `${(file.size / 1000_000_000).toFixed(2)}GB`;
-                        if (file.size / 1000_000 >= 1) return `${(file.size / 1000_000).toFixed(2)}MB`;
-                        if (file.size / 1000 >= 1) return `${(file.size / 1000).toFixed(2)}KB`;
-                        return `${file.size}B`;
-                    })()}</td>
-                </tr>`).join('')}
-            </tbody>
-        </table>    
+        <body style="margin: 0px;">
+            <table style="width: 100vw;">
+                <thead>
+                    <tr style="background-color: grey;">
+                        <th scope="col" style="width: 75vw">Name</th>
+                        <th scope="col">Owner</th>
+                        <th scope="col" style="width: 200px">Date</th>
+                        <th scope="col" style="width: 0px">Size</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${files.map(file => `<tr>
+                        <td style="background-color: #aFaFaF; word-break: break-word;"><a href="/${escape(owner.name)}/file/${escape(file.name)}">
+                            <img
+                                src="/${escape(owner.name)}/icon/${escape(file.name)}"
+                                align="middle"
+                                decoding="async"
+                                fetchpriority="low"
+                            ></img>
+                            ${escape(file.name)}
+                        </a></td>
+                        <td style="background-color: #aFaFaF;">${escape(file.owner)}</td>
+                        <td style="background-color: #aFaFaF;">${new Date(file.date).toLocaleString()}</td>
+                        <td style="background-color: #aFaFaF;">${(() => {
+                            if (file.size / 1000_000_000_000 >= 1) return `${(file.size / 1000_000_000_000).toFixed(2)}TB`;
+                            if (file.size / 1000_000_000 >= 1) return `${(file.size / 1000_000_000).toFixed(2)}GB`;
+                            if (file.size / 1000_000 >= 1) return `${(file.size / 1000_000).toFixed(2)}MB`;
+                            if (file.size / 1000 >= 1) return `${(file.size / 1000).toFixed(2)}KB`;
+                            return `${file.size}B`;
+                        })()}</td>
+                    </tr>`).join('')}
+                </tbody>
+            </table>    
+        </body>
     `);
 })
 console.log('installing cors fuckawayer, body parser, and request logger');

@@ -3,7 +3,21 @@ const fs = require('fs');
 const WebSocket = require('ws');
 const { createCanvas, loadImage } = require('canvas');
 const ffmpeg = require('ffmpeg');
+const child = require('child_process');
 let passhash = fs.existsSync('../passcode-hash.hex') ? fs.readFileSync('../passcode-hash.hex', 'utf8').trim() : '';
+let ffmpegSupport = [];
+child.exec('ffmpeg -hide_banner -formats', (error, stdout, stderr) => {
+    if (error) return console.warn('Could not use ffmpeg:', error);
+    ffmpegSupport = stdout.split('\n')
+        .slice(4)
+        .map(line => line.match(/^\s*(D?)(E?)\s*([0-9a-zA-Z_,]*)\s*(.*)$/))
+        .map(info => ({ decode: !!info[1], encode: !!info[2], extensions: info[3].split(','), names: info[4] }))
+        // special tea
+        .filter(info => info.decode)
+        .map(info => info.extensions)
+        .flat();
+})
+
 
 global.shares = []; // global, as thats kinda the point
 class ShareManager {
@@ -224,20 +238,43 @@ class ShareManager {
         [ShareManager.HasHandle]: (handle, nonce) => this.reply(ShareManager.Reply, nonce, !!this.handles[handle]).done(),
         [ShareManager.GetFileIcon]: async (filename, nonce) => {
             if (!this.isClient) return this.reply(ShareManager.Error, nonce, 'Cannot read from server').done();
-            if (this.iconCache[filename]) return fs.readFile(this.iconCache[filename], (err, file) => this.reply(ShareManager.Reply, nonce, file).done());
             const file = this.sharedFiles.find(this._filterFiles(filename));
-            const processor = await new ffmpeg(file.path);
-            const temp = await new Promise(r => fs.mkdtemp('icon-factory', (e,f) => r(f)));
-            processor.fnExtractFrameToJPG(temp, { number: 1, file_name: 'icon' });
-            const icon = await loadImage(path.resolve(temp, 'icon_1.jpg'));
-            const scale = Math.max(32 / icon.width, 32 / icon.height);
-            const canvas = createCanvas(icon.width * scale, icon.height * scale);
+            if (!file) return this.reply(ShareManager.Error, nonce, 'File Doesnt Exist').done();
+            if (this.iconCache[file.name]) {
+                const data = await new Promise((g,b) => fs.readFile(this.iconCache[file.name], (e,d) => e ? b(e) : g(d)));
+                if (data) return this.reply(ShareManager.Reply, nonce, data).done();
+            }
+
+            let iconData;
+            if (['.png', '.jpeg', '.svg', '.pdf']) {
+                iconData = await new Promise((g,b) => fs.readFile(file.path, (e,d) => e ? b(e) : g(d)));
+            } else if (ffmpegSupport.includes(path.extname(filename).slice(1))) {
+                const processor = await new ffmpeg(file.path);
+                const temp = await new Promise(r => fs.mkdtemp('icon-factory', (e,f) => r(f)));
+                const [iconPath] = await processor.fnExtractFrameToJPG(temp, { number: 1, file_name: 'icon' });
+                iconData = await new Promise((g,b) => fs.readFile(iconPath, (e,d) => e ? b(e) : g(d)));
+                fs.rm(temp, { recursive: true, force: true }, () => {});
+            } else {
+                this.reply(ShareManager.Error, nonce, 'File Type Not Supported');
+                return;
+            }
+
+            const icon = await loadImage(iconData);
+            const scale = Math.min(32 / icon.width, 32 / icon.height);
+            const canvas = createCanvas(Math.round(icon.width * scale), Math.round(icon.height * scale));
             const ctx = canvas.getContext('2d');
-            ctx.drawImage(icon, canvas.width, canvas.height);
-            // webp isnt supported for exporting from canvas /sad   
-            this.reply(ShareManager.Reply, nonce, canvas.toBuffer('image/jpeg')).done();
+            ctx.drawImage(icon, 0, 0, canvas.width, canvas.height);
+            // webp isnt supported for exporting from canvas /sad
+            // good thing low-quality jpegs are goated with the sauce
+            const data = canvas.toBuffer('image/jpeg', { quality: 0.45 });
+            const id = this.cacheId++;
+            const cacheFile = path.resolve(__dirname, `./cached/${id}.jpg`)
+            fs.writeFile(cacheFile, data, () => {});
+            this.iconCache[file.name] = cacheFile;
+            this.reply(ShareManager.Reply, nonce, data).done();
         }
     }
+    cacheId = 0;
     iconCache = {};
     inFlights = {};
 
