@@ -53,6 +53,7 @@ class ShareManager {
     static HasHandle = 14;
     static ForwardMessage = 15;
     static GetFileIcon = 16;
+    static Ping = 17;
     static FileModeRead = 0;
     static FileModeWrite = 1;
     methods = {
@@ -88,6 +89,7 @@ class ShareManager {
             if (!isGood) return this.exit(); 
             clearTimeout(this.timeout);
             this.reply(ShareManager.Reply, nonce).done();
+            this.ping(4000);
             shares.push(this); // push to public once authorized
         },
         /**
@@ -239,7 +241,8 @@ class ShareManager {
             if (!this.isClient) return this.reply(ShareManager.Error, nonce, 'Cannot read from server').done();
             const file = this.sharedFiles.find(this._filterFiles(filename));
             if (!file) return this.reply(ShareManager.Error, nonce, 'File Doesnt Exist').done();
-            if (this.iconCache[file.name]) {
+            if (file.name in this.iconCache) {
+                if (!this.iconCache[file.name]) return this.reply(ShareManager.Error, nonce, 'File Cant Be Iconned').done();
                 const data = await new Promise((g,b) => fs.readFile(this.iconCache[file.name], (e,d) => e ? b(e) : g(d)));
                 if (data) return this.reply(ShareManager.Reply, nonce, data).done();
             }
@@ -253,16 +256,21 @@ class ShareManager {
                 const iconPath = path.resolve(temp, 'icon.jpg');
                 await new Promise(r => child.exec(`ffmpeg -i '${file.path.replaceAll('\'', '\\\'')}' -frames:v 1 '${iconPath.replaceAll('\'', '\\\'')}'`, r));
                 iconData = await new Promise(g => fs.readFile(iconPath, (e,d) => g(d)));
-                if (!iconData) return this.reply(ShareManager.Error, nonce, 'File Cant Be Iconned').done();
                 fs.rm(temp, { recursive: true, force: true }, () => {});
             } else {
                 this.reply(ShareManager.Error, nonce, 'File Type Not Supported');
                 return;
             }
 
-            if (!iconData) return this.reply(ShareManager.Error, nonce, 'File Cant Be Iconned').done();
+            if (!iconData) {
+                this.iconCache[file.name] = null;
+                return this.reply(ShareManager.Error, nonce, 'File Cant Be Iconned').done();
+            }
             const icon = await loadImage(iconData).catch(() => {});
-            if (!icon) return this.reply(ShareManager.Error, nonce, 'File Cant Be Iconned').done();
+            if (!icon) {
+                this.iconCache[file.name] = null;
+                return this.reply(ShareManager.Error, nonce, 'File Cant Be Iconned').done();
+            }
             const scale = Math.min(32 / icon.width, 32 / icon.height);
             const canvas = createCanvas(Math.round(icon.width * scale), Math.round(icon.height * scale));
             const ctx = canvas.getContext('2d');
@@ -271,11 +279,12 @@ class ShareManager {
             // good thing low-quality jpegs are goated with the sauce
             const data = canvas.toBuffer('image/jpeg', { quality: 0.45 });
             const id = this.cacheId++;
-            const cacheFile = path.resolve(__dirname, `./cached/${id}.jpg`)
-            fs.writeFile(cacheFile, data, () => {});
+            const cacheFile = path.resolve(global.cacheFolder, `./${id}.jpg`)
+            fs.writeFile(cacheFile, data, e => e && console.warn(e));
             this.iconCache[file.name] = cacheFile;
             this.reply(ShareManager.Reply, nonce, data).done();
-        }
+        },
+        [ShareManager.Ping]: wait => setTimeout(() => this.reply(ShareManager.Ping, null, wait).done(), wait)
     }
     cacheId = 0;
     iconCache = {};
@@ -451,6 +460,7 @@ class ShareManager {
     }
     _filterFiles(match) {
         if (!/[^*]/.test(match)) return () => true;
+        if (!match) return () => false;
         return file => {
             let j = 0;
             for (let i = 0; i < match.length; i++) {
@@ -479,6 +489,11 @@ class ShareManager {
         };
         this.sharedFiles.push(fileMeta);
         return fileMeta;
+    }
+    _removeFile(filename) {
+        const file = this.sharedFiles.findIndex(this._filterFiles(filename));
+        if (file <= -1) return;
+        this.sharedFiles.splice(file, 1);
     }
     async _addNewFile(file) {
         const fileMeta = {
@@ -577,6 +592,7 @@ class ShareManager {
      * @returns {Promise<Buffer>} The icon image
      */
     getFileIcon(filename) { return this.reply(ShareManager.GetFileIcon, null, filename).promise(); }
+    ping(wait) { return this.reply(ShareManager.Ping, null, wait).done(); }
 
     /**
      * @param {import('express').Request} req 
@@ -627,7 +643,9 @@ class ShareManager {
         const url = new URL(link);
         url.searchParams.set('name', name);
         const socket = new WebSocket(url);
-        return new ShareManager(true, socket);
+        const share = new ShareManager(true, socket);
+        share.name = name;
+        return share;
     }
 }
 
