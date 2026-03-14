@@ -36,6 +36,52 @@ function escape(str) {
         }
     });
 }
+function generateFileList(files, displayOwner, owner) {
+    return `
+        <body style="margin: 0px;">
+            <table style="width: 100vw;">
+                <thead>
+                    <tr style="background-color: grey;">
+                        <th scope="col" style="width: 75vw">Name</th>
+                        ${displayOwner ? '<th scope="col">Owner</th>' : ''}
+                        <th scope="col" style="width: 200px">Date</th>
+                        <th scope="col" style="width: 0px">Size</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${files.map(file => `<tr>
+                        <td style="background-color: #aFaFaF; word-break: break-word; vertical-align: middle;"><a href="/${escape(file.owner ?? owner)}/file/${escape(file.name)}">
+                            <div class="icon" style="width: 32px; height: 32px; display: inline-block" src="/${escape(file.owner ?? owner)}/icon/${escape(file.name)}"></div>
+                            ${escape(file.name)}
+                        </a></td>
+                        ${displayOwner ? `<td style="background-color: #aFaFaF;">${escape(file.owner ?? owner)}</td>` : ''}
+                        <td style="background-color: #aFaFaF;">${new Date(file.date).toLocaleString()}</td>
+                        <td style="background-color: #aFaFaF;">${(() => {
+                            if (file.size / 1000_000_000_000 >= 1) return `${(file.size / 1000_000_000_000).toFixed(2)}TB`;
+                            if (file.size / 1000_000_000 >= 1) return `${(file.size / 1000_000_000).toFixed(2)}GB`;
+                            if (file.size / 1000_000 >= 1) return `${(file.size / 1000_000).toFixed(2)}MB`;
+                            if (file.size / 1000 >= 1) return `${(file.size / 1000).toFixed(2)}KB`;
+                            return `${file.size}B`;
+                        })()}</td>
+                    </tr>`).join('')}
+                </tbody>
+            </table>    
+            <script>
+                const files = [...document.getElementsByClassName('icon')];
+                window.onscroll = () => files.forEach(file => {
+                    if (typeof file.firstChild !== 'object') return;
+                    const bound = file.getBoundingClientRect();
+                    if (bound.top < -70 && bound.bottom > window.innerHeight +70) {
+                        const image = new Image();
+                        image.src = file.getAttribute('src');
+                        file.appendChild(image);
+                    }
+                }); 
+                window.onscroll();
+            </script>
+        </body>
+    `;
+}
 server.ws('/share-port', ShareManager.openSharePort);
 server.get(/^\/file\/(?<filename>.*)/i, async (req, res) => {
     const [share, size, name, handle] = await ShareManager.openFileRead(req.params.filename);
@@ -55,47 +101,7 @@ server.get(/^\/(?<owner>.*)\/files(?:\/(?<filename>.*))?/i, async (req, res) => 
     if (!owner) return res.send('Owner doesnt exist');
     const files = await owner.listFiles(req.params.filename);
     res.header('Content-Type', 'text/html');
-    res.send(`
-        <body style="margin: 0px;">
-            <table style="width: 100vw;">
-                <thead>
-                    <tr style="background-color: grey;">
-                        <th scope="col" style="width: 75vw">Name</th>
-                        <th scope="col" style="width: 200px">Date</th>
-                        <th scope="col" style="width: 0px">Size</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${files.map(file => `<tr>
-                        <td style="background-color: #aFaFaF; word-break: break-word; vertical-align: middle;"><a href="/${escape(owner.name)}/file/${escape(file.name)}">
-                            <div class="icon" style="width: 32px; height: 32px; display: inline-block" src="/${escape(owner.name)}/icon/${escape(file.name)}"></div>
-                            ${escape(file.name)}
-                        </a></td>
-                        <td style="background-color: #aFaFaF;">${new Date(file.date).toLocaleString()}</td>
-                        <td style="background-color: #aFaFaF;">${(() => {
-                            if (file.size / 1000_000_000_000 >= 1) return `${(file.size / 1000_000_000_000).toFixed(2)}TB`;
-                            if (file.size / 1000_000_000 >= 1) return `${(file.size / 1000_000_000).toFixed(2)}GB`;
-                            if (file.size / 1000_000 >= 1) return `${(file.size / 1000_000).toFixed(2)}MB`;
-                            if (file.size / 1000 >= 1) return `${(file.size / 1000).toFixed(2)}KB`;
-                            return `${file.size}B`;
-                        })()}</td>
-                    </tr>`).join('')}
-                </tbody>
-            </table>    
-            <script>
-                const files = document.getElementsByClassName('icon');
-                window.onscroll = () => files.forEach(file => {
-                    if (typeof file.firstChild !== 'object') return;
-                    const bound = file.getBoundingClientRect();
-                    if (bound.top < -70 && bound.bottom > window.innerHeight +70) {
-                        const image = new Image();
-                        image.src = file.getAttribute('src');
-                        file.appendChild(image);
-                    }
-                }); 
-            </script>
-        </body>
-    `);
+    res.send(generateFileList(files, false, owner.name));
 });
 server.get(/^\/(?<owner>.*)\/file\/(?<filename>.*)/i, async (req, res) => {
     const owner = shares.find(share => share.name === req.params.owner);
@@ -117,49 +123,7 @@ server.get(/^\/(?<owner>.*)\/icon\/(?<filename>.*)/i, async (req, res) => {
 server.get(/^\/files(?:\/(?<filename>.*))?/i, async (req, res) => {
     const files = await ShareManager.listFiles(req.params.filename);
     res.header('Content-Type', 'text/html');
-    res.send(`
-        <body style="margin: 0px;">
-            <table style="width: 100vw;">
-                <thead>
-                    <tr style="background-color: grey;">
-                        <th scope="col" style="width: 75vw">Name</th>
-                        <th scope="col">Owner</th>
-                        <th scope="col" style="width: 200px">Date</th>
-                        <th scope="col" style="width: 0px">Size</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${files.map(file => `<tr>
-                        <td style="background-color: #aFaFaF; word-break: break-word; vertical-align: middle;"><a href="/${escape(file.owner)}/file/${escape(file.name)}">
-                            <div class="icon" style="width: 32px; height: 32px; display: inline-block" src="/${escape(file.owner)}/icon/${escape(file.name)}"></div>
-                            ${escape(file.name)}
-                        </a></td>
-                        <td style="background-color: #aFaFaF;">${escape(file.owner)}</td>
-                        <td style="background-color: #aFaFaF;">${new Date(file.date).toLocaleString()}</td>
-                        <td style="background-color: #aFaFaF;">${(() => {
-                            if (file.size / 1000_000_000_000 >= 1) return `${(file.size / 1000_000_000_000).toFixed(2)}TB`;
-                            if (file.size / 1000_000_000 >= 1) return `${(file.size / 1000_000_000).toFixed(2)}GB`;
-                            if (file.size / 1000_000 >= 1) return `${(file.size / 1000_000).toFixed(2)}MB`;
-                            if (file.size / 1000 >= 1) return `${(file.size / 1000).toFixed(2)}KB`;
-                            return `${file.size}B`;
-                        })()}</td>
-                    </tr>`).join('')}
-                </tbody>
-            </table>    
-            <script>
-                const files = document.getElementsByClassName('icon');
-                window.onscroll = () => files.forEach(file => {
-                    if (typeof file.firstChild !== 'object') return;
-                    const bound = file.getBoundingClientRect();
-                    if (bound.top < -70 && bound.bottom > window.innerHeight +70) {
-                        const image = new Image();
-                        image.src = file.getAttribute('src');
-                        file.appendChild(image);
-                    }
-                }); 
-            </script>
-        </body>
-    `);
+    res.send(generateFileList(files, true));
 })
 console.log('installing cors fuckawayer, body parser, and request logger');
 server.useHTTP((req, res, next) => {
