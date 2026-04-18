@@ -3,6 +3,7 @@ const fs = require('fs');
 const WebSocket = require('ws');
 const { createCanvas, loadImage } = require('canvas');
 const child = require('child_process');
+const { Duplex } = require('stream');
 let passhash = fs.existsSync('../passcode-hash.hex') ? fs.readFileSync('../passcode-hash.hex', 'utf8').trim() : '';
 let ffmpegSupport = [];
 child.exec('ffmpeg -hide_banner -formats', (error, stdout, stderr) => {
@@ -57,7 +58,18 @@ class ShareManager {
     static FileModeRead = 0;
     static FileModeWrite = 1;
     methods = {
-        [ShareManager.Reply]: (...args) => this.inFlights[args.pop()]?.resolve?.(args.length > 1 ? args : args[0]),
+        [ShareManager.Reply]: (...args) => {
+            const nonce = args.pop();
+            const flight = this.inFlights[nonce];
+            switch (flight.opcode) {
+            case ShareManager.OpenFileRead:
+                flight.onData(...args);
+                break;
+            default:
+                flight?.resolve?.(args.length > 1 ? args : args[0]);
+                break;
+            }
+        },
         /**
          * Indicates that an error occured while attempting to perform an action.
          * @param {string} message A short message stating what happened
@@ -166,7 +178,9 @@ class ShareManager {
             this.closeFile(handle);
             this.reply(ShareManager.Reply, nonce, writeHandles.length);
         },
-        [ShareManager.OpenFileRead]: (filename, nonce) => {
+        [ShareManager.OpenFileRead]: (filename, shouldStream, nonce) => {
+            if (typeof nonce !== 'number') { nonce = shouldStream; shouldStream = true; }
+
             if (!this.isClient) return this.reply(ShareManager.Error, nonce, 'Cannot read from server').done();
             const file = this.sharedFiles.find(this._filterFiles(filename));
             if (!file) return this.reply(ShareManager.Error, nonce, 'File Doesnt Exist').done();
@@ -180,6 +194,10 @@ class ShareManager {
                 type: ShareManager.FileModeRead
             };
             stream.on('open', fd => handle.fd = fd);
+            if (shouldStream) {
+                stream.on('data', chunk => this.reply(ShareManager.Reply, nonce, chunk).done());
+                stream.on('end', () => this.reply(ShareManager.Reply, nonce, Buffer.alloc(0)).done())
+            }
             // stream.pause();
             this.reply(ShareManager.Reply, nonce, this.handles[id].type, file.size, file.name, id).done();
         },
@@ -289,6 +307,7 @@ class ShareManager {
     cacheId = 0;
     iconCache = {};
     inFlights = {};
+    timeouts = [];
 
     constructor(isClient, socket) {
         this.isClient = isClient;
@@ -334,33 +353,37 @@ class ShareManager {
                 return this.reply(1, nonce, 'Unhandled Syntax Error').done();
             }
             try {
-                console.log('Running request for', opcode, 'with', ...args);
+                // console.log('Running request for', opcode, 'with', ...args);
                 this.methods[opcode].call(this, ...args, nonce);
             } catch (err) {
                 console.error(err);
                 return this.reply(1, nonce, 'Unhandled Command Error').done();
             }
         }
-        this.socket.onclose = () => {
+        // treat error the same as close
+        this.socket.onerror = this.socket.onclose = () => {
+            console.log('Connection requested closure');
             // exit case is already handled, close event means nothing
             if (!this.socket) return;
             if (this.isClient && this.attempts < 5) {
-                setTimeout(() => {
+                const idx = this.timeouts.push(setTimeout(() => {
+                    this.timeouts.splice(idx, 1);
+                    if (this.timeouts.length > 0) return; // wait until we all clear
                     console.log('Attempting reconnect to server');
                     const url = new URL(this.socket.url);
                     url.searchParams.set('name', this.name);
                     this._attachToSocket(new WebSocket(url));
-                }, this.attempts * 1000);
+                }, (this.attempts * 1000) + 1500)) -1;
                 this.attempts++;
                 return;
             }
-            console.log('Connection requested closure');
             this.exit();
         }
         this.socket.onopen = () => {
-            console.log('Connected to server successfully');
+            console.log('Server connected');
+            this.timeouts.forEach(clearTimeout);
             this.attempts = 0;
-            if (this.passcode !== null) this.authorize(this.passcode);
+            if (this.passcode !== null) this.authorize(this.passcode).then(() => console.log('Connected to the server successfully'));
             // clients shouldnt timeout
             if (!this.isClient) this.timeout = setTimeout(this.exit.bind(this), 4000);
         }
@@ -373,7 +396,7 @@ class ShareManager {
      * @returns {{ [key: string]: any, opcode: number, done: () => void, promise: () => Promise<any> }} The in-flight state container for this message
      */
     reply(opcode, nonce, ...args) {
-        console.log('Sending', opcode, 'with', ...args);
+        // console.log('Sending', opcode, 'with', ...args);
         const encoded = [];
         // opcode + nonce
         let totalLength = 3;
@@ -451,6 +474,7 @@ class ShareManager {
     }
     exit() {
         shares.splice(this.index, 1);
+        this.socket.onerror = this.socket.onclose = this.socket.onopen = this.socket.onmessage = null;
         this.socket.close();
         this.socket = null;
         // force all in flights to die deathidly
@@ -551,9 +575,28 @@ class ShareManager {
     /**
      * Opens a file for read-only access
      * @param {string} filename The file to begin reading
-     * @returns {Promise<[number, number, string, number]>} The type, size, name, and handle for this file
+     * @returns {Promise<[number, number, string, number, Duplex?]>} The type, size, name, and handle for this file
      */
-    openFileRead(filename) { return this.reply(ShareManager.OpenFileRead, null, filename).promise(); }
+    openFileRead(filename, shouldStream) {
+        const flight = this.reply(ShareManager.OpenFileRead, null, filename);
+        if (!shouldStream) return flight.promise();
+        return new Promise((resolve, reject) => {
+            const stream = new Duplex();
+            flight.realReject = reject;
+            flight.reject = error => {
+                // we dont want done to emit its signal closed error
+                delete flight.realReject;
+                flight.done();
+                reject(error);
+            }
+            flight.onData = (...args) => {
+                if (args.length >= 4) return resolve([...args.slice(0,-1), stream]);
+                stream.write(args[0]);
+                if (args[0].length <= 0) stream.end();
+            }
+            resolve();
+        })
+    }
     /**
      * Opens a file for write-only access
      * @param {string} filename The file to begin writing
@@ -616,13 +659,13 @@ class ShareManager {
     /**
      * Opens a file for reading from the first share to have it
      * @param {string} filename The file to open read for
-     * @returns {Promise<[ShareManager, number, string, number]>} Important and other file info
+     * @returns {Promise<[ShareManager, number, string, number, Duplex?]>} Important and other file info
      */
-    static async openFileRead(filename) {
+    static async openFileRead(filename, shouldStream) {
         for (const share of shares) {
-            const [type, size, name, handle] = await share.openFileRead(filename).catch(() => []);
+            const [type, size, name, handle, stream] = await share.openFileRead(filename, shouldStream).catch(() => []);
             if (typeof name !== 'string') continue;
-            return [share, size, name, handle];
+            return [share, size, name, handle, stream];
         }
         throw new Error(`File ${filename} not found`);
     }

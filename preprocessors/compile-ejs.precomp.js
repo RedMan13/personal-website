@@ -17,7 +17,7 @@ module.exports = async function(req, res, handleReject, codes, once, storage, mo
         null,
         null,
         null
-    );
+    ).catch(err => console.error(err) || err.toString());
     res.status(headers.status);
     for (const key in headers) {
         if (key === 'status') continue;

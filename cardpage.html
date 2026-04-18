@@ -8,6 +8,8 @@
     <meta name="theme-color" content="white">
     <meta name="color-scheme" content="light">
     <script>
+        const authorized = !!performance.getEntriesByType('navigation')[0].serverTiming.find(v => v.name === 'authorized');
+
         const elementClassNames = {
             "a": 'HTMLAnchorElement',
             "area": 'HTMLAreaElement',
@@ -662,19 +664,33 @@
             }, 1000)
         }
         const achievements = document.getElementById('achievements');
-        localStorage.titles ??= '{}';
+        localStorage.titles ??= '[]';
         const titles = JSON.parse(localStorage.titles);
-        function pushAchievement(title, comment) {
-            titles[title] = comment;
+        const achievementIds = {
+            'Entranced': 'Who knew an incorrect renderer would do that.',
+            'Boop': 'You did a heckin boopin!!',
+            'Gnome': 'Wait, when did that get here?',
+            'Centennial': 'Wonder how long thats going to last...',
+            'Hacker': 'Its funny what this server software allows.',
+            'Sources': 'The code is surely somewhere...',
+            'Explorer': 'I wonder what will happen when new pages get added...',
+            'This': 'Hey look, its the achievements!',
+            'Lengthy': 'You really watched the whole thing?',
+            'Expload': 'How dare you do that.'
+        }
+        function pushAchievement(id) {
+            if (!achievementIds[id]) return;
+            if (titles.includes(id)) return;
+            titles.push(id);
             localStorage.titles = JSON.stringify(titles);
             /** @type {CanvasRenderingContext2D} */
             const ctx = achievements.getContext('2d');
             ctx.font = `20px sans-serif`;
-            const text = title + ' : ' + comment;
+            const text = id + ' : ' + achievementIds[id];
             ctx.strokeText(text, achievements.width -5, 0);
             ctx.fillText(text, achievements.width -5, 0);
         }
-        const titlePos = Object.fromEntries(Object.keys(titles).map(title => [title, 0]));
+        const titlePos = Object.fromEntries(titles.map(title => [title, 0]));
         let lastScroll = 0;
         let scrollPos = 0;
         let running = false;

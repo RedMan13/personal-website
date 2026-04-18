@@ -1,6 +1,8 @@
 {
   "dependencies": {
+    "bcrypt": "^6.0.0",
     "canvas": "^3.2.0",
+    "cookie-parser": "^1.4.7",
     "emoji-regex": "^10.5.0",
     "ffmpeg": "^0.0.4",
     "mime": "1.6.0",

@@ -4,12 +4,15 @@ console.log('creating expressjs server');
 const { WebSocketExpress } = require('websocket-express');
 const runPHP = require('./php-execute.js');
 const read = require('body-parser/lib/read');
+const cookieParser = require('cookie-parser');
 const server = new WebSocketExpress();
 const fs = require('fs');
 const { handleReject, codes } = require('./handle-reject.js');
 const mongoose = require('mongoose');
+const UserManager = require('./user-manager.js');
 const mime = require('mime');
-  
+
+server.use(cookieParser());
 console.log(new Date().toUTCString());
 const onces = {};
 function once(ident, generator, override) {
@@ -18,6 +21,7 @@ function once(ident, generator, override) {
     return onces[ident] = generator();
 }
 const storage = mongoose.createConnection(process.env.mdbUrl);
+global.users = new UserManager(storage);
 fs.watch('.', () => {
     console.log('server changed, killing my self for the new version to take place');
     process.exit(0);
@@ -87,13 +91,19 @@ function generateFileList(files, displayOwner, owner) {
     `;
 }
 server.ws('/share-port', ShareManager.openSharePort);
+server.useHTTP(async (req, res, next) => {
+    const { username, password, loggingAllowed } = req.cookies;
+    const agent = `${req.headers['user-agent']}, ${req.ips}`;
+    if (loggingAllowed) users.logTraffic('load', req.path);
+    if (username) users.logDeviceUsage(agent, username);
+    if (username && password && await users.authorized(username, password)) res.header('Server-Timing', `authorized`);
+    next();
+})
 server.get(/^\/file\/(?<filename>.*)/i, async (req, res) => {
-    const [share, size, name, handle] = await ShareManager.openFileRead(req.params.filename);
+    const [share, size, name, handle, stream] = await ShareManager.openFileRead(req.params.filename, true);
     res.header('Content-Length', size);
     res.header('Content-Type', mime.lookup(name));
-    let chunk;
-    while (chunk = await share.readChunk(handle).catch(() => null)) res.write(chunk);
-    res.end();
+    stream.pipe(res);
     share.closeFile(handle);
 });
 server.get(/^\/icon\/(?<filename>.*)/i, async (req, res) => {
@@ -110,12 +120,10 @@ server.get(/^\/(?<owner>.*)\/files(?:\/(?<filename>.*))?/i, async (req, res) => 
 server.get(/^\/(?<owner>.*)\/file\/(?<filename>.*)/i, async (req, res) => {
     const owner = shares.find(share => share.name === req.params.owner);
     if (!owner) return res.send('Owner doesnt exist');
-    const [type, size, name, handle] = await owner.openFileRead(req.params.filename);
+    const [type, size, name, handle, stream] = await owner.openFileRead(req.params.filename, true);
     res.header('Content-Type', mime.lookup(name));
     res.header('Content-Length', size);
-    let chunk;
-    while (chunk = await owner.readChunk(handle).catch(() => null)) res.write(chunk);
-    res.end();
+    stream.pipe(res);
     owner.closeFile(handle);
 });
 server.get(/^\/(?<owner>.*)\/icon\/(?<filename>.*)/i, async (req, res) => {
