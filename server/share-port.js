@@ -594,7 +594,6 @@ class ShareManager {
                 stream.push(args[0]);
                 if (args[0].length <= 0) stream.end();
             }
-            resolve();
         })
     }
     /**
