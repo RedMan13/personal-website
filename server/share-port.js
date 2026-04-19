@@ -312,7 +312,7 @@ class ShareManager {
     iconCache = {};
     inFlights = {};
     lastPing = Date.now();
-    pingWait = 3000;
+    pingWait = 6000;
     reconnectId = null;
 
     constructor(isClient, socket) {
@@ -322,6 +322,7 @@ class ShareManager {
         const intr = setInterval(() => {
             if (!this.socket) return;
             if (this.socket.readyState < this.socket.CLOSING && (Date.now() - this.lastPing) < this.pingWait) return;
+            this.lastPing = Date.now(); // make sure this doesnt keep repeatedly catching out ass
             console.log('Socket went stale');
             this.socket.close() // ensure we are indeed closing
             if (!this.isClient) {
