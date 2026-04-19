@@ -4,6 +4,7 @@ const WebSocket = require('ws');
 const { createCanvas, loadImage } = require('canvas');
 const child = require('child_process');
 const { Readable } = require('stream');
+const crypto = require('crypto');
 let passhash = fs.existsSync('../passcode-hash.hex') ? fs.readFileSync('../passcode-hash.hex', 'utf8').trim() : '';
 let ffmpegSupport = [];
 child.exec('ffmpeg -hide_banner -formats', (error, stdout, stderr) => {
@@ -18,7 +19,7 @@ child.exec('ffmpeg -hide_banner -formats', (error, stdout, stderr) => {
         .flat();
 })
 
-
+const deadShares = [];
 global.shares = []; // global, as thats kinda the point
 class ShareManager {
     /** @type {WebSocket} */
@@ -100,7 +101,7 @@ class ShareManager {
             // dont keep the socket open on auth fail, we dont really want them to be able to slam this method in what ever way they want
             if (!isGood) return this.exit(); 
             clearTimeout(this.timeout);
-            this.reply(ShareManager.Reply, nonce).done();
+            this.reply(ShareManager.Reply, nonce, this.reconnectId).done();
             this.ping(4000);
             shares.push(this); // push to public once authorized
         },
@@ -302,16 +303,58 @@ class ShareManager {
             this.iconCache[file.name] = cacheFile;
             this.reply(ShareManager.Reply, nonce, data).done();
         },
-        [ShareManager.Ping]: wait => setTimeout(() => this.reply(ShareManager.Ping, null, wait).done(), wait)
+        [ShareManager.Ping]: wait => {
+            this.pingWait = (wait * 2) + 1000;
+            setTimeout(() => this.reply(ShareManager.Ping, null, wait).done(), wait);
+        }
     }
     cacheId = 0;
     iconCache = {};
     inFlights = {};
-    timeouts = [];
+    lastPing = Date.now();
+    pingWait = 1000;
+    reconnectId = null;
 
     constructor(isClient, socket) {
+        if (!isClient) this.reconnectId = crypto.randomUUID();
         this.isClient = isClient;
         this._attachToSocket(socket);
+        const intr = setInterval(() => {
+            if (!this.socket) return;
+            if (this.socket.readyState < this.socket.CLOSING && (Date.now() - this.lastPing) < this.pingWait) return;
+            console.log('Socket went stale');
+            this.socket.close() // ensure we are indeed closing
+            if (!this.isClient) {
+                // clean our selves out of the main list
+                deadShares.push(this);
+                shares.splice(this.index, 1);
+                this.socket = null;
+                console.log('Holding onto hope for', this.name);
+                // wait ten minutes to trash the entire state
+                setTimeout(() => {
+                    if (this.socket) return;
+                    console.log('Lost hope for', this.name);
+                    clearInterval(intr);
+                    this.exit();
+                    const idx = deadShares.indexOf(this);
+                    if (idx < 0) return;
+                    deadShares.splice(idx, 1);
+                }, 10 * 60 * 1000);
+                return;
+            }
+            // doesnt seem necessary? would normally just be to avoid weird shenanigans with ratelimit, which we dont have
+            // if (this.attempts > 5) {
+            //     clearInterval(intr);
+            //     this.exit();
+            //     return;
+            // }
+            console.log('Attempting reconnect to server');
+            const url = new URL(this.socket.url);
+            url.searchParams.set('name', this.name);
+            url.searchParams.set('reconnectId', this.reconnectId);
+            this._attachToSocket(new WebSocket(url));
+            this.attempts++;
+        }, 1000);
     }
     _attachToSocket(socket) {
         this.socket = socket;
@@ -361,27 +404,9 @@ class ShareManager {
             }
         }
         // treat error the same as close
-        this.socket.onerror = this.socket.onclose = () => {
-            console.log('Connection requested closure');
-            // exit case is already handled, close event means nothing
-            if (!this.socket) return;
-            if (this.isClient && this.attempts < 5) {
-                const idx = this.timeouts.push(setTimeout(() => {
-                    this.timeouts.splice(idx, 1);
-                    if (this.timeouts.length > 0) return; // wait until we all clear
-                    console.log('Attempting reconnect to server');
-                    const url = new URL(this.socket.url);
-                    url.searchParams.set('name', this.name);
-                    this._attachToSocket(new WebSocket(url));
-                }, (this.attempts * 1000) + 1500)) -1;
-                this.attempts++;
-                return;
-            }
-            this.exit();
-        }
+        this.socket.onerror = this.socket.onclose = () => console.log('Connection requested closure');
         this.socket.onopen = () => {
             console.log('Server connected');
-            this.timeouts.forEach(clearTimeout);
             this.attempts = 0;
             if (this.passcode !== null) this.authorize(this.passcode).then(() => console.log('Connected to the server successfully'));
             // clients shouldnt timeout
@@ -542,11 +567,12 @@ class ShareManager {
     /**
      * Authorizes this connection with a password, closes the socket if incorrect
      * @param {string} passcode The password required to access this port
-     * @returns {Promise} No value, just resolves if allowed
+     * @returns {Promise<string>} Resolves to the reconnection id
      */
     authorize(passcode) {
         this.passcode = passcode;
-        return this.reply(ShareManager.Authorize, null, passcode).promise();
+        return this.reply(ShareManager.Authorize, null, passcode).promise()
+            .then(id => this.reconnectId = id); // hooked here so we can automatically handle reconnection
     }
     /**
      * Sets the password of the server, fails when applied to clients
@@ -637,6 +663,10 @@ class ShareManager {
      * @returns {Promise<Buffer>} The icon image
      */
     getFileIcon(filename) { return this.reply(ShareManager.GetFileIcon, null, filename).promise(); }
+    /**
+     * Pings the remote
+     * @param {number} wait The time that remote should wait before sending back a ping
+     */
     ping(wait) { return this.reply(ShareManager.Ping, null, wait).done(); }
 
     /**
@@ -644,6 +674,14 @@ class ShareManager {
      * @param {import('websocket-express').WSResponse} res 
      */
     static async openSharePort(req, res) {
+        if ('reconnectId' in req.query) {
+            const share = deadShares.findIndex(share => share.reconnectId === req.query.reconnectId);
+            if (share >= 0) {
+                share._attachToSocket(await res.accept());
+                console.log('New share port opened as', share.name);
+                return;
+            }
+        }
         const share = new ShareManager(false, await res.accept());
         share.name = req.query.name ?? 'someone else';
         console.log('New share port opened as', share.name);
