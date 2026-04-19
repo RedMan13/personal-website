@@ -312,7 +312,7 @@ class ShareManager {
     iconCache = {};
     inFlights = {};
     lastPing = Date.now();
-    pingWait = 1000;
+    pingWait = 3000;
     reconnectId = null;
 
     constructor(isClient, socket) {
@@ -406,6 +406,7 @@ class ShareManager {
         // treat error the same as close
         this.socket.onerror = this.socket.onclose = () => console.log('Connection requested closure');
         this.socket.onopen = () => {
+            this.lastPing = Date.now();
             console.log('Server connected');
             this.attempts = 0;
             if (this.passcode !== null) this.authorize(this.passcode).then(() => console.log('Connected to the server successfully'));
