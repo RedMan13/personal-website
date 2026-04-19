@@ -3,7 +3,7 @@ const fs = require('fs');
 const WebSocket = require('ws');
 const { createCanvas, loadImage } = require('canvas');
 const child = require('child_process');
-const { Duplex } = require('stream');
+const { Readable } = require('stream');
 let passhash = fs.existsSync('../passcode-hash.hex') ? fs.readFileSync('../passcode-hash.hex', 'utf8').trim() : '';
 let ffmpegSupport = [];
 child.exec('ffmpeg -hide_banner -formats', (error, stdout, stderr) => {
@@ -198,7 +198,7 @@ class ShareManager {
                 stream.on('data', chunk => this.reply(ShareManager.Reply, nonce, chunk).done());
                 stream.on('end', () => this.reply(ShareManager.Reply, nonce, Buffer.alloc(0)).done())
             }
-            // stream.pause();
+            if (!shouldStream) stream.pause();
             this.reply(ShareManager.Reply, nonce, this.handles[id].type, file.size, file.name, id).done();
         },
         [ShareManager.ReadChunk]: (fileId, nonce) => {
@@ -581,7 +581,10 @@ class ShareManager {
         const flight = this.reply(ShareManager.OpenFileRead, null, filename);
         if (!shouldStream) return flight.promise();
         return new Promise((resolve, reject) => {
-            const stream = new Duplex();
+            const chunks = [];
+            const stream = new Readable({
+                read() { return chunks.unshift() }
+            });
             flight.realReject = reject;
             flight.reject = error => {
                 // we dont want done to emit its signal closed error
@@ -590,9 +593,9 @@ class ShareManager {
                 reject(error);
             }
             flight.onData = (...args) => {
-                console.log(args);
-                if (args.length >= 4) return resolve([...args, stream], console.log(args));
+                if (args.length >= 4) return resolve([...args, stream]);
                 if (args[0].length <= 0) stream.end();
+                chunks.push(args[0]);
             }
         })
     }
