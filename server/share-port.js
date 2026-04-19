@@ -592,7 +592,6 @@ class ShareManager {
             flight.onData = (...args) => {
                 console.log(args);
                 if (args.length >= 4) return resolve([...args, stream], console.log(args));
-                stream.push(args[0]);
                 if (args[0].length <= 0) stream.end();
             }
         })
