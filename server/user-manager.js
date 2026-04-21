@@ -39,7 +39,6 @@ class UserManager {
         this.connection = connection;
         this.profiles = connection.model('user-profiles', UserProfile);
         this.access = connection.model('user-access', UserAccess);
-        this.agents = connection.model('user-agents', UsersAgent);
         this.achievements = connection.model('user-achievments', Achievement);
     }
     
@@ -74,11 +73,11 @@ class UserManager {
     async register(username, password, email = '') {
         const user = await this.profiles.exists({ username });
         if (user) return false;
-        new UserProfile({
+        this.profiles.create({
             username,
             passcode: bcrypt.hash(password, 10),
             email
-        }).save();
+        });
         return true;
     }
     /**
@@ -123,7 +122,7 @@ class UserManager {
      * @param {string} username 
      * @param {string} id The id of the achievement to add
      */
-    async addAchievement(username, id) { new Achievement({ username, id }).save(); }
+    async addAchievement(username, id) { this.achievements.create({ username, id }); }
     /**
      * Gets only the users profile information
      * @param {string} username 
@@ -156,23 +155,6 @@ class UserManager {
             authorizations: authents.map(v => v.authClass),
             agents: agents.map(v => v.details)
         }
-    }
-    /**
-     * Logs a single traffic instance
-     * @param {'load'|'click'} type The type of traffic
-     * @param {Promise<string>} location The location and information about the traffic
-     */
-    async logTraffic(type, location) {
-        new TraficEntry({ type, location }).save();
-    }
-    /**
-     * Logs what agents relate to which users
-     * @param {string} agent The useragent related to this traffic
-     * @param {Promise<string>} username The user who has that useragent
-     */
-    async logDeviceUsage(agent, username) {
-        if (await this.agents.exists({ details: agent, username })) return;
-        new UsersAgent({ username, details: agent }).save();
     }
 }
 
