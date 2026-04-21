@@ -2,8 +2,8 @@
 <head>
     <title>Sign Up</title>
     <%
-        const meta = new URLSearchParams(req.body.toString());
-        const hasSubmitted = !!req.body.length;
+        const meta = new URLSearchParams(req.body?.toString?.());
+        const hasSubmitted = !!req.body?.length;
         console.log(hasSubmitted);
         const loggedIn = hasSubmitted && await users.register(meta.get('username'), meta.get('password'), meta.get('email'));
         if (loggedIn) res.header('Set-Cookie', `username=${escape(meta.get('username'))}; password=${escape(meta.get('password'))}`);

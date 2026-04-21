@@ -2,8 +2,8 @@
 <head>
     <title>Sign In</title>
     <%
-        const meta = new URLSearchParams(req.body.toString());
-        const hasSubmitted = !!req.body.length;
+        const meta = new URLSearchParams(req.body?.toString?.());
+        const hasSubmitted = !!req.body?.length;
         console.log(hasSubmitted);
         const loggedIn = hasSubmitted && await users.authorize(meta.get('username'), meta.get('password'));
         if (loggedIn) res.header('Set-Cookie', `username=${escape(meta.get('username'))}; password=${escape(meta.get('password'))}`);
