@@ -73,11 +73,11 @@ class UserManager {
     async register(username, password, email = '') {
         const user = await this.profiles.exists({ username });
         if (user) return false;
-        this.profiles.create({
+        (await this.profiles.create({
             username,
             passcode: bcrypt.hash(password, 10),
             email
-        });
+        })).save();
         return true;
     }
     /**
@@ -109,6 +109,18 @@ class UserManager {
         return !!canUse;
     }
     /**
+     * Adds a feature to a users allow list
+     * @param {string} username The user to verify
+     * @param {string} feature The feature name to check for
+     */
+    async allowUse(username, feature) { (await this.access.create({ username, authClass: feature })).save(); }
+    /**
+     * Removes a feature from the users allow list
+     * @param {string} username The user to verify
+     * @param {string} feature The feature name to check for
+     */
+    async disallowUse(username, feature) { await this.access.deleteOne({ username, authClass: feature }) }
+    /**
      * Gets all achievements held by a specific user
      * @param {string} username
      * @returns {Promise<string[]>} The achievement IDs that this user holds
@@ -122,7 +134,7 @@ class UserManager {
      * @param {string} username 
      * @param {string} id The id of the achievement to add
      */
-    async addAchievement(username, id) { this.achievements.create({ username, id }); }
+    async addAchievement(username, id) { (await this.achievements.create({ username, id })).save(); }
     /**
      * Gets only the users profile information
      * @param {string} username 
