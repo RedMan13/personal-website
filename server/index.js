@@ -36,9 +36,6 @@ server.useHTTP((req, res, next) => {
 });
 server.useHTTP(async (req, res, next) => {
     const { username, password, loggingAllowed } = req.cookies;
-    const agent = `${req.headers['user-agent']}, ${req.ips}`;
-    if (loggingAllowed) users.logTraffic('load', req.path);
-    if (username) users.logDeviceUsage(agent, username);
     if (username && password && await users.authorized(username, password)) res.header('Server-Timing', `authorized`);
     next();
 })

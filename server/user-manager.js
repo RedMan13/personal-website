@@ -75,7 +75,7 @@ class UserManager {
         if (user) return false;
         (await this.profiles.create({
             username,
-            passcode: bcrypt.hash(password, 10),
+            passcode: await bcrypt.hash(password, 10),
             email
         })).save();
         return true;
