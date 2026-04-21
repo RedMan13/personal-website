@@ -12,8 +12,37 @@ const mongoose = require('mongoose');
 const UserManager = require('./user-manager.js');
 const mime = require('mime');
 
-server.use(cookieParser());
 console.log(new Date().toUTCString());
+
+server.use(cookieParser());
+console.log('installing cors fuckawayer, body parser, and request logger');
+server.useHTTP((req, res, next) => {
+    console.log(req.method, 'request to', req.path);
+    // fuck cors
+    // i fucking hate that cors is PERMANENTLY ENFORCED on webbrowsers making it so you HAVE to only use resources with cors systems
+    // even shittier, most API's wont send cors headers and most static file hosts (github-pages and vercel to be specific) WONT LET YOU change the cors options for the webpage(s)
+    // if i found a genie one of my first whishes would be "make cors nolonger enforced in browsers allowing content from none-cors compliant systems to be accessed"
+    // what even is the point on cors? what the fuck does cors even do?, be an actual pain the mother fucking ass is all it does
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Referrer-Policy', 'unsafe-url');
+    read(req, res, next, v => v, console.debug, {
+        encoding: null,
+        inflate: false,
+        limit: 100000,
+        verify: false,
+        skipCharset: true,
+        shouldParse: () => true
+    });
+});
+server.useHTTP(async (req, res, next) => {
+    const { username, password, loggingAllowed } = req.cookies;
+    const agent = `${req.headers['user-agent']}, ${req.ips}`;
+    if (loggingAllowed) users.logTraffic('load', req.path);
+    if (username) users.logDeviceUsage(agent, username);
+    if (username && password && await users.authorized(username, password)) res.header('Server-Timing', `authorized`);
+    next();
+})
+
 const onces = {};
 function once(ident, generator, override) {
     if (override) ident = override;
@@ -91,14 +120,6 @@ function generateFileList(files, displayOwner, owner) {
     `;
 }
 server.ws('/share-port', ShareManager.openSharePort);
-server.useHTTP(async (req, res, next) => {
-    const { username, password, loggingAllowed } = req.cookies;
-    const agent = `${req.headers['user-agent']}, ${req.ips}`;
-    if (loggingAllowed) users.logTraffic('load', req.path);
-    if (username) users.logDeviceUsage(agent, username);
-    if (username && password && await users.authorized(username, password)) res.header('Server-Timing', `authorized`);
-    next();
-})
 server.get(/^\/file\/(?<filename>.*)/i, async (req, res) => {
     const [share, size, name, handle, stream] = await ShareManager.openFileRead(req.params.filename, true);
     res.header('Content-Length', size);
@@ -136,23 +157,6 @@ server.get(/^\/files(?:\/(?<filename>.*))?/i, async (req, res) => {
     const files = await ShareManager.listFiles(req.params.filename);
     res.header('Content-Type', 'text/html');
     res.send(generateFileList(files, true));
-})
-console.log('installing cors fuckawayer, body parser, and request logger');
-server.useHTTP((req, res, next) => {
-    console.log(req.method, 'request to', req.path);
-    // fuck cors
-    // i fucking hate that cors is PERMANENTLY ENFORCED on webbrowsers making it so you HAVE to only use resources with cors systems
-    // even shittier, most API's wont send cors headers and most static file hosts (github-pages and vercel to be specific) WONT LET YOU change the cors options for the webpage(s)
-    // if i found a genie one of my first whishes would be "make cors nolonger enforced in browsers allowing content from none-cors compliant systems to be accessed"
-    // what even is the point on cors? what the fuck does cors even do?, be an actual pain the mother fucking ass is all it does
-    res.header('Access-Control-Allow-Origin', '*');
-    res.header('Referrer-Policy', 'unsafe-url');
-    read(req, res, next, v => v, console.debug, {
-        encoding: null,
-        inflate: false,
-        limit: 100000,
-        verify: false
-    });
 })
 console.log('setting up main file dealer');
 server.useHTTP(handleURL);

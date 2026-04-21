@@ -665,7 +665,9 @@
         }
         const achievements = document.getElementById('achievements');
         localStorage.titles ??= '[]';
-        const titles = JSON.parse(localStorage.titles);
+        const titles = localStorage.titles[0] === '{'
+            ? Object.keys(JSON.parse(localStorage.titles))
+            : JSON.parse(localStorage.titles);
         const achievementIds = {
             'Entranced': 'Who knew an incorrect renderer would do that.',
             'Boop': 'You did a heckin boopin!!',

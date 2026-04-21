@@ -69,15 +69,17 @@ class UserManager {
      * @param {string} username The new profiles username
      * @param {string} password The new profiles password
      * @param {string} email The email of the user, or blank if none available
+     * @returns {boolean} If the account was registered or not
      */
     async register(username, password, email = '') {
         const user = await this.profiles.exists({ username });
-        if (user) return;
+        if (user) return false;
         new UserProfile({
             username,
             passcode: bcrypt.hash(password, 10),
             email
         }).save();
+        return true;
     }
     /**
      * Updates the information on a users profile
