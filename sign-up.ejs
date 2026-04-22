@@ -4,8 +4,9 @@
     <%
         const meta = new URLSearchParams(req.body?.toString?.());
         const hasSubmitted = !!req.body?.length;
-        console.log(hasSubmitted);
-        const loggedIn = hasSubmitted && await users.register(meta.get('username'), meta.get('password'), meta.get('email'));
+        const loggedIn = hasSubmitted &&
+            meta.get('username').length > 1 && 
+            await users.register(meta.get('username').slice(0, 64), meta.get('password').slice(0, 64), meta.get('email').slice(0, 128));
         if (loggedIn) {
             res.header('Set-Cookie', `username=${escape(meta.get('username'))}; Max-Age=${400 * 24 * 60 * 60}`);
             res.header('Set-Cookie', `password=${escape(meta.get('password'))}; Secure; HttpOnly; Max-Age=${400 * 24 * 60 * 60}`);
@@ -23,11 +24,11 @@
     <% if (!hasSubmitted) { %>
         <form method="post">
             <p>Username:</p>
-            <input type="text" name="username" required placeholder="John Sigma">
+            <input type="text" name="username" minlength="2" maxlength="64" required placeholder="John Sigma">
             <p>Password:</p>
-            <input type="password" name="password" required>
+            <input type="password" name="password" minlength="8" maxlength="64" required>
             <p>Email:</p>
-            <input type="email" name="email" required><br><br>
+            <input type="email" name="email" maxlength="128" required><br><br>
             <input type="submit">
         </form>
     <% } else if (!loggedIn) { %>

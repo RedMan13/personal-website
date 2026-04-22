@@ -7,11 +7,11 @@
         if (!req.authorized || !await users.userExists(user)) return res.redirect('/sign-in');
         const profile = await users.getFullProfile(user);
         if ('submitted' in req.query) {
-            profile.picture = req.query.picture
-            profile.banner = req.query.banner
-            profile.bio = req.query.bio
-            profile.styles = req.query.styles
-            profile.email = req.query.email
+            profile.picture = req.query.picture.slice(0, 512);
+            profile.banner = req.query.banner.slice(0, 512);
+            profile.bio = req.query.bio.slice(0, 2048);
+            profile.styles = req.query.styles.slice(0, 1024);
+            profile.email = req.query.email.slice(0, 128);
             const auths = JSON.parse(req.query.authorizations);
             const removed = profile.authorizations.filter(auth => !auths.includes(auth));
             const added = auths.filter(auth => !profile.authorizations.includes(auth));
