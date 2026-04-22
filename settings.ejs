@@ -1,0 +1,109 @@
+<!TEMPLATE /cardpage.html>
+<head>
+    <title>Settings</title>
+    <%
+        const accessor = req.cookies.username;
+        const user = req.query.user || accessor;
+        if (!req.authorized || !await users.userExists(user)) return res.redirect('/sign-in');
+        const profile = await users.getFullProfile(user);
+        if ('submitted' in req.query) {
+            profile.picture = req.query.picture
+            profile.banner = req.query.banner
+            profile.bio = req.query.bio
+            profile.styles = req.query.styles
+            profile.email = req.query.email
+            const auths = JSON.parse(req.query.authorizations);
+            const removed = profile.authorizations.filter(auth => !auths.includes(auth));
+            const added = auths.filter(auth => !profile.authorizations.includes(auth));
+            if ((removed.length || added.length) && await users.canUse(accessor, 'edit-users')) {
+                profile.authorizations = auths;
+                await users.allowUse(user, added);
+                await users.disallowUse(user, removed);
+            }
+            if (profile.banned != req.query.banned && await users.canUse(accessor, 'ban-users'))
+                profile.banned = !(req.query.banned !== 'true');
+            await users.updateProfile(user, profile); 
+        }
+    %>
+    <style>
+        p {
+            margin: 0px;
+            margin-top: 6px;
+        }
+        form { padding: 6px; }
+        .permissions-list {
+            background-color: aliceblue;
+            padding: 5px;
+            border: 1px solid gray;
+            border-radius: 5px;
+        }
+        .item {
+            border-radius: 1000px;
+            background-color: white;
+            padding: 0px 4px;
+            word-break: keep-all;
+            margin: 2px;
+        }
+        .remove-item {
+            width: 1rem;
+            height: 1rem;
+            background: none;
+            border: none;
+        }
+        .remove-item:hover {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <form method="get">
+        <p>PFP Image Url:</p>
+        <input type="url" name="picture" value="<%= profile.picture %>">
+        <p>Banner Image Url</p>
+        <input type="url" name="banner" value="<%= profile.banner %>">
+        <p>Bio Text:</p>
+        <textarea name="bio"><%= profile.bio %></textarea>
+        <p>CSS Styling:</p>
+        <textarea name="styles"><%= profile.styles %></textarea>
+        <p>Email:</p>
+        <input type="email" name="email" value="<%= profile.email %>">
+
+        <% if (await users.canUse(accessor, 'edit-users')) { %>
+            <p>Permissions:</p>
+            <div class="permissions-list" id="permissions-list">
+                <input type="text" id="new-authorization"><button type="button" onclick="handleAdd()">Add</button><br>
+                <%- profile.authorizations.map(id => `<span class="item"><button class="remove-item" onclick="handleRemove({ target: this })">x</button>${escapeFn(id)}</span>`).join('') %>
+            </div>
+            <input type="hidden" name="authorizations" id="authorizations-entry" value="<%= JSON.stringify(profile.authorizations)%>"> 
+            <script file="jsx">
+                const authList = <%- JSON.stringify(profile.authorizations)%>;
+                const inputAuthorization = document.getElementById('new-authorization');
+                const permissionsList = document.getElementById('permissions-list');
+                const authorizationsEntry = document.getElementById('authorizations-entry');
+                function saveList() {
+                    authorizationsEntry.value = JSON.stringify(authList);
+                }
+                function handleAdd() {
+                    const auth = inputAuthorization.value;
+                    inputAuthorization.value = '';
+                    if (!auth) return;
+                    if (authList.includes(auth)) return;
+                    authList.push(auth);
+                    permissionsList.appendChild(<span class="item"><button class="remove-item" on:click="handleRemove">x</button>{auth}</span>)
+                    saveList();
+                }
+                function handleRemove(ev) {
+                    const el = ev.target;
+                    const text = el.parentElement.childNodes[el.parentElement.childNodes.length -1];
+                    const idx = authList.indexOf(text);
+                    authList.splice(idx, 1);
+                    el.parentElement.remove();
+                    saveList();
+                }
+            </script>
+        <% } %>
+        <p>Banned: <input type="checkbox" name="banned" <%= profile.banned ? 'checked' : '' %> <%= await users.canUse(accessor, 'ban-users') ? '' : 'disabled' %>></p>
+        <br>
+        <input type="submit" name="submitted">
+    </form>
+</body>

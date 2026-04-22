@@ -6,7 +6,10 @@
         const hasSubmitted = !!req.body?.length;
         console.log(hasSubmitted);
         const loggedIn = hasSubmitted && await users.register(meta.get('username'), meta.get('password'), meta.get('email'));
-        if (loggedIn) res.header('Set-Cookie', `username=${escape(meta.get('username'))}; password=${escape(meta.get('password'))}`);
+        if (loggedIn) {
+            res.header('Set-Cookie', `username=${escape(meta.get('username'))}; Max-Age=${400 * 24 * 60 * 60}`);
+            res.header('Set-Cookie', `password=${escape(meta.get('password'))}; Secure; HttpOnly; Max-Age=${400 * 24 * 60 * 60}`);
+        } 
     %>
     <style>
         p {
@@ -20,11 +23,11 @@
     <% if (!hasSubmitted) { %>
         <form method="post">
             <p>Username:</p>
-            <input type="text" name="username" placeholder="John Sigma">
+            <input type="text" name="username" required placeholder="John Sigma">
             <p>Password:</p>
-            <input type="password" name="password">
+            <input type="password" name="password" required>
             <p>Email:</p>
-            <input type="email" name="email"><br><br>
+            <input type="email" name="email" required><br><br>
             <input type="submit">
         </form>
     <% } else if (!loggedIn) { %>

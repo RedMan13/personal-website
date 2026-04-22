@@ -15,14 +15,6 @@ const UserAccess = new mongoose.Schema({
     username: String,
     authClass: String // what, by name, they are authorized to use
 });
-const UsersAgent = new mongoose.Schema({
-    username: String,
-    details: String
-})
-const TraficEntry = new mongoose.Schema({
-    type: String,
-    location: String
-});
 const Achievement = new mongoose.Schema({
     id: String, // id of the achievement itself
     username: String
@@ -82,21 +74,28 @@ class UserManager {
     }
     /**
      * Updates the information on a users profile
-     * @param {string} author The username of the user who is authring these changes
      * @param {string} username The username of the person to change
      * @param {string} keys What changes to make
      */
-    async updateProfile(author, username, keys) {
+    async updateProfile(username, keys) {
         const user = await this.profiles.findOne({ username });
         if (!user) return;
-        if (author !== username && !await this.canUse(author, 'edit-users')) return;
         if ('email' in keys) user.email = keys.email;
         if ('bio' in keys) user.bio = keys.bio;
         if ('picture' in keys) user.picture = keys.picture;
         if ('banner' in keys) user.banner = keys.banner;
         if ('styles' in keys) user.styles = keys.styles;
-        if ('banned' in keys && await this.canUse(author, 'ban-users'))
-            user.banned = keys.banned;
+        user.save();
+    }
+    async banUser(username) {
+        const user = await this.profiles.findOne({ username });
+        user.banned = true;
+        user.save();
+    }
+    async unbanUser(username) {
+        const user = await this.profiles.findOne({ username });
+        user.banned = false;
+        user.save();
     }
     /**
      * Checks to see if a user can access a given feature
@@ -104,22 +103,35 @@ class UserManager {
      * @param {string} feature The feature name to check for
      * @returns {Promise<boolean>} If the user can or can not use this feature
      */
-    async canUse(username, feature) {
-        const canUse = await this.access.exists({ username, authClass: feature });
+    async canUse(username, features) {
+        if (Array.isArray(features)) {
+            const canUse = this.access.exists({ username, authClass: { $in: features } });
+            return !!canUse;
+        }
+        const canUse = await this.access.exists({ username, authClass: features });
         return !!canUse;
     }
     /**
      * Adds a feature to a users allow list
      * @param {string} username The user to verify
-     * @param {string} feature The feature name to check for
+     * @param {string|string[]} features The feature name(s) to check for
      */
-    async allowUse(username, feature) { (await this.access.create({ username, authClass: feature })).save(); }
+    async allowUse(username, features) {
+        if (!Array.isArray(feature)) features = [features];
+        this.access.create(features.map(feature => ({ username, authClass: feature })));
+    }
     /**
      * Removes a feature from the users allow list
      * @param {string} username The user to verify
-     * @param {string} feature The feature name to check for
+     * @param {string|string[]} features The feature name(s) to check for
      */
-    async disallowUse(username, feature) { await this.access.deleteOne({ username, authClass: feature }) }
+    async disallowUse(username, features) {
+        if (!Array.isArray(features)) {
+            await this.access.deleteOne({ username, authClass: features });
+            return;
+        }
+        await this.access.deleteMany({ username, authClass: { $in: features } });
+    }
     /**
      * Gets all achievements held by a specific user
      * @param {string} username
@@ -142,9 +154,11 @@ class UserManager {
      */
     async getPartialProfile(username) {
         const user = await this.profiles.findOne({ username });
+        if (!user) return;
         const achievements = await this.achievements.aggregate([ { $match: { username } } ]);
         return {
             username,
+            email: user.email,
             bio: user.bio,
             picture: user.picture,
             banner: user.banner,
@@ -160,12 +174,11 @@ class UserManager {
      */
     async getFullProfile(username) {
         const basic = await this.getPartialProfile(username);
+        if (!basic) return;
         const authents = await this.access.aggregate([{ $match: { username } }]);
-        const agents = await this.agents.aggregate([{ $match: { username } }]);
         return {
             ...basic,
-            authorizations: authents.map(v => v.authClass),
-            agents: agents.map(v => v.details)
+            authorizations: authents.map(v => v.authClass)
         }
     }
 }

@@ -3,6 +3,7 @@ const path = require('path');
 /** @param {import('builder').PrecompUtils} util */
 module.exports = async function(util) {
     const match = util.file.match(/<head.*?>/);
+    if (!match) return;
     const meta = `<meta id="site-distributed" content="${path.relative(util.entry, util.path)}">`;
     util.insert(match.index + match[0].length, meta);
 };
