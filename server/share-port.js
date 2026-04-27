@@ -5,7 +5,6 @@ const { createCanvas, loadImage } = require('canvas');
 const child = require('child_process');
 const { Readable } = require('stream');
 const crypto = require('crypto');
-let passhash = fs.existsSync('../passcode-hash.hex') ? fs.readFileSync('../passcode-hash.hex', 'utf8').trim() : '';
 let ffmpegSupport = [];
 child.exec('ffmpeg -hide_banner -formats', (error, stdout, stderr) => {
     if (error) return console.warn('Could not use ffmpeg:', error);
@@ -32,6 +31,7 @@ class ShareManager {
     attempts = 0;
     isClient = false;
     passcode = null;
+    username = null;
     /** @type {{ name: string, path: string, size: number, date: number }[]} */
     sharedFiles = []; // client only
     defaultFolder = '';
@@ -92,11 +92,12 @@ class ShareManager {
          * @param {string} passcode The password
          * @server
          */
-        [ShareManager.Authorize]: async (passcode, nonce) => {
+        [ShareManager.Authorize]: async (passcode, username, nonce) => {
             if (this.isClient) return this.reply(ShareManager.Error, nonce, 'Must Be Server');
             // if we werent given a string password, dont bother saying anything, just exit immediately
             if (typeof passcode !== 'string') return this.exit();
-            const isGood = passcode === passhash;
+            if (typeof username !== 'string') return this.exit();
+            const isGood = await users.authorize(username, passcode);
             this.loggedIn = isGood;
             // dont keep the socket open on auth fail, we dont really want them to be able to slam this method in what ever way they want
             if (!isGood) return this.exit(); 
@@ -572,11 +573,13 @@ class ShareManager {
     /**
      * Authorizes this connection with a password, closes the socket if incorrect
      * @param {string} passcode The password required to access this port
+     * @param {string} username The username required to access this port
      * @returns {Promise<string>} Resolves to the reconnection id
      */
-    authorize(passcode) {
+    authorize(passcode, username) {
         this.passcode = passcode;
-        return this.reply(ShareManager.Authorize, null, passcode).promise()
+        this.username = username;
+        return this.reply(ShareManager.Authorize, null, passcode, username).promise()
             .then(id => this.reconnectId = id); // hooked here so we can automatically handle reconnection
     }
     /**
@@ -680,9 +683,11 @@ class ShareManager {
      */
     static async openSharePort(req, res) {
         if ('reconnectId' in req.query) {
-            const share = deadShares.findIndex(share => share.reconnectId === req.query.reconnectId);
-            if (share >= 0) {
+            const shareIdx = deadShares.findIndex(share => share.reconnectId === req.query.reconnectId);
+            if (shareIdx >= 0) {
+                const share = deadShares[shareIdx]
                 share._attachToSocket(await res.accept());
+                deadShares.splice(shareIdx, 1);
                 console.log('New share port opened as', share.name);
                 return;
             }
