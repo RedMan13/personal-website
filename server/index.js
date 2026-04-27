@@ -11,8 +11,6 @@ const { handleReject, codes } = require('./handle-reject.js');
 const mongoose = require('mongoose');
 const UserManager = require('./user-manager.js');
 const mime = require('mime');
-const makeShareRest = require('./share-port-rest.js');
-const makeUsersRest = require('./user-manager-rest.js');
 
 console.log(new Date().toUTCString());
 const onces = {};
@@ -60,8 +58,8 @@ server.useHTTP(async (req, res, next) => {
     next();
 });
 
-makeShareRest(server);
-makeUsersRest(server);
+require('./share-port-rest.js')(server);
+require('./user-manager-rest.js')(server);
 
 console.log('setting up main file dealer');
 server.useHTTP(handleURL);
