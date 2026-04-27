@@ -1,6 +1,5 @@
 const { handleReject, codes } = require('./handle-reject.js');
 
-global.users = null; // temporarily define users
 module.exports = server => {
     server.get('/logs', (req, res) => {
         if (!req.authorized || !await users.userExists(req.cookies.username))
