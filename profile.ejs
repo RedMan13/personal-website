@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <%
+        const user = req.query.user;
+        const profile = await users.getFullProfile(user);
+    %>
+</head>
+<body>
+    <img class="banner" src="<%- profile.banner %>">
+    <img class="pfp-image" src="<%- profile.picture %>">
+    
+    <script>
+        const style = document.createElement('style');
+        style.innerText = <%- JSON.stringify(profile.styles).replaceAll('/', '\\x2F') %>;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>

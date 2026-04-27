@@ -322,8 +322,11 @@ class ShareManager {
         const intr = setInterval(() => {
             if (!this.socket) return;
             if (this.socket.readyState < this.socket.CLOSING && (Date.now() - this.lastPing) < this.pingWait) return;
+            if ((Date.now() - this.lastPing) < this.pingWait) 
+                return console.log('Socket went stale');
+            else 
+                console.log('Socket closed unintentionally');
             this.lastPing = Date.now(); // make sure this doesnt keep repeatedly catching out ass
-            console.log('Socket went stale');
             this.socket.close() // ensure we are indeed closing
             if (!this.isClient) {
                 // clean our selves out of the main list
