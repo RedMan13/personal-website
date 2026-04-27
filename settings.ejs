@@ -4,7 +4,7 @@
     <%
         const accessor = req.cookies.username;
         const user = req.query.user || accessor;
-        if (!req.authorized || !await users.userExists(user)) return res.redirect('/sign-in');
+        if (!req.authorized || !await users.userExists(accessor)) return res.redirect('/sign-in');
         const profile = await users.getFullProfile(user);
         if ('submitted' in req.query) {
             profile.picture = req.query.picture.slice(0, 512);
