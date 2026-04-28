@@ -324,7 +324,7 @@ class ShareManager {
             if (!this.socket) return;
             if (this.socket.readyState < this.socket.CLOSING && (Date.now() - this.lastPing) < this.pingWait) return;
             if ((Date.now() - this.lastPing) < this.pingWait) 
-                return console.log('Socket went stale');
+                console.log('Socket went stale');
             else 
                 console.log('Socket closed unintentionally');
             this.lastPing = Date.now(); // make sure this doesnt keep repeatedly catching out ass
@@ -414,9 +414,9 @@ class ShareManager {
             this.lastPing = Date.now();
             console.log('Server connected');
             this.attempts = 0;
-            if (this.passcode !== null) this.authorize(this.passcode).then(() => console.log('Connected to the server successfully'));
+            if (this.passcode !== null) this.authorize(this.passcode, this.username).then(() => console.log('Connected to the server successfully'));
             // clients shouldnt timeout
-            if (!this.isClient) this.timeout = setTimeout(this.exit.bind(this), 4000);
+            if (!this.isClient) this.timeout = setTimeout(() => { if (!this.loggedIn) this.exit.bind(this) }, 4000);
         }
     }
     /**
