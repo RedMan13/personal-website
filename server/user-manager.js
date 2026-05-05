@@ -68,7 +68,46 @@ class UserManager {
         (await this.profiles.create({
             username,
             passcode: await bcrypt.hash(password, 10),
-            email
+            email,
+            styles: `
+.banner {
+    display: block;
+    width: 100%;
+    height: 96px;
+    object-fit: cover;
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
+}
+.profile-identity {
+    display: flex;
+    gap: 10px;
+    justify-content: left;
+    align-items: center;
+    margin: 0px 10px;
+    margin-top: -32px;
+}
+.pfp-image {
+    width: 64px;
+    border-radius: 25%;
+}
+.username {
+    font-size: large;
+    font-weight: bold;
+    margin-top: 32px;
+    display: inline-block;
+}
+.bio-text {
+    margin: 16px 7px;
+    overflow: scroll;
+    white-space: preserve;
+}
+.backdrop {
+    border-radius: 16px;
+    border: 1px solid #AAA;
+    background-color: white;
+    margin: 0px;
+    font-family: sans-serif;
+}`
         })).save();
         return true;
     }

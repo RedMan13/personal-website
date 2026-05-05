@@ -2,83 +2,87 @@
 <html>
 <head>
     <%
+        const crypto = require('crypto')
+
         const user = req.query.user;
-        const profile = global.users 
-            ? await users.getPartialProfile(user)  
-            : {
-                banner: '/scratch-for-discord.png',
-                picture: '/puzzlingggg.jpg',
-                username: 'Joe', 
-                styles: `
-                    .banner {
-                        width: 100%;
-                        height: 96px;
-                        object-fit: cover;
-                    }
-                    .profile-identity {
-                        display: flex;
-                        gap: 10px;
-                        justify-content: left;
-                        align-items: center;
-                        margin: 0px 10px;
-                        margin-top: -32px;
-                    }
-                    .pfp-image {
-                        width: 64px;
-                        border-radius: 25%;
-                    }
-                    .username {
-                        font-size: large;
-                        font-weight: bold;
-                        margin-top: 32px;
-                        display: inline-block;
-                    }
-                    .bio-text {
-                        margin: 16px 7px;
-                        overflow: scroll;
-                        white-space: preserve;
-                    }
-                    .backdrop {
-                        border-radius: 16px;
-                        border: 1px solid #AAA;
-                        background-color: white;
-                    }
-                `,
-                bio: 'Lorem Ipsum\nDollar Sallet'
-            };
+        const profile = await users.getPartialProfile(user) ?? req.query;
         const bioFixed = escapeFn(profile.bio);
-        let collector = ''
-        let isCollecting = false;
-        let bioWords = [['bio-text', ['']]];
+        let biop = '';
+        let layer = 0;
+        let collector = '';
+        let variable = false;
         for (let i = 0; i < bioFixed.length; i++) {
-            const current = bioWords.at(-1);
             if (bioFixed[i] === '\\') {
-                if (isCollecting)
-                    collector += bioFixed[++i];
-                else
-                    current[1][current[1].length -1] += bioFixed[++i];
+                if (variable) collector += bioFixed[++i];
+                else biop += bioFixed[++i];
                 continue;
             }
-            if (isCollecting && bioFixed[i] === '[') {
-                
+            if (bioFixed[i] === '[') { layer++; variable = true; collector = ''; continue; }
+            if (bioFixed[i] === ']' && layer) { layer--; biop += '</div>'; variable = false; continue; }
+            if (variable) {
+                if ((collector ? /[a-z0-9_$-]/i : /[a-z_$-]/i).test(bioFixed[i])) collector += bioFixed[i];
+                else { variable = false; biop += `<div class="${escapeFn(collector)}">`; }
+                continue;
             }
-            if (isCollecting) { collector += bioFixed[i]; continue; }
-            if (bioFixed[i] !== '@') { current[1][current[1].length -1] += bioFixed[i]; continue; }
+            biop += bioFixed[i];
         }
+
+        const nonce = crypto.randomUUID();
     %>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src localhost:8000 localhost:3000 godslayerakp.serv00.net/proxy; script-src 'nonce-<%- nonce %>'; style-src 'nonce-<%- nonce %>'">
 </head>
 <body class="backdrop">
-    <img class="banner" src="<%- profile.banner %>">
+    <img class="banner" id="banner" src="/proxy?u=<%- encodeURI(profile.banner) %>" alt=" ">
     <div class="profile-identity">
-        <img class="pfp-image" src="<%- profile.picture %>">
-        <span class="username"><%- profile.username %></span>
+        <img class="pfp-image" id="picture" src="/proxy?u=<%- encodeURI(profile.picture) %>">
+        <span class="username" id="username"><%- profile.username %></span>
     </div>
-    <div class="bio-text"><%- profile.bio %></div>
+    <div class="bio-text" id="bio"><%- biop %></div>
     
-    <script>
-        const style = document.createElement('style');
-        style.innerText = <%- JSON.stringify(profile.styles).replaceAll('/', '\\x2F') %>;
-        document.head.appendChild(style);
+    <style nonce="<%- nonce %>" id="styles"><%= profile.styles
+        .replaceAll('&', '\\26')
+        .replaceAll('<', '\\3E')
+        .replaceAll('>', '\\3C')
+        .replaceAll('"', '\\22')
+        .replaceAll("'", '\\27') %></style>
+    <script nonce="<%- nonce %>">
+        const banner = document.getElementById('banner');
+        const picture = document.getElementById('picture');
+        const username = document.getElementById('username');
+        const bio = document.getElementById('bio');
+        const styles = document.getElementById('styles');
+        window.onmessage = ({ data }) => {
+            if ('banner' in data) banner.src = `/proxy?u=${encodeURI(data.banner)}`;
+            if ('picture' in data) picture.src = `/proxy?u=${encodeURI(data.picture)}`;
+            if ('username' in data) username.innerText = data.username;
+            if ('style' in data) styles.innerText = data.style;
+            if ('bio' in data) {
+                bio.innerText = data.bio;
+                const bioFixed = bio.innerHTML;
+                let biop = '';
+                let layer = 0;
+                let collector = '';
+                let variable = false;
+                for (let i = 0; i < bioFixed.length; i++) {
+                    if (bioFixed[i] === '\\') {
+                        if (variable) collector += bioFixed[++i];
+                        else biop += bioFixed[++i];
+                        continue;
+                    }
+                    if (bioFixed[i] === '[') { layer++; variable = true; collector = ''; continue; }
+                    if (bioFixed[i] === ']' && layer) { layer--; biop += '</div>'; variable = false; continue; }
+                    if (variable) {
+                        if ((collector ? /[a-z0-9_$-]/i : /[a-z_$-]/i).test(bioFixed[i])) collector += bioFixed[i];
+                        else { variable = false; biop += `<div class="${escapeFn(collector)}">`; }
+                        continue;
+                    }
+                    biop += bioFixed[i];
+                }
+                bio.innerHTML = biop;
+            }
+            const rect = document.body.getBoundingClientRect();
+            window.parent.postMessage(rect.height);
+        }
     </script>
 </body>
 </html>

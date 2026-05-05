@@ -9,8 +9,8 @@
         if ('submitted' in req.query) {
             profile.picture = req.query.picture.slice(0, 512);
             profile.banner = req.query.banner.slice(0, 512);
-            profile.bio = req.query.bio.slice(0, 2048);
-            profile.styles = req.query.styles.slice(0, 1024);
+            profile.bio = req.query.bio.slice(0, 1024);
+            profile.styles = req.query.styles.slice(0, 4096);
             profile.email = req.query.email.slice(0, 128);
             const auths = JSON.parse(req.query.authorizations);
             const removed = profile.authorizations.filter(auth => !auths.includes(auth));
@@ -23,6 +23,7 @@
             if (profile.banned != req.query.banned && await users.canUse(accessor, 'ban-users'))
                 profile.banned = !(req.query.banned !== 'true');
             await users.updateProfile(user, profile); 
+            return res.redirect('/profile?user=' + user);
         }
     %>
     <style>
@@ -44,6 +45,11 @@
             word-break: keep-all;
             margin: 2px;
         }
+        .text-box {
+            box-sizing: border-box;
+            width: 100%;
+            height: 4rem;
+        }
         .remove-item {
             width: 1rem;
             height: 1rem;
@@ -62,9 +68,9 @@
         <p>Banner Image Url</p>
         <input type="url" name="banner" value="<%= profile.banner %>">
         <p>Bio Text:</p>
-        <textarea name="bio"><%= profile.bio %></textarea>
+        <textarea name="bio" class="text-box"><%= profile.bio %></textarea>
         <p>CSS Styling:</p>
-        <textarea name="styles"><%= profile.styles %></textarea>
+        <textarea name="styles" class="text-box"><%= profile.styles %></textarea>
         <p>Email:</p>
         <input type="email" name="email" value="<%= profile.email %>">
 
@@ -103,6 +109,18 @@
             </script>
         <% } %>
         <p>Banned: <input type="checkbox" name="banned" <%= profile.banned ? 'checked' : '' %> <%= await users.canUse(accessor, 'ban-users') ? '' : 'disabled' %>></p>
+        <iframe id="preview-frame" src="/profile?user=<%- encodeURI(user) %>" height="300" style="border: none; width: 100%"></iframe>
+        <script>
+            /** @type {HTMLIFrameElement} */
+            const frame = document.getElementById('preview-frame');
+            const inputs = document.getElementsByTagName('input');
+            const areas = document.getElementsByTagName('textarea');
+            const els = [...inputs, ...areas];
+            window.onmessage = ({ data: height }) => frame.style.height = `${height}px`;
+            frame.contentWindow.postMessage({}); // dont change anything, just get the height
+            for (let el, i = 0; el = els[i]; i++)
+                el.onchange = () => frame.contentWindow.postMessage({ [el.name]: el.value });
+        </script>
         <br>
         <input type="submit" name="submitted">
     </form>

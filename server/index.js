@@ -10,6 +10,8 @@ const fs = require('fs');
 const { handleReject, codes } = require('./handle-reject.js');
 const mongoose = require('mongoose');
 const UserManager = require('./user-manager.js');
+const https = require('https');
+const http = require('http');
 const mime = require('mime');
 
 console.log(new Date().toUTCString());
@@ -60,6 +62,19 @@ server.useHTTP(async (req, res, next) => {
 
 require('./share-port-rest.js')(server);
 require('./user-manager-rest.js')(server);
+server.get('/proxy', (req, res) => {
+    (req.query.u.startsWith('https') ? https : http).get(req.query.u, req => {
+        // this proxy is intended solely for image media
+        // so, only mirror information that would be relevant to an image
+        if (req.statusCode >= 300) 
+            return handleReject(codes.MisdirectedRequest, 'This proxy is not for apis!! please only use for media, like images.', res, false);
+        res.status(200);
+        if ('content-type' in req.headers) res.header('Content-Type', req.headers['content-type']);
+        if ('content-encoding' in req.headers) res.header('Content-Encoding', req.headers['content-encoding']);
+        if ('content-length' in req.headers) res.header('Content-Length', req.headers['content-length']);
+        req.pipe(res);
+    }).on('error', e => { console.error(e); handleReject(codes['BadRequest'], e.message, res, false); });
+});
 
 console.log('setting up main file dealer');
 server.useHTTP(handleURL);
