@@ -40,7 +40,7 @@ class UserManager {
      * @returns {Promise<boolean>} If they do or do not exist
      */
     async userExists(username) {
-        const user = await this.profiles.exists({ username });
+        const user = await this.profiles.findOne({ username });
         return !!user;
     }
     /**
@@ -63,7 +63,7 @@ class UserManager {
      * @returns {boolean} If the account was registered or not
      */
     async register(username, password, email = '') {
-        const user = await this.profiles.exists({ username });
+        const user = await this.userExists(username);
         if (user) return false;
         (await this.profiles.create({
             username,
@@ -119,6 +119,7 @@ class UserManager {
     async updateProfile(username, keys) {
         const user = await this.profiles.findOne({ username });
         if (!user) return;
+        if ('username' in keys) user.username = keys.username;
         if ('email' in keys) user.email = keys.email;
         if ('bio' in keys) user.bio = keys.bio;
         if ('picture' in keys) user.picture = keys.picture;

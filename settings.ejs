@@ -7,6 +7,7 @@
         if (!req.authorized || !await users.userExists(accessor)) return res.redirect('/sign-in');
         const profile = await users.getFullProfile(user);
         if ('submitted' in req.query) {
+            profile.username = req.query.username.slice(0, 64);
             profile.picture = req.query.picture.slice(0, 512);
             profile.banner = req.query.banner.slice(0, 512);
             profile.bio = req.query.bio.slice(0, 1024);
@@ -64,17 +65,19 @@
 <body>
     <form method="get">
         <p>PFP Image Url:</p>
-        <input type="url" name="picture" value="<%= profile.picture %>">
+        <input type="url" name="picture" maxlength="512" value="<%= profile.picture %>">
         <p>Banner Image Url</p>
-        <input type="url" name="banner" value="<%= profile.banner %>">
+        <input type="url" name="banner" maxlength="512" value="<%= profile.banner %>">
         <p>Bio Text:</p>
-        <textarea name="bio" class="text-box"><%= profile.bio %></textarea>
+        <textarea name="bio" class="text-box" maxlength="1024"><%= profile.bio %></textarea>
         <p>CSS Styling:</p>
-        <textarea name="styles" class="text-box"><%= profile.styles %></textarea>
+        <textarea name="styles" class="text-box" maxlength="4096"><%= profile.styles %></textarea>
         <p>Email:</p>
-        <input type="email" name="email" value="<%= profile.email %>">
+        <input type="email" name="email" maxlength="128" value="<%= profile.email %>">
 
         <% if (await users.canUse(accessor, 'edit-users')) { %>
+            <p>Username:</p>
+            <input name="username" type="text" maxlength="64" value="<%= profile.username %>">
             <p>Permissions:</p>
             <div class="permissions-list" id="permissions-list">
                 <input type="text" id="new-authorization"><button type="button" onclick="handleAdd()">Add</button><br>
@@ -82,7 +85,7 @@
             </div>
             <input type="hidden" name="authorizations" id="authorizations-entry" value="<%= JSON.stringify(profile.authorizations)%>"> 
             <script file="jsx">
-                const authList = <%- JSON.stringify(profile.authorizations)%>;
+                const authList = <%- JSON.stringify(profile.authorizations) %>;
                 const inputAuthorization = document.getElementById('new-authorization');
                 const permissionsList = document.getElementById('permissions-list');
                 const authorizationsEntry = document.getElementById('authorizations-entry');

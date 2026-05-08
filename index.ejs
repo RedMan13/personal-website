@@ -97,7 +97,7 @@ if (visitorCount > 9 && visitorCount < 20) sufix = 'th';
         }
         .footer-grid {
             display: grid; 
-            grid-template-columns: repeat(2, 1fr); 
+            grid-template-columns: 50% 50%; 
             grid-template-rows: 174px 174px;
         }
         .footer-grid-item {
@@ -117,16 +117,16 @@ if (visitorCount > 9 && visitorCount < 20) sufix = 'th';
         .commit-time {
             font-size: small;
             color: #999;
+            overflow: clip;
         }
         .commit-message {
             font-size: small;
             grid-column: 2 / 4;
-            overflow: clip;
         }
         .commit {
             display: grid;
-            grid-template-columns: calc(1.75lh + 2px) 1fr max-content;
-            grid-template-rows: 1lh .75lh;
+            grid-template-columns: calc(1.75lh + 2px) 1fr 1fr;
+            grid-template-rows: 1lh max-content;
         }
         .gnome {
             position: absolute;
