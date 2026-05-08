@@ -340,11 +340,22 @@
             color: red;
             font-weight: bold;
         }
+        noscript {
+            font-size: small;
+            background-color: rgb(212, 86, 54);
+            color: white;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            box-sizing: border-box;
+            z-index: 9999999999999;
+        }
     </style>
 </head>
 <body class="card-wrapper">
+    <noscript>Dont be allarmed! it looks like you have scripts dissabled, this site uses scripts to make certain renders (like scaling this card) work and display correctly</noscript>
     <div class="card">
-        <noscript>Dont be allarmed! it looks like you have scripts dissabled, this site uses scripts to make certain renders (like scaling this card) work and display correctly</noscript>
         <div class="browser close" style="width: 180px; left: -180px; box-shadow: 0 0 0px black;" id="browser" hidden>{filejson}</div>
         <button id="close-browser" style="left: 0px;" class="close-browser close" hidden>&gt;</button>
         <div style="
