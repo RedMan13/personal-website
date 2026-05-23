@@ -612,12 +612,13 @@ class ShareManager {
      * @param {string} filename The file to begin reading
      * @returns {Promise<[number, number, string, number, Duplex?]>} The type, size, name, and handle for this file
      */
-    openFileRead(filename, shouldStream) {
-        const flight = this.reply(ShareManager.OpenFileRead, null, filename);
+    openFileRead(filename, shouldStream = true) {
+        const flight = this.reply(ShareManager.OpenFileRead, null, filename, shouldStream);
         if (!shouldStream) return flight.promise();
         return new Promise((resolve, reject) => {
             const chunks = [];
             const stream = new Readable({
+                emitClose: true,
                 read() { return chunks.unshift() }
             });
             flight.realReject = reject;
@@ -626,10 +627,12 @@ class ShareManager {
                 delete flight.realReject;
                 flight.done();
                 reject(error);
+                stream.destroy();
             }
             flight.onData = (...args) => {
                 if (args.length >= 4) return resolve([...args, stream]);
-                if (args[0].length <= 0) stream.destroy();
+                if (args[0].length <= 0) return stream.destroy();
+                stream.push(args[0]);
                 chunks.push(args[0]);
             }
         })

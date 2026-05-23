@@ -62,7 +62,7 @@ function generateFileList(files, displayOwner, owner) {
         </body>
     `;
 }
-
+/** @param {import('express').Express} server */
 module.exports = server => {
     server.ws('/share-port', ShareManager.openSharePort);
     server.get(/^\/file\/(?<filename>.*)/i, async (req, res) => {
@@ -70,7 +70,10 @@ module.exports = server => {
         res.header('Content-Length', size);
         res.header('Content-Type', mime.lookup(name));
         stream.pipe(res);
-        share.closeFile(handle);
+        stream.on('close', () => {
+            res.end();
+            share.closeFile(handle);
+        });
     });
     server.get(/^\/icon\/(?<filename>.*)/i, async (req, res) => {
         res.header('Content-Type', 'image/jpeg');
@@ -90,7 +93,10 @@ module.exports = server => {
         res.header('Content-Type', mime.lookup(name));
         res.header('Content-Length', size);
         stream.pipe(res);
-        owner.closeFile(handle);
+        stream.on('close', () => {
+            res.end();
+            owner.closeFile(handle);
+        });
     });
     server.get(/^\/(?<owner>.*)\/icon\/(?<filename>.*)/i, async (req, res) => {
         const owner = shares.find(share => share.name === req.params.owner);
