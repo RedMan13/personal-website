@@ -1,4 +1,5 @@
 const ShareManager = require('./share-port');
+const mime = require('mime');
 
 function escape(str) {
     return String(str).replace(/[<>&'"]/g, c => {
