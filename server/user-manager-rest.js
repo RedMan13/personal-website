@@ -1,6 +1,6 @@
 const { handleReject, codes } = require('./handle-reject.js');
 const path = require('path');
-const fs = require('fs');
+const fs = require('fs/promises');
 
 const logs = path.resolve('../logs/error.log');
 module.exports = server => {
@@ -10,6 +10,6 @@ module.exports = server => {
         if (!await users.canUse(req.cookies.username, 'view-logs'))
             return handleReject(codes.Forbidden, 'You are not permitted to view this content', res, false);
         res.sendFile(logs);
-        fs.writeFile(logs, '', () => {});
+        fs.writeFile(logs, '\n');
     })
 }
