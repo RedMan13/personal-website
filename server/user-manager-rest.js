@@ -10,6 +10,7 @@ module.exports = server => {
         if (!await users.canUse(req.cookies.username, 'view-logs'))
             return handleReject(codes.Forbidden, 'You are not permitted to view this content', res, false);
         const data = await fs.readFile(logs, 'utf8');
+        res.header('Content-Type', 'text/plain');
         res.send(data);
         fs.writeFile(logs, '\n');
     })
