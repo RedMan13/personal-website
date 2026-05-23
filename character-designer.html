@@ -135,7 +135,8 @@
             e.preventDefault();
             scrollp += -e.deltaY / 4;
             scrollp = Math.max(scrollp, 10);
-            board.style.transform = `scale(${scrollp}%)`;
+            board.style.transformOrigin = `${e.clientX}px ${e.clientY}px`;
+            board.style.transform = `translate(${x}px, ${y}px) scale(${scrollp}%)`;
         }
         overlay.oncontextmenu = () => false;
         overlay.onclick = e => e.preventDefault();

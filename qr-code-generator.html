@@ -2,23 +2,24 @@
 <head>
     <title>QR Code Generator</title>
     <script>
-        const positionMarker = new ImageData([
-            0,0,0,0,0,0,0,0,
-            0,1,1,1,1,1,1,0,
-            0,1,0,0,0,0,1,0,
-            0,1,0,1,1,0,1,0,
-            0,1,0,1,1,0,1,0,
-            0,1,0,0,0,0,1,0,
-            0,1,1,1,1,1,1,0,
-            0,0,0,0,0,0,0,0
-        ].reduce((c,v) => c.push(255 * v, 255 * v, 255 * v, 255), []), 8,8);
-        const alignmentMarker = new ImageData([
+        const positionMarker = new ImageData(new Uint8ClampedArray([
+            0,0,0,0,0,0,0,0,0,
+            0,1,1,1,1,1,1,1,0,
+            0,1,0,0,0,0,0,1,0,
+            0,1,0,1,1,1,0,1,0,
+            0,1,0,1,1,1,0,1,0,
+            0,1,0,1,1,1,0,1,0,
+            0,1,0,0,0,0,0,1,0,
+            0,1,1,1,1,1,1,1,0,
+            0,0,0,0,0,0,0,0,0
+        ].map(v => !v).reduce((c,v) => (c.push(255 * v, 255 * v, 255 * v, 255), c), [])), 9,9);
+        const alignmentMarker = new ImageData(new Uint8ClampedArray([
             1,1,1,1,1,
             1,0,0,0,1,
             1,0,1,0,1,
             1,0,0,0,1,
             1,1,1,1,1
-        ].reduce((c,v) => c.push(255 * v, 255 * v, 255 * v, 255 * v), []), 5,5);
+        ].map(v => !v).reduce((c,v) => (c.push(255 * v, 255 * v, 255 * v, 255), c), [])), 5,5);
     </script>
 </head>
 <body>
@@ -27,26 +28,24 @@
         /** @type {HTMLCanvasElement} */
         const canvas = document.getElementById('qr-code');
         const ctx = canvas.getContext('2d');
+        function generate(content, config = {}) {
+            const conf = {
+                level: content.length,
+                ...config
+            }
+        }
         const w = canvas.width = 43;
         const h = canvas.height = 43;
         for (let i = 0; i < w; i++) {
             ctx.fillStyle = i % 2 ? 'white' : 'black';
-            ctx.fillRect(i,5, 1,1);
+            ctx.fillRect(i,6, 1,1);
         }
         for (let i = 0; i < w; i++) {
             ctx.fillStyle = i % 2 ? 'white' : 'black';
-            ctx.fillRect(5,i, 1,1);
+            ctx.fillRect(6,i, 1,1);
         }
         ctx.putImageData(positionMarker, -1,-1);
-        ctx.putImageData(positionMarker, -1,h -7);
-        ctx.putImageData(positionMarker, w -7,-1);
-        for (let i = 0; i < w; i++) {
-            ctx.fillStyle = i % 2 ? 'white' : 'black';
-            ctx.fillRect(i,5, 1,1);
-        }
-        for (let i = 0; i < w; i++) {
-            ctx.fillStyle = i % 2 ? 'white' : 'black';
-            ctx.fillRect(5,i, 1,1);
-        }
+        ctx.putImageData(positionMarker, -1,h -8);
+        ctx.putImageData(positionMarker, w -8,-1);
     </script>
 </body>

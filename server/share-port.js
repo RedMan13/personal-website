@@ -427,6 +427,7 @@ class ShareManager {
      * @returns {{ [key: string]: any, opcode: number, done: () => void, promise: () => Promise<any> }} The in-flight state container for this message
      */
     reply(opcode, nonce, ...args) {
+        if (!this.socket) return { done() {}, promise() { return Promise.reject('Socket Closed'); } }
         // console.log('Sending', opcode, 'with', ...args);
         const encoded = [];
         // opcode + nonce
