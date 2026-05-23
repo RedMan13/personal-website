@@ -10,6 +10,6 @@ module.exports = server => {
         if (!await users.canUse(req.cookies.username, 'view-logs'))
             return handleReject(codes.Forbidden, 'You are not permitted to view this content', res, false);
         res.sendFile(logs);
-        fs.writeFile(logs, '');
+        fs.writeFile(logs, '', () => {});
     })
 }
