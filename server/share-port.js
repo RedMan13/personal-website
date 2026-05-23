@@ -305,7 +305,7 @@ class ShareManager {
             this.reply(ShareManager.Reply, nonce, data).done();
         },
         [ShareManager.Ping]: wait => {
-            this.pingWait = (wait * 2) + 1000;
+            // this.pingWait = (wait * 2) + 1000;
             setTimeout(() => this.reply(ShareManager.Ping, null, wait).done(), wait);
         }
     }
@@ -313,7 +313,7 @@ class ShareManager {
     iconCache = {};
     inFlights = {};
     lastPing = Date.now();
-    pingWait = 6000;
+    pingWait = Infinity;
     reconnectId = null;
 
     constructor(isClient, socket) {
@@ -323,7 +323,7 @@ class ShareManager {
         const intr = setInterval(() => {
             if (!this.socket) return;
             if (this.socket.readyState < this.socket.CLOSING && (Date.now() - this.lastPing) < this.pingWait) return;
-            if ((Date.now() - this.lastPing) < this.pingWait) 
+            if ((Date.now() - this.lastPing) > this.pingWait) 
                 console.log('Socket went stale');
             else 
                 console.log('Socket closed unintentionally');
