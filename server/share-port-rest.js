@@ -67,7 +67,7 @@ module.exports = server => {
     server.ws('/share-port', ShareManager.openSharePort);
     server.get(/^\/file\/(?<filename>.*)/i, async (req, res) => {
         const [share, size, name, handle, stream] = await ShareManager.openFileRead(req.params.filename, true);
-        res.header('Content-Length', size);
+        // res.header('Content-Length', size);
         res.header('Content-Type', mime.lookup(name));
         stream.pipe(res);
         stream.on('close', () => share.closeFile(handle));
@@ -88,7 +88,7 @@ module.exports = server => {
         if (!owner) return res.send('Owner doesnt exist');
         const [type, size, name, handle, stream] = await owner.openFileRead(req.params.filename, true);
         res.header('Content-Type', mime.lookup(name));
-        res.header('Content-Length', size);
+        // res.header('Content-Length', size);
         stream.pipe(res);
         stream.on('close', () => owner.closeFile(handle));
     });
