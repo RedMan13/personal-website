@@ -183,6 +183,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
+            image-rendering: pixelated;
         }
         .card {
             background-color: white;
@@ -822,6 +823,50 @@
         const realFileMeta = document.getElementById('site-distributed');
         if (!location.pathname.startsWith('/' + realFileMeta.getAttribute('content')) && !/index(\..*)?$/i.test(realFileMeta.getAttribute('content')))
             pushAchievement('Hacker', 'Its funny what this server software allows.');
+
+        if (Math.random() < 0.00001) {
+            const can = document.createElement('canvas');
+            can.id = 'background';
+            can.hidden = true;
+            can.width = can.height = 128;
+            document.head.appendChild(can);
+            document.body.style.backgroundImage = `-moz-element(#background)`;
+            const ctx = can.getContext('2d');
+            const firstColor = [[0xFF, 0xFF, 0xFF], [0x30, 0x7F, 0xC9]]
+            const secondColor = [[0xEF, 0xEA, 0xFF], [0x01, 0x95, 0xFA]]
+
+            let dir = -45 / 180 * Math.PI;
+            const lastSteps = { first: 0, second: 0 };
+            let lastTime = 0;
+            function drawBackground(t) {
+                const step =  t / 3000;
+                const firstColorStep = (t % 30000) / 30000;
+                const secondColorStep = (t % 45000) / 45000;
+                const firstAbsStep = Math.floor(t / 30000);
+                const secondAbsStep = Math.floor(t / 45000);
+                if (lastSteps.first !== firstAbsStep) firstColor.push(firstColor.shift());
+                lastSteps.first = firstAbsStep;
+                if (lastSteps.second !== secondAbsStep) secondColor.push(secondColor.shift());
+                lastSteps.second = secondAbsStep;
+                const x = Math.cos(-dir) * step * 64;
+                const y = Math.sin(-dir) * step * 64;
+                document.body.style.backgroundPosition = `${x}px ${y}px`;
+                ctx.fillStyle = '#' +
+                    (Math.floor(((firstColor[1][0] - firstColor[0][0]) * firstColorStep) + firstColor[0][0]).toString(16).padStart(2, '0')) +
+                    (Math.floor(((firstColor[1][1] - firstColor[0][1]) * firstColorStep) + firstColor[0][1]).toString(16).padStart(2, '0')) +
+                    (Math.floor(((firstColor[1][2] - firstColor[0][2]) * firstColorStep) + firstColor[0][2]).toString(16).padStart(2, '0'));
+                ctx.fillRect(0,0, 64,64);
+                ctx.fillRect(64,64, 64,64);
+                ctx.fillStyle = '#' +
+                    (Math.floor(((secondColor[1][0] - secondColor[0][0]) * secondColorStep) + secondColor[0][0]).toString(16).padStart(2, '0')) +
+                    (Math.floor(((secondColor[1][1] - secondColor[0][1]) * secondColorStep) + secondColor[0][1]).toString(16).padStart(2, '0')) +
+                    (Math.floor(((secondColor[1][2] - secondColor[0][2]) * secondColorStep) + secondColor[0][2]).toString(16).padStart(2, '0'));
+                ctx.fillRect(64,0, 64,64);
+                ctx.fillRect(0,64, 64,64);
+
+                requestAnimationFrame(drawBackground);
+            }; drawBackground();
+        }
     </script>
 </body>
 </html>

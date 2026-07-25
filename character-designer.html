@@ -2,38 +2,27 @@
 <head>
     <title>ANSI Code Helper</title>
     <meta name="keywords" content="ansi,ascii,discord,text,formating">
-    <style>
-        @keyframes blink {
-            from { display: none; }
-            to { display: inherit; }
-        }
-    </style>
 </head>
 <body>
     <div style="
         position: absolute; 
         width: 480px; 
         height: 360px; 
-        overflow-x: scroll; 
-        overflow-y: scroll;
+        overflow-x: hidden; 
+        overflow-y: hidden;
     " id="body">
         <div style="
-            width: 160px; 
-            height: 192px; 
             transform: scale(200%); 
-            transform-origin: left top;
+            transform-origin: center center;
             position: absolute;
-            background-color: black;
+            left: 50%;
+            top: 50%;
+            background: repeat url('/background-pattern.png');
+            image-rendering: pixelated;
             font-family: monospace;
             font-size: 10px;
             color: grey;
         " id="board">
-            <div style="
-                position: absolute; left: 0; right: 0;
-                display: grid;
-                grid-template-columns: repeat(10px, 16);
-                grid-template-rows: repeat(12px, 16);
-            " id="char-template"></div>
             <canvas 
                 id="terminal"
                 style="position: absolute; left: 0; right: 0; image-rendering: pixelated;"
@@ -60,6 +49,9 @@
         const otx = overlay.getContext('2d');
         /** @type {CanvasRenderingContext2D} */
         const ctx = terminal.getContext('2d');
+
+        board.style.width = (terminal.width = overlay.width = (location.hash.slice(1).split(':', 2)[0] || 200)) + 'px';
+        board.style.height = (terminal.height = overlay.height = (location.hash.slice(1).split(':', 2)[1] || 200)) + 'px';
         function imageDataToPng(imageData) {
             return new Promise(resolve => {
                 imageTransformer.width = imageData.width;
@@ -81,26 +73,18 @@
                 img.onerror = reject;
             });
         }
-
-        const chSize = [8,8];
-        template.style.gridTemplateColumns = `${chSize[0]}px `.repeat(16);
-        template.style.gridTemplateRows = `${chSize[1]}px `.repeat(16);
-        template.style.fontSize = `${chSize[0]}px`;
-        overlay.width = terminal.width = chSize[0] * 16;
-        overlay.height = terminal.height = chSize[1] * 16;
-        overlay.style.width = terminal.style.width = `${terminal.width}px`;
-        overlay.style.height = terminal.style.height = `${terminal.height}px`;
-        for (let i = 0; i < 256; i++)
-            template.appendChild(<span 
-                style={`text-align: center; background-color: ${((i + Math.floor(i / 16)) % 2) ? '#000' : '#222'}`}
-            >{String.fromCharCode(i)}</span>); 
  
+        let color = '#FFEEAA';
         let sx = 0;
         let sy = 0;
         let x = 0;
         let y = 0;
+        let ox = 0;
+        let oy = 0;
         let undoIdx = -1;
-        let scrollp = 200;
+        let scrollX = 240;
+        let scrollY = 180;
+        let scrollp = 100;
         /** @type {string} */
         let mode = null;
         /** @type {ImageData} */
@@ -115,13 +99,13 @@
                     // offset by the position of the top-left corner of the cardpage
                     (mx - ((window.innerWidth / 2) - (240 * scale))) 
                     // scale down to cardpage px size
-                    / scale) + 
+                    / scale) -
                 // offset by the scroll pos
-                body.scrollLeft) / 
+                ((scrollX - (terminal.width / 2)) * (scrollp / 100))) / 
                 // scale by zoom factor
                 (scrollp / 100));
             // repeat above but with all x-axis replaced with y-axis
-            const y = Math.floor((((my - ((window.innerHeight / 2) - (180 * scale))) / scale) + body.scrollTop) / (scrollp / 100));
+            const y = Math.floor((((my - ((window.innerHeight / 2) - (180 * scale))) / scale) - ((scrollY - (terminal.height / 2) * (scrollp / 100))) / (scrollp / 100));
             return [x,y];
         }
         function draw() {
@@ -133,10 +117,18 @@
         }
         body.onwheel = e => { 
             e.preventDefault();
+            // factualy correct, as the position of the mouse has moved :Trollha
+            overlay.onmousemove(e);
+            if (!e.ctrlKey) {
+                scrollX -= e.deltaX / (scrollp / 200);
+                scrollY -= e.deltaY / (scrollp / 200); 
+                board.style.left = scrollX + 'px';
+                board.style.top = scrollY + 'px';
+                return;
+            }
             scrollp += -e.deltaY / 4;
             scrollp = Math.max(scrollp, 10);
-            board.style.transformOrigin = `${e.clientX}px ${e.clientY}px`;
-            board.style.transform = `translate(${x}px, ${y}px) scale(${scrollp}%)`;
+            board.style.transform = `scale(${scrollp}%)`; 
         }
         overlay.oncontextmenu = () => false;
         overlay.onclick = e => e.preventDefault();
@@ -147,7 +139,7 @@
             [x,y] = mpos(e.clientX, e.clientY);
             undoLog[++undoIdx] = [];
             switch (e.button) {
-            case 0: ctx.fillStyle = 'white'; break;
+            case 0: ctx.fillStyle = color; break;
             case 2: ctx.fillStyle = 'transparent'; break;
             }
             switch (mode) {
@@ -213,9 +205,14 @@
                 otx.stroke();
                 break;
             case 'drawing': draw(); break;
+            case null:
+                otx.clearRect(0,0, overlay.width, overlay.height);
+                otx.fillStyle = color;
+                otx.fillRect(x,y, 1,1);
+                break;
             }
         }
-        document.onkeydown = async e => {
+        overlay.onkeydown = async e => {
             e.preventDefault();
             if (!e.ctrlKey) return;
             switch (e.key) {
