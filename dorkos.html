@@ -5,8 +5,180 @@
     <title>Dork OS</title>
     <meta name="description" content="The one and only os designed for Dorkings!!!">
     <meta name="keywords" content="chicken,os,webos,dorking,dorkings,">
+    <script>
+        const authorized = !!performance.getEntriesByType('navigation')[0].serverTiming.find(v => v.name === 'authorized');
+
+        const elementClassNames = {
+            "a": 'HTMLAnchorElement',
+            "area": 'HTMLAreaElement',
+            "audio": 'HTMLAudioElement',
+            "base": 'HTMLBaseElement',
+            "blockquote": 'HTMLQuoteElement',
+            "body": 'HTMLBodyElement',
+            "br": 'HTMLBRElement',
+            "button": 'HTMLButtonElement',
+            "canvas": 'HTMLCanvasElement',
+            "caption": 'HTMLTableCaptionElement',
+            "col": 'HTMLTableColElement',
+            "colgroup": 'HTMLTableColElement',
+            "data": 'HTMLDataElement',
+            "datalist": 'HTMLDataListElement',
+            "del": 'HTMLModElement',
+            "details": 'HTMLDetailsElement',
+            "dialog": 'HTMLDialogElement',
+            "dir": 'HTMLDirectoryElement',
+            "div": 'HTMLDivElement',
+            "dl": 'HTMLDListElement',
+            "embed": 'HTMLEmbedElement',
+            "fencedframe": 'HTMLUnknownElement',
+            "fieldset": 'HTMLFieldSetElement',
+            "font": 'HTMLFontElement',
+            "form": 'HTMLFormElement',
+            "frame": 'HTMLFrameElement',
+            "frameset": 'HTMLFrameSetElement',
+            "h1": 'HTMLHeadingElement',
+            "head": 'HTMLHeadElement',
+            "hr": 'HTMLHRElement',
+            "html": 'HTMLHtmlElement',
+            "iframe": 'HTMLIFrameElement',
+            "img": 'HTMLImageElement',
+            "input": 'HTMLInputElement',
+            "ins": 'HTMLModElement',
+            "label": 'HTMLLabelElement',
+            "legend": 'HTMLLegendElement',
+            "li": 'HTMLLIElement',
+            "link": 'HTMLLinkElement',
+            "map": 'HTMLMapElement',
+            "marquee": 'HTMLMarqueeElement',
+            "menu": 'HTMLMenuElement',
+            "meta": 'HTMLMetaElement',
+            "meter": 'HTMLMeterElement',
+            "object": 'HTMLObjectElement',
+            "ol": 'HTMLOListElement',
+            "optgroup": 'HTMLOptGroupElement',
+            "option": 'HTMLOptionElement',
+            "output": 'HTMLOutputElement',
+            "p": 'HTMLParagraphElement',
+            "param": 'HTMLParamElement',
+            "picture": 'HTMLPictureElement',
+            "portal": 'HTMLUnknownElement',
+            "pre": 'HTMLPreElement',
+            "progress": 'HTMLProgressElement',
+            "q": 'HTMLQuoteElement',
+            "script": 'HTMLScriptElement',
+            "select": 'HTMLSelectElement',
+            "slot": 'HTMLSlotElement',
+            "source": 'HTMLSourceElement',
+            "span": 'HTMLSpanElement',
+            "style": 'HTMLStyleElement',
+            "table": 'HTMLTableElement',
+            "tbody": 'HTMLTableSectionElement',
+            "td": 'HTMLTableCellElement',
+            "template": 'HTMLTemplateElement',
+            "textarea": 'HTMLTextAreaElement',
+            "tfoot": 'HTMLTableSectionElement',
+            "th": 'HTMLTableCellElement',
+            "thead": 'HTMLTableSectionElement',
+            "time": 'HTMLTimeElement',
+            "title": 'HTMLTitleElement',
+            "tr": 'HTMLTableRowElement',
+            "track": 'HTMLTrackElement',
+            "ul": 'HTMLUListElement',
+            "video": 'HTMLVideoElement',
+            "xmp": 'HTMLPreElement'
+        };
+        // loose def for elements that dont require any direct manipulation
+        function defineElement(name, attributes, innerGen) {
+            const extend = attributes.extends;
+            /** @type {HTMLElement} */
+            const elClass = window[elementClassNames[extend]] ?? HTMLElement;
+            let onAttributes;
+            class newElement extends elClass {
+                static observedAttributes = Object.keys(attributes)
+                    .filter(key => !key.startsWith('on') && !['extends', 'attributes'].includes(key));
+                display = null;
+                priv = {};
+                constructor() {
+                    if (extend) 
+                        return document.createElement(extend, { is: name });
+                    super();
+                    this.render();
+                    for (const [key, val] of Object.entries(attributes)) {
+                        if (key.startsWith('on')) {
+                            this.addEventListener(key.slice(2), val.bind(this));
+                            continue;
+                        }
+                        this.setAttribute(key, val);
+                    }
+                }
+                render() {
+                    if (!this.display) this.display = this.attachShadow({ mode: 'open' });
+                    this.display.innerHTML = '';
+                    innerGen.apply(this, [this.display]);
+                }
+                attributeChangedCallback(key, oldVal, newVal) {
+                    if (key in newElement.prototype) this[key] = newVal;
+                    onAttributes?.apply?.(this, [key, newVal, oldVal]);
+                }
+            }
+            for (const key in attributes) {
+                if (key.startsWith('on')) {
+                    switch (key.slice(3)) {
+                    case 'connected':
+                        newElement.prototype.connectedCallback = attributes[key];
+                        delete attributes[key];
+                        break;
+                    case 'disconnected':
+                        newElement.prototype.disconnectedCallback = attributes[key];
+                        delete attributes[key];
+                        break;
+                    case 'adopted':
+                        newElement.prototype.adoptedCallback = attributes[key];
+                        delete attributes[key];
+                        break;
+                    case 'attributes':
+                        onAttributes = attributes[key];
+                        delete attributes[key];
+                        break;
+                    }
+                    continue;
+                }
+            }
+            if (attributes.attributes) {
+                newElement.observedAttributes = attributes.attributes;
+                delete attributes.attributes;
+            }
+            if (attributes.this) {
+                Object.assign(newElement.prototype, attributes.this);
+                delete attributes.this;
+            }
+            delete attributes.extends;
+            customElements.define(name, newElement, { extends: attributes.extends });
+            return newElement;
+        }
+        function appendChildren(parent, children) {
+            children.forEach(child => {
+                if (!child) return;
+                if (Array.isArray(child))
+                    return appendChildren(parent, child);
+
+                try { parent.appendChild(child); }
+                catch (e) {
+                    parent.appendChild(document.createTextNode(String(child)));
+                }
+            });
+        }
+        /** @param {HTMLElement} el */
+        function setAttribute(el, key, val) {
+            if (val) el.setAttribute(key, typeof val === 'object' ? JSON.stringify(val) : val);
+            else el.removeAttribute(key);
+        }
+    </script>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap');
+
         html, body {
+            font-family: "Open Sans";
             padding: 0px;
             height: 100%;
         }
@@ -19,12 +191,15 @@
             height: 100%;
         }
         .background {
+            pointer-events: none;
+            user-select: none;
             object-fit: fill;
             z-index: -1;
         }
         .logon-ui {
             display: flex;
-
+            align-items: center;
+            justify-content: center;
         }
     </style>
 </head>
@@ -37,9 +212,54 @@
     </div>
     
     <script file="jsx">
-        const AccountTile = <define>
-            
+        const AccountTile = <define
+            this={{ icon: null, name: '' }}
+            icon name=""
+            on:attributes={function(key, value) { this.render() }}
+        >
+            <style>{`
+                .account {
+                    font-family: "Open Sans";
+                    text-align: center;
+                    border-radius: 1rem;
+                    padding: 1rem;
+                    border: 1px solid #FFF0;
+                    transition: all 150ms ease-out;
+                    box-shadow: 0px 0px 5px black;
+                    margin: 5px;
+                    user-select: none;
+                }
+                .account:hover {
+                    transition: all 150ms ease-in;
+                    border: 1px solid #FFF8;
+                    background-color: #FFF6;
+                    box-shadow: 0px 0px 20px black;
+                    margin-bottom: .5rem;
+                }
+                .icon {
+                    pointer-events: none;
+                    border-radius: 100%;
+                    aspect-ratio: 1 / 1;
+                    width: 6rem;
+                }
+                .label {
+                    max-width: 7rem;
+                    margin-bottom: 0;
+                }
+            `}</style>
+            <div class="account">
+                <img src={this.icon} class="icon"></img>
+                <p class="label">{this.name}</p>
+            </div>
         </define>
+
+        const loginUi = document.getElementById('login-ui');
+        const mainScreen = document.getElementById('main-screen');
+        const account = new AccountTile();
+        account.onclick = console.log;
+        account.setAttribute('name', 'PuzzlingGGG');
+        account.setAttribute('icon', 'puzzlingggg.jpg');
+        loginUi.appendChild(account);
     </script>
 </body>
 </html>
