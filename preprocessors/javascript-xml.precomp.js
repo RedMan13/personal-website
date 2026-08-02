@@ -219,7 +219,7 @@ module.exports = async function(util) {
                 gen += `["${namespace ? `${namespace}:` : ''}${key}"]: ${value 
                     ? value[0] === '{' 
                         ? value.slice(1, -1) 
-                        : '`' + value.slice(1, -1).replaceAll('`', '\\`') + '`' 
+                        : JSON.stringify(value.slice(1, -1)) 
                     : 'true'},`;
             }
             gen += `}, async function(shadow) {${makeJS({
