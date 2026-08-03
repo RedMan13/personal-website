@@ -235,7 +235,7 @@
     
     <script file="jsx">
         const AccountTile = <define
-            this={{ icon: null, name: '', password: '', selected: false }}
+            this={{ icon: null, name: '', password: '', selected: false, idx: -1 }}
             icon name=""
             on:attributes={function(key, value) { this.render() }}
         >
@@ -382,13 +382,15 @@
                             }
                             mainScreen.classList.remove('hidden');
                             loginUi.classList.add('hidden');
-                            setTimeout(() => loginUi.hidden = true, 150);
+                            setTimeout(() => loginUi.style.display = 'none', 150);
+                            loggedInto = this.idx;
                         }}
                     />
                 </div>
             </div>
         </define>
 
+        let loggedInto = -1;
         const loginUi = document.getElementById('login-ui');
         const mainScreen = document.getElementById('main-screen');
         const loginBackdrop = document.getElementById('login-backdrop');
@@ -396,6 +398,7 @@
 
         for (let i = 0; i < localStorage.accounts; i++) {
             const account = new AccountTile();
+            account.setAttribute('idx', i);
             account.setAttribute('name', localStorage.getItem(`account${i}-name`));
             account.setAttribute('icon', localStorage.getItem(`account${i}-icon`));
             account.setAttribute('password', localStorage.getItem(`account${i}-password`));
