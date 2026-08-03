@@ -180,6 +180,7 @@
         html, body {
             font-family: "Open Sans";
             padding: 0px;
+            margin: 0px;
             height: 100%;
         }
         .fullscreen {
@@ -189,6 +190,7 @@
             z-index: 0;
             width: 100%;
             height: 100%;
+            overflow: hidden;
         }
         .background {
             pointer-events: none;
@@ -200,20 +202,40 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            overflow: hidden;
+        }
+
+        .desktop, .logon-ui {
+            transition: opacity 150ms ease-out;
+            opacity: 1;
+        }
+        .hidden {
+            opacity: 0;
         }
     </style>
+    <script>
+        // setup defaults
+        if (!localStorage.hasSetup) {
+            localStorage.setItem('login-backdrop', 'joeback.svg');
+            localStorage.setItem('accounts', 1);
+            localStorage.setItem('account0-name', 'PuzzlingGGG');
+            localStorage.setItem('account0-password', 'joemama');
+            localStorage.setItem('account0-icon', 'puzzlingggg.jpg');
+            localStorage.setItem('account0-backdrop', 'joeback.svg');
+        }
+    </script>
 </head>
 <body>
-    <div id="login-ui" class="fullscreen logon-ui">
-        <img src="joeback.svg" class="fullscreen background" style="filter: blur(1.5rem);">
-    </div>
-    <div id="main-screen" class="fullscreen" hidden>
+    <div id="main-screen" class="fullscreen desktop hidden">
         <img src="joeback.svg" class="fullscreen background">
+    </div>
+    <div id="login-ui" class="fullscreen logon-ui">
+        <img id="login-backdrop" class="fullscreen background" style="filter: blur(1.5rem);">
     </div>
     
     <script file="jsx">
         const AccountTile = <define
-            this={{ icon: null, name: '' }}
+            this={{ icon: null, name: '', password: '', selected: false }}
             icon name=""
             on:attributes={function(key, value) { this.render() }}
         >
@@ -221,13 +243,16 @@
                 .account {
                     font-family: "Open Sans";
                     text-align: center;
-                    border-radius: 1rem;
+                    border-radius: .75rem;
                     padding: 1rem;
                     border: 1px solid #FFF0;
                     transition: all 150ms ease-out;
                     box-shadow: 0px 0px 5px black;
                     margin: 5px;
                     user-select: none;
+                    overflow: hidden;
+                    width: 6rem;
+                    height: 8.5rem;
                 }
                 .account:hover {
                     transition: all 150ms ease-in;
@@ -243,23 +268,139 @@
                     width: 6rem;
                 }
                 .label {
-                    max-width: 7rem;
+                    max-width: 100%;
                     margin-bottom: 0;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                }
+
+                .password {
+                    width: 100%;
+                    position: relative;
+                    box-sizing: border-box;
+                    background-color: #FFF6;
+                    border: 1px solid #FFF0;
+                    border-radius: 1rem;
+                    margin-top: .5rem;
+                    padding: .5rem;
+                    text-align: center;
+                }
+                .password-fields { display: none }
+                .selected .password-fields {
+                    display: block;
+                    width: 100%;
+                }
+                .selected {
+                    margin: 1rem;
+                    height: 11rem;
                 }
             `}</style>
-            <div class="account">
+            <div
+                on:click={e => {
+                    if (e.target.tagName === 'INPUT' || e.target.tagName === 'BUTTON') return;
+                    for (const tile of document.getElementsByTagName('account-tile')) {
+                        tile.selected = tile === this;
+                        tile.render();
+                    }
+                }}
+                class={"account" + (this.selected ? ' selected' : '')}
+            >
                 <img src={this.icon} class="icon"></img>
                 <p class="label">{this.name}</p>
+                <div class="password-fields">
+                    <input
+                        class="password"
+                        type="password"
+                        placeholder="Password"
+                        on:keydown={e => {
+                            /** @type {HTMLInputElement} */
+                            const self = e.target;
+                            if (e.key !== 'Enter') return;
+                            if (self.value !== this.password) {
+                                self.animate(
+                                    [
+                                        {
+                                            // from
+                                            backgroundColor: "#F116",
+                                            left: 0,
+                                            easing: "ease-in"
+                                        },
+                                        {
+                                            offset: 0.1,
+                                            left: '.5rem',
+                                            easing: "ease-in"
+                                        },
+                                        {
+                                            offset: 0.2,
+                                            left: '-.45rem',
+                                            easing: "ease-in"
+                                        },
+                                        {
+                                            offset: 0.3,
+                                            left: '.4rem',
+                                            easing: "ease-in"
+                                        },
+                                        {
+                                            offset: 0.4,
+                                            left: '-.35rem',
+                                            easing: "ease-in"
+                                        },
+                                        {
+                                            offset: 0.5,
+                                            left: '.3rem',
+                                            easing: "ease-in"
+                                        },
+                                        {
+                                            offset: 0.6,
+                                            left: '-.25rem',
+                                            easing: "ease-in"
+                                        },
+                                        {
+                                            offset: 0.7,
+                                            left: '.2rem',
+                                            easing: "ease-in"
+                                        },
+                                        {
+                                            offset: 0.8,
+                                            left: '-.15rem',
+                                            easing: "ease-in"
+                                        },
+                                        {
+                                            offset: 0.9,
+                                            left: '.1rem',
+                                            easing: "ease-in"
+                                        },
+                                        {
+                                            // to
+                                            backgroundColor: "#FFF6",
+                                            left: 0
+                                        }
+                                    ],
+                                    750
+                                );
+                                return;
+                            }
+                            mainScreen.classList.remove('hidden');
+                            loginUi.classList.add('hidden');
+                            setTimeout(() => loginUi.hidden = true, 150);
+                        }}
+                    />
+                </div>
             </div>
         </define>
 
         const loginUi = document.getElementById('login-ui');
         const mainScreen = document.getElementById('main-screen');
-        const account = new AccountTile();
-        account.onclick = console.log;
-        account.setAttribute('name', 'PuzzlingGGG');
-        account.setAttribute('icon', 'puzzlingggg.jpg');
-        loginUi.appendChild(account);
+        const loginBackdrop = document.getElementById('login-backdrop');
+        loginBackdrop.src = localStorage.getItem('login-backdrop');
+
+        for (let i = 0; i < localStorage.accounts; i++) {
+            const account = new AccountTile();
+            account.setAttribute('name', localStorage.getItem(`account${i}-name`));
+            account.setAttribute('icon', localStorage.getItem(`account${i}-icon`));
+            account.setAttribute('password', localStorage.getItem(`account${i}-password`));
+            loginUi.appendChild(account);
+        }
     </script>
 </body>
 </html>
