@@ -35,13 +35,7 @@ server.use(cookieParser());
 console.log('installing cors fuckawayer, body parser, and request logger');
 server.useHTTP((req, res, next) => {
     console.log(req.method, 'request to', req.path);
-    // fuck cors
-    // i fucking hate that cors is PERMANENTLY ENFORCED on webbrowsers making it so you HAVE to only use resources with cors systems
-    // even shittier, most API's wont send cors headers and most static file hosts (github-pages and vercel to be specific) WONT LET YOU change the cors options for the webpage(s)
-    // if i found a genie one of my first whishes would be "make cors nolonger enforced in browsers allowing content from none-cors compliant systems to be accessed"
-    // what even is the point on cors? what the fuck does cors even do?, be an actual pain the mother fucking ass is all it does
-    res.header('Access-Control-Allow-Origin', '*');
-    res.header('Referrer-Policy', 'unsafe-url');
+
     read(req, res, next, v => v, console.debug, {
         encoding: null,
         inflate: false,

@@ -117,6 +117,7 @@
                     innerGen.apply(this, [this.display]);
                 }
                 attributeChangedCallback(key, oldVal, newVal) {
+                    if (oldVal === newVal) return;
                     if (key in newElement.prototype) this[key] = newVal;
                     onAttributes?.apply?.(this, [key, newVal, oldVal]);
                 }
@@ -213,6 +214,7 @@
             opacity: 0;
         }
     </style>
+    <script src="/jszip.min.js"></script>
     <script>
         // setup defaults
         if (!localStorage.hasSetup) {
@@ -222,6 +224,63 @@
             localStorage.setItem('account0-password', 'joemama');
             localStorage.setItem('account0-icon', 'puzzlingggg.jpg');
             localStorage.setItem('account0-backdrop', 'joeback.svg');
+        }
+        // setup fs
+        const fs = new JSZip();
+        let savable = false;
+        try {
+            /** @type {IDBDatabase} */
+            let db;
+            const req = indexedDB.open('filesystem', 3);
+            req.onblocked = req.onerror = e => console.error(e);
+            req.onupgradeneeded = e => {
+                db = req.result;
+                db.deleteObjectStore('filesystem');
+                const object = db.createObjectStore('filesystem', { keyPath: 'unique' });
+                object.createIndex('zip-file', 'zipFile', { unique: false });
+            }
+            function read(object, key) {
+                return new Promise((resolve, reject) => {
+                    const store = db.transaction('filesystem', 'readonly').objectStore(object);
+                    const req = store.get(key);
+                    req.onsuccess = () => resolve(req.result?.zipFile);
+                    req.onerror = () => reject(req.error);
+                })
+            }
+            function write(object, key, value) {
+                return new Promise((resolve, reject) => {
+                    const store = db.transaction('filesystem', 'readwrite').objectStore(object);
+                    const req = store.put({ unique: key, zipFile: value });
+                    req.onsuccess = () => resolve(req.result);
+                    req.onerror = () => reject(req.error);
+                })
+            }
+            req.onsuccess = async e => {
+                savable = true;
+                db = req.result;
+                const zipFile = await read('filesystem', 'main-zip');
+                if (zipFile) await fs.loadAsync(zipFile, { createFolders: true });
+
+                if (!fs.folder(/^Desktop\//).length) {
+                    fs.folder('Desktop');
+                    fs.folder('Downloads');
+                    fs.folder('Documents');
+                    fs.folder('Images');
+                    fs.folder('Sounds');
+                    fs.folder('Videos');
+                    fs.file('Dekstop/Welcome.txt', 'Welcome to DorkOS! To setup your account, open settings>account and select this account. To add more accounts, go to settings>account and press "+ add account"', { comment: '?X=0&Y=0' });
+
+                }
+                const onWriteTime = async () => write('filesystem', 'main-zip', await fs.generateAsync({
+                    type: 'uint8array',
+                    compression: 'DEFLATE',
+                    compressionOptions: { level: 9 }
+                }));
+                await onWriteTime();
+                setInterval(onWriteTime, 30000)
+            }
+        } catch (err) {
+            console.error(err);
         }
     </script>
 </head>
@@ -236,7 +295,7 @@
     <script file="jsx">
         const AccountTile = <define
             this={{ icon: null, name: '', password: '', selected: false, idx: -1 }}
-            icon name=""
+            icon name="" password
             on:attributes={function(key, value) { this.render() }}
         >
             <style>{`
@@ -388,6 +447,66 @@
                     />
                 </div>
             </div>
+        </define>;
+        const WindowBorder = <define
+            x y width height title="Application" icon=""
+        >
+            <style>{`
+                
+                .window {
+                    border: 1px solid grey;
+                    display: grid;
+                    grid-template-columns: 1fr 2rem 2rem 2rem;
+                    grid-template-rows: 1rem 1fr;
+                    position: absolute;
+
+        width: 400px;
+        height: 300px;
+        left: 200px;
+        top: 200px;
+                }
+                .top-background {
+                    grid-column: 1 / 5;
+                    grid-row: 1;
+                    background: #E3E3E3;
+                }
+                .title {
+                    grid-column: 1;
+                    grid-row: 1;
+                }
+                
+                .title-button {
+                    grid-row: 1;
+                    text-align: center;
+                    border-left: 1px solid #1C1C1C;
+                }
+                .title-button img { height: 100%; }
+                .title-button:hover { filter: saturate(80%); }
+                .minimize {
+                    grid-column: 2;
+                }
+                .maximize {
+                    grid-column: 3;
+                }
+                .maximize .maximised {}
+                .close {
+                    grid-column: 4;
+                }
+
+                .content {
+                    grid-column: 1 / 5;
+                    grid-row: 3;
+                    background-color: white;
+                }
+            `}</style>
+            <div class="window">
+                <div class="top-background"></div>
+                <div class="title"></div>
+                <div class="title-button minimize"><img src="/google-material/minimize.svg"/></div>
+                <div class="title-button maximize"><img src="/google-material/maximize.svg"/></div>
+                <div class="title-button close"><img src="/google-material/close.svg"/></div>
+                <div class="content"></div>
+            </div>
         </define>
 
         let loggedInto = -1;
@@ -404,6 +523,9 @@
             account.setAttribute('password', localStorage.getItem(`account${i}-password`));
             loginUi.appendChild(account);
         }
+
+        const testWindow = new WindowBorder();
+        mainScreen.appendChild(testWindow);
     </script>
 </body>
 </html>
