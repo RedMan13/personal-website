@@ -165,7 +165,7 @@ module.exports = async function(req, res, reject, codes) {
                     .map(file => file[1]);
                 const pages = [''];
                 for (const file of sorted) {
-                    const append = `[${file}](<https://godslayerakp.serv00.net/${file.replace(/[^a-z0-9.]+/gi, '-')}>) ; `;
+                    const append = `[${file}](<https://godslayerakp.gay/${file.replace(/[^a-z0-9.]+/gi, '-')}>) ; `;
                     if ((pages.at(-1).length + append.length) >= 2000)
                         pages.push('');
                     pages[pages.length -1] += append;

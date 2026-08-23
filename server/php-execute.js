@@ -5,7 +5,7 @@ const phpEnvDefualts = {
     SERVER_SOFTWARE: 'gsa-website-builder/V2.5',
     
     // The server's hostname, DNS alias, or IP address as it would appear in self-referencing URLs.
-    SERVER_NAME: 'godslayerakp.serv00.net',
+    SERVER_NAME: 'godslayerakp.gay',
     
     // The revision of the CGI specification to which this server complies. Format: CGI/revision
     GATEWAY_INTERFACE: 'CGI/1.1',
