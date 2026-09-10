@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paint Editor</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap');
+        html { height: 100%; }
+        body {
+            margin: 0;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Open Sans' sans-serif;
+        }
+        .tools {
+            padding: 4px;
+            position: absolute;
+            left: 0;
+            top: 0;
+            display: flex;
+            gap: 2px;
+            flex-direction: column;
+            align-items: start;
+        }
+        .screen {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100vw;
+            height: 100vh;
+            background-image: url('/background-pattern.png');
+            image-rendering: pixelated;
+            overflow: hidden;
+        }
+
+        .tool {
+            height: 24px;
+            border-radius: 2px;
+        }
+        .tool.selected { border: 1px solid grey; }
+        .tool.selected:has(.controls) {
+            border-top-right-radius: 4px;
+            border-bottom-right-radius: 4px;
+        }
+
+        .controls .view {
+            content: "";
+            display: inline-block;
+            background-image: url('/google-material/expand.svg');
+            background-repeat: no-repeat;
+            background-position: center;
+            width: 12px;
+            height: 24px;
+            border-left: 1px dashed grey;
+            vertical-align: top;
+        }
+        .controls.expanded .view { background-image: url('/google-material/collapse.svg'); }
+        .controls {
+            display: inline-block;
+            height: 24px;
+            cursor: auto;
+            vertical-align: top;
+        }
+        .controls * { display: none; }
+        .controls.expanded * { display: inherit; }
+        .tool .controls { display: none; }
+        .tool.selected .controls { display: inline-block; }
+        
+        .button {
+            cursor: pointer;
+            border-radius: 2px;
+        }
+        .button:hover { background-color: #00000010; }
+        .color {
+            padding: 0;
+            padding-top: 20px;
+            border: none;
+            width: 24px;
+            height: 24px;
+            box-sizing: border-box;
+            cursor: pointer;
+            background-color: transparent;
+        }
+        /* ??? are we actually serious?? theres no official way to get rid of the border in the swatch??? */
+        .color::-moz-color-swatch,
+        .color::-webkit-color-swatch { border: none; }
+        .text {
+            box-sizing: border-box;
+            width: 48px;
+            height: 24px;
+            vertical-align: top;
+            border: 1px solid grey;
+            border-radius: 0;
+            border-top: 0;
+            border-bottom: 0;
+        }
+
+        .popunder {
+            border-radius: 8px;
+            border: 1px solid grey;
+            background-color: white;
+            position-area: bottom;
+            min-width: 144px;
+            min-height: 144px;
+            margin: 16px;
+            margin-top: 8px;
+        }
+        .arrow {
+            transform: rotate(45deg);
+            background-color: white;
+            width: 8px;
+            height: 8px;
+            border-top-left-radius: 4px;
+            border: 1px solid grey;
+            border-bottom: 0;
+            border-right: 0;
+            position: absolute;
+            position-anchor: match-parent;
+            position-area: bottom;
+        }
+    </style>
+</head>
+<body>
+    <div class="screen" id="toucher" style="background: white">
+        <canvas class="screen" id="screen"></canvas>
+        <canvas class="screen" id="overlay" style="background: none;"></canvas>
+    </div>
+    <div id="color-picker" popover="auto" class="popunder">
+        <div class="arrow"></div>    
+    </div>
+    <div class="tools">
+        <div class="tool" id="fullscreen">
+            <img class="button" src="/google-material/fullscreen.svg">
+        </div>
+        <div class="tool" name="pan">
+            <img class="button" src="/google-material/pan.svg">
+        </div>
+        <div class="selected tool" name="select">
+            <img class="button" src="/google-material/select.svg" title="Select">
+            <div class="controls expanded">
+                <img class="button" src="/google-material/copy.svg" title="Copy Selected" id="copy">
+                <img class="button" src="/google-material/cut.svg" title="Cut Selected" id="cut">
+                <img class="button" src="/google-material/paste.svg" title="Paste" id="paste">
+                <img class="button" src="/google-material/delete.svg" title="Delete Selected" id="delete" style="margin-left: 6px">
+                <div class="view" id="view-controls"></div>
+            </div>
+        </div>
+        <div class="tool" name="pencil">
+            <img class="button" src="/google-material/pencil.svg" title="Pencil">
+            <div class="controls">
+                <button
+                    class="color"
+                    id="pencil-stroke"
+                    style="background-image: url('/google-material/stroke-color.svg')"
+                    title="Stroke Color"
+                    popovertargetaction="show"
+                    popovertarget="color-picker"
+                >
+                    <div id="pencil-stroke-color-swatch"></div>
+                </button>
+                <button 
+                    class="color"
+                    id="pencil-fill"
+                    style="background-image: url('/google-material/fill-color.svg')"
+                    title="Fill Color"
+                    popovertargetaction="show"
+                    popovertarget="color-picker"
+                >
+                    <div id="pencil-fill-color-swatch"></div>
+                </button>
+                <input type="number" class="text" id="pencil-size" min="0" value="1" title="Stroke Thickness">
+                <div class="view" id="view-controls"></div>
+            </div>
+        </div>
+        <div class="tool" name="pen">
+            <img class="button" src="/google-material/pen.svg">
+            <div class="controls">
+                <input type="color" class="color" id="pen-stroke" alpha value="#000000FF" style="background-image: url('/google-material/stroke-color.svg')" title="Stroke Color">
+                <input type="color" class="color" id="pen-fill" alpha value="#00000000" style="background-image: url('/google-material/fill-color.svg')" title="Fill Color">
+                <input type="number" class="text" id="pen-size" min="0" value="1" title="Stroke Thickness">
+                <div class="view" id="view-controls"></div>
+            </div>
+        </div>
+        <div class="tool" name="erase">
+            <img class="button" src="/google-material/erase.svg">
+            <div class="controls">
+                <input type="number" class="text" id="eraser-size" min="0" value="10" title="Eraser Thickness">
+                <div class="view" id="view-controls"></div>
+            </div>
+        </div>
+        <!-- <div class="tool" name="brush">
+            <img class="button" src="/google-material/brush.svg">
+            <div class="controls">
+                <div class="view" id="view-controls"></div>
+            </div>
+        </div> -->
+    </div>
+    <script>
+        let currentTool = '';
+
+        const colorPicker = document.getElementById('color-picker');
+        const tools = document.getElementsByClassName('tool');
+        for (const tool of tools) {
+            if (!tool.getAttribute('name')) continue;
+            
+            const controls = tool.children[1];
+            const expandByDefault = controls && controls.classList.contains('expanded');
+            if (controls) {
+                const expander = controls.children.namedItem('view-controls');
+                expander.onclick = () => controls.classList.toggle('expanded');
+                if (!expandByDefault) { // if, normally, this should be collapsed, then open automatically when hovered
+                    let focusLock = false;
+                    let wantsClose = false;
+                    expander.onmouseenter = () => controls.classList.add('expanded');
+                    tool.onmouseleave = () => {
+                        if (focusLock) return wantsClose = true;
+                        wantsClose = false;
+                        colorPicker.hidePopover();
+                        controls.classList.remove('expanded');
+                    }
+                    controls.addEventListener('focusin', () => focusLock = true);
+                    controls.addEventListener('focusout', () => {
+                        focusLock = false;
+                        if (wantsClose) {
+                            colorPicker.hidePopover();
+                            controls.classList.remove('expanded');
+                            wantsClose = false;
+                        }
+                    });
+                }
+            }
+
+            const selector = tool.firstElementChild;
+            selector.onclick = () => {
+                for (const tool of tools) tool.classList.remove('selected');
+                tool.classList.add('selected');
+                if (expandByDefault)
+                    controls.classList.add('expanded');
+                currentTool = tool.getAttribute('name');
+            }
+
+            if (tool.classList.contains('selected'))
+                currentTool = tool.getAttribute('name');
+        }
+
+        const fullscreen = document.getElementById('fullscreen');
+        (fullscreen.onclick = async () => {
+            if (document.fullscreenElement)  
+                await document.exitFullscreen();
+            else
+                await document.body.requestFullscreen();
+            fullscreen.firstElementChild.src = document.fullscreenElement
+                ? '/google-material/exit-fullscreen.svg'
+                : '/google-material/fullscreen.svg';
+        })();
+        const copy = document.getElementById('copy');
+        copy.onclick = () => {
+            const data = ctx.getImageData(startX, startY, selectWidth, selectHeight);
+            clip = data;
+        }
+        const cut = document.getElementById('cut');
+        cut.onclick = () => {
+            const data = ctx.getImageData(startX, startY, selectWidth, selectHeight);
+            ctx.clearRect(startX, startY, selectWidth, selectHeight);
+            clip = data;
+        }
+        const paste = document.getElementById('paste');
+        paste.onclick = () => currentTool = 'paste';
+        const delet = document.getElementById('delete');
+        delet.onclick = () => ctx.clearRect(startX, startY, selectWidth, selectHeight);
+        const toucher = document.getElementById('toucher');
+        const overlay = document.getElementById('overlay');
+        const canvas = document.getElementById('screen');
+        overlay.width = canvas.width = canvas.clientWidth * (window.devicePixelRatio || 1);
+        overlay.height = canvas.height = canvas.clientHeight * (window.devicePixelRatio || 1);
+        /** @type {CanvasRenderingContext2D} */
+        const ctx = canvas.getContext('2d');
+        /** @type {CanvasRenderingContext2D} */
+        const otx = overlay.getContext('2d');
+
+        let panX = 0; 
+        let panY = 0;
+        let zoom = 1;
+        function draw() {
+            canvas.style.transform = `translate(${panX}px, ${panY}px) scale(${zoom})`;
+            overlay.style.transform = `translate(${panX}px, ${panY}px) scale(${zoom})`;
+
+            requestAnimationFrame(draw);
+        }; draw();
+
+        let clip = null;
+        let startX = 0;
+        let startY = 0;
+        let selectWidth = 0;
+        let selectHeight = 0;
+        let lastX = 0;
+        let lastY = 0;
+        let lastAbsX = 0;
+        let lastAbsY = 0;
+        let path = new Path2D();
+        let penIdent = -1;
+        let firstFinger = -1;
+        let secondFinger = -1;
+        let lastCenterX = 0;
+        let lastCenterY = 0;
+        let lastDistance = 0;
+        toucher.ontouchstart = e => {
+            e.preventDefault();
+            let firstTouch;
+            let secondTouch;
+            for (const touch of e.touches) {
+                if (touch.identifier === firstFinger) { firstTouch = touch; continue; }
+                if (touch.identifier === secondFinger) { secondTouch = touch; continue; }
+                if (touch.force === 1) {
+                    if (firstFinger < 0) {
+                        firstFinger = touch.identifier;
+                        firstTouch = touch;
+                        continue;
+                    }
+                    if (secondFinger < 0) {
+                        secondFinger = touch.identifier;
+                        secondTouch = touch;
+                        continue;
+                    }
+                    continue;
+                }
+                penIdent = touch.identifier;
+                const x = Math.floor(((((touch.clientX - panX) - (canvas.clientWidth / 2)) / zoom) + (canvas.clientWidth / 2)) * window.devicePixelRatio);
+                const y = Math.floor(((((touch.clientY - panY) - (canvas.clientHeight / 2)) / zoom) + (canvas.clientHeight / 2)) * window.devicePixelRatio);
+                switch (currentTool) {
+                case 'paste':
+                    ctx.putImageData(clip, x,y);
+                    break;
+                case 'pan':
+                    lastX = touch.clientX;
+                    lastY = touch.clientY;
+                    break;
+                case 'select':
+                    startX = x;
+                    startY = y;
+                    selectWidth = 0;
+                    selectHeight = 0;
+                    otx.clearRect(0,0, canvas.width, canvas.height);
+                    break;
+                case 'pencil':
+                    ctx.strokeStyle = document.getElementById('pencil-stroke').value;
+                    ctx.fillStyle = document.getElementById('pencil-fill').value;
+                    ctx.lineWidth = document.getElementById('pencil-size').value * touch.force;
+                    ctx.lineCap = 'round';
+                    otx.clearRect(0,0, canvas.width, canvas.height);
+                    path.moveTo(x,y);
+                    ctx.beginPath();
+                    ctx.moveTo(x,y);
+                    ctx.lineTo(x,y +1);
+                    ctx.stroke();
+                    otx.fill(path);
+                    break;
+                case 'pen': 
+                    ctx.strokeStyle = document.getElementById('pen-stroke').value;
+                    ctx.fillStyle = document.getElementById('pen-fill').value;
+                    ctx.lineWidth = document.getElementById('pen-size').value;
+                    ctx.lineCap = 'round';
+                    path.moveTo(x,y);
+                    path.lineTo(x,y +1);
+                    ctx.stroke(path);
+                    ctx.fill(path);
+                    break;
+                }
+                lastX = x;
+                lastY = y;
+            }
+            
+            if (!firstTouch || !secondTouch) return;
+            lastCenterX = (firstTouch.clientX + secondTouch.clientX) / 2;
+            lastCenterY = (firstTouch.clientY + secondTouch.clientY) / 2;
+            const diffX = firstTouch.clientX - secondTouch.clientX;
+            const diffY = firstTouch.clientY - secondTouch.clientY;
+            lastDistance = Math.sqrt((diffX * diffX) + (diffY * diffY));
+        }
+        toucher.ontouchmove = e => {
+            e.preventDefault();
+            let firstTouch;
+            let secondTouch;
+            for (const touch of e.touches) {
+                if (touch.identifier === firstFinger) { firstTouch = touch; continue; }
+                if (touch.identifier === secondFinger) { secondTouch = touch; continue; }
+                if (touch.identifier !== penIdent) continue;
+                const x = Math.floor(((((touch.clientX - panX) - (canvas.clientWidth / 2)) / zoom) + (canvas.clientWidth / 2)) * window.devicePixelRatio);
+                const y = Math.floor(((((touch.clientY - panY) - (canvas.clientHeight / 2)) / zoom) + (canvas.clientHeight / 2)) * window.devicePixelRatio);
+
+                switch (currentTool) {
+                case 'paste':
+                    ctx.putImageData(clip, x,y);
+                    break;
+                case 'pan':
+                    panX += touch.clientX - lastAbsX;
+                    panY += touch.clientY - lastAbsY;
+                    lastAbsX = touch.clientX;
+                    lastAbsY = touch.clientY;
+                    break;
+                case 'select':
+                    otx.clearRect(0,0, canvas.width, canvas.height);
+                    otx.fillStyle = '#03B6FC1F';
+                    otx.setLineDash([4,4]);
+                    otx.strokeStyle = 'grey';
+                    otx.lineWidth = 1;
+                    selectWidth = x - startX;
+                    selectHeight = y - startY;
+                    otx.fillRect(startX, startY, selectWidth, selectHeight);
+                    otx.strokeRect(startX +1, startY +1, selectWidth -2, selectHeight -2);
+                    break;
+                case 'pencil':
+                    ctx.lineWidth = document.getElementById('pencil-size').value * touch.force;
+                    ctx.moveTo(lastX, lastY);
+                    ctx.lineTo(x,y);
+                    path.lineTo(x,y);
+                    ctx.stroke();
+                    ctx.fill(path);
+                    break;
+                case 'pen':
+                    path.lineTo(x,y);
+                    ctx.stroke(path);
+                    ctx.fill(path);
+                    break;
+                }
+                lastX = x;
+                lastY = y;
+            }
+            
+            if (!firstTouch || !secondTouch) return;
+            const centerX = (firstTouch.clientX + secondTouch.clientX) / 2;
+            const centerY = (firstTouch.clientY + secondTouch.clientY) / 2;
+            const diffX = firstTouch.clientX - secondTouch.clientX;
+            const diffY = firstTouch.clientY - secondTouch.clientY;
+            const distance = Math.sqrt((diffX * diffX) + (diffY * diffY));
+            const speedX = centerX - lastCenterX;
+            const speedY = centerY - lastCenterY;
+            zoom += (distance - lastDistance) / 100;
+            panX += speedX;
+            panY += speedY;
+            lastCenterX = centerX;
+            lastCenterY = centerY;
+            lastDistance = distance;
+        }
+        toucher.onmousemove = e => {
+            const x = Math.floor(((((e.clientX - panX) - (canvas.clientWidth / 2)) / zoom) + (canvas.clientWidth / 2)) * window.devicePixelRatio);
+            const y = Math.floor(((((e.clientY - panY) - (canvas.clientHeight / 2)) / zoom) + (canvas.clientHeight / 2)) * window.devicePixelRatio);
+            switch (currentTool) {
+            case 'paste':
+                otx.clearRect(0,0, canvas.width, canvas.height);
+                otx.putImageData(clip, x,y);
+                break;
+            }
+        }
+        toucher.ontouchend = e => {
+            e.preventDefault();
+            for (const touch of e.changedTouches) {
+                if (touch.identifier === firstFinger) { firstFinger = -1; continue; }
+                if (touch.identifier === secondFinger) { secondFinger = -1; continue; }
+                if (touch.identifier !== penIdent) continue;
+                const x = Math.floor(((((touch.clientX - panX) - (canvas.clientWidth / 2)) / zoom) + (canvas.clientWidth / 2)) * window.devicePixelRatio);
+                const y = Math.floor(((((touch.clientY - panY) - (canvas.clientHeight / 2)) / zoom) + (canvas.clientHeight / 2)) * window.devicePixelRatio);
+
+                penIdent = -1;
+                switch (currentTool) {
+                case 'paste':
+                    currentTool = 'select';
+                    otx.clearRect(0,0, canvas.width, canvas.height);
+                    break;
+                case 'pencil': 
+                    ctx.strokeStyle = document.getElementById('pencil-stroke').value;
+                    ctx.fillStyle = document.getElementById('pencil-fill').value;
+                    ctx.lineWidth = document.getElementById('pencil-size').value * touch.force;
+                    ctx.moveTo(lastX, lastY);
+                    ctx.lineTo(x,y);
+                    path.lineTo(x,y);
+                    ctx.stroke();
+                    ctx.fill(path);
+                    path = new Path2D();
+                    break;
+                case 'pen': path = new Path2D(); break;
+                }
+                lastX = x;
+                lastY = y;
+            }
+        }
+        // canvas.ontouchcancel = e => {
+        //     e.preventDefault();
+        // }
+    </script>
+</body>
+</html>
