@@ -4,6 +4,172 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Paint Editor</title>
+    <script>
+        const authorized = !!performance.getEntriesByType('navigation')[0].serverTiming.find(v => v.name === 'authorized');
+
+        const elementClassNames = {
+            "a": 'HTMLAnchorElement',
+            "area": 'HTMLAreaElement',
+            "audio": 'HTMLAudioElement',
+            "base": 'HTMLBaseElement',
+            "blockquote": 'HTMLQuoteElement',
+            "body": 'HTMLBodyElement',
+            "br": 'HTMLBRElement',
+            "button": 'HTMLButtonElement',
+            "canvas": 'HTMLCanvasElement',
+            "caption": 'HTMLTableCaptionElement',
+            "col": 'HTMLTableColElement',
+            "colgroup": 'HTMLTableColElement',
+            "data": 'HTMLDataElement',
+            "datalist": 'HTMLDataListElement',
+            "del": 'HTMLModElement',
+            "details": 'HTMLDetailsElement',
+            "dialog": 'HTMLDialogElement',
+            "dir": 'HTMLDirectoryElement',
+            "div": 'HTMLDivElement',
+            "dl": 'HTMLDListElement',
+            "embed": 'HTMLEmbedElement',
+            "fencedframe": 'HTMLUnknownElement',
+            "fieldset": 'HTMLFieldSetElement',
+            "font": 'HTMLFontElement',
+            "form": 'HTMLFormElement',
+            "frame": 'HTMLFrameElement',
+            "frameset": 'HTMLFrameSetElement',
+            "h1": 'HTMLHeadingElement',
+            "head": 'HTMLHeadElement',
+            "hr": 'HTMLHRElement',
+            "html": 'HTMLHtmlElement',
+            "iframe": 'HTMLIFrameElement',
+            "img": 'HTMLImageElement',
+            "input": 'HTMLInputElement',
+            "ins": 'HTMLModElement',
+            "label": 'HTMLLabelElement',
+            "legend": 'HTMLLegendElement',
+            "li": 'HTMLLIElement',
+            "link": 'HTMLLinkElement',
+            "map": 'HTMLMapElement',
+            "marquee": 'HTMLMarqueeElement',
+            "menu": 'HTMLMenuElement',
+            "meta": 'HTMLMetaElement',
+            "meter": 'HTMLMeterElement',
+            "object": 'HTMLObjectElement',
+            "ol": 'HTMLOListElement',
+            "optgroup": 'HTMLOptGroupElement',
+            "option": 'HTMLOptionElement',
+            "output": 'HTMLOutputElement',
+            "p": 'HTMLParagraphElement',
+            "param": 'HTMLParamElement',
+            "picture": 'HTMLPictureElement',
+            "portal": 'HTMLUnknownElement',
+            "pre": 'HTMLPreElement',
+            "progress": 'HTMLProgressElement',
+            "q": 'HTMLQuoteElement',
+            "script": 'HTMLScriptElement',
+            "select": 'HTMLSelectElement',
+            "slot": 'HTMLSlotElement',
+            "source": 'HTMLSourceElement',
+            "span": 'HTMLSpanElement',
+            "style": 'HTMLStyleElement',
+            "table": 'HTMLTableElement',
+            "tbody": 'HTMLTableSectionElement',
+            "td": 'HTMLTableCellElement',
+            "template": 'HTMLTemplateElement',
+            "textarea": 'HTMLTextAreaElement',
+            "tfoot": 'HTMLTableSectionElement',
+            "th": 'HTMLTableCellElement',
+            "thead": 'HTMLTableSectionElement',
+            "time": 'HTMLTimeElement',
+            "title": 'HTMLTitleElement',
+            "tr": 'HTMLTableRowElement',
+            "track": 'HTMLTrackElement',
+            "ul": 'HTMLUListElement',
+            "video": 'HTMLVideoElement',
+            "xmp": 'HTMLPreElement'
+        };
+        // loose def for elements that dont require any direct manipulation
+        function defineElement(name, attributes, innerGen) {
+            const extend = attributes.extends;
+            /** @type {HTMLElement} */
+            const elClass = window[elementClassNames[extend]] ?? HTMLElement;
+            let onAttributes;
+            class newElement extends elClass {
+                static observedAttributes = Object.keys(attributes)
+                    .filter(key => !key.startsWith('on') && !['extends', 'attributes'].includes(key));
+                display = null;
+                priv = {};
+                constructor() {
+                    if (extend) 
+                        return document.createElement(extend, { is: name });
+                    super();
+                    if (!this.display) this.display = this.attachShadow({ mode: 'open' });
+                    innerGen.apply(this, [this.display]);
+                    for (const [key, val] of Object.entries(attributes)) {
+                        if (key.startsWith('on')) {
+                            this.addEventListener(key.slice(2), val.bind(this));
+                            continue;
+                        }
+                        this.setAttribute(key, val);
+                    }
+                }
+                attributeChangedCallback(key, oldVal, newVal) {
+                    onAttributes?.apply?.(this, [key, oldVal, newVal]);
+                    if (key in newElement.prototype) return;
+                    this[key] = newVal;
+                }
+            }
+            for (const key in attributes) {
+                if (key.startsWith('on')) {
+                    switch (key.slice(3)) {
+                    case 'connected':
+                        newElement.prototype.connectedCallback = attributes[key];
+                        delete attributes[key];
+                        break;
+                    case 'disconnected':
+                        newElement.prototype.disconnectedCallback = attributes[key];
+                        delete attributes[key];
+                        break;
+                    case 'adopted':
+                        newElement.prototype.adoptedCallback = attributes[key];
+                        delete attributes[key];
+                        break;
+                    case 'attributes':
+                        onAttributes = attributes[key];
+                        delete attributes[key];
+                        break;
+                    }
+                    continue;
+                }
+            }
+            if (attributes.attributes) {
+                newElement.observedAttributes = attributes.attributes;
+                delete attributes.attributes;
+            }
+            if (attributes.this) {
+                Object.assign(newElement.prototype, attributes.this);
+                delete attributes.this;
+            }
+            delete attributes.extends;
+            customElements.define(name, newElement, { extends: attributes.extends });
+            return newElement;
+        }
+        function appendChildren(parent, children) {
+            children.forEach(child => {
+                if (!child) return;
+                if (Array.isArray(child))
+                    return appendChildren(parent, child);
+
+                try { parent.appendChild(child); }
+                catch (e) {
+                    parent.appendChild(document.createTextNode(String(child)));
+                }
+            });
+        }
+        /** @param {HTMLElement} el */
+        function setAttribute(el, key, val) {
+            if (val) el.setAttribute(key, typeof val === 'object' ? JSON.stringify(val) : val);
+            else el.removeAttribute(key);
+        }
+    </script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap');
         html { height: 100%; }
@@ -22,6 +188,7 @@
             gap: 2px;
             flex-direction: column;
             align-items: start;
+            pointer-events: none;
         }
         .screen {
             position: absolute;
@@ -37,6 +204,7 @@
         .tool {
             height: 24px;
             border-radius: 2px;
+            pointer-events: all;
         }
         .tool.selected { border: 1px solid grey; }
         .tool.selected:has(.controls) {
@@ -82,9 +250,6 @@
             cursor: pointer;
             background-color: transparent;
         }
-        /* ??? are we actually serious?? theres no official way to get rid of the border in the swatch??? */
-        .color::-moz-color-swatch,
-        .color::-webkit-color-swatch { border: none; }
         .text {
             box-sizing: border-box;
             width: 48px;
@@ -106,18 +271,19 @@
             margin: 16px;
             margin-top: 8px;
         }
-        .arrow {
-            transform: rotate(45deg);
-            background-color: white;
-            width: 8px;
-            height: 8px;
-            border-top-left-radius: 4px;
-            border: 1px solid grey;
-            border-bottom: 0;
-            border-right: 0;
-            position: absolute;
-            position-anchor: match-parent;
-            position-area: bottom;
+
+        .color-slider {
+            width: 100%;
+            height: 24px;
+            background-image: url('/background-pattern.png');
+            background-size: 48px auto;
+            image-rendering: pixelated;
+        }
+        .color-slider * {
+            border: 1px solid #0000007F;
+            height: 100%;
+            box-sizing: border-box;
+            width: 4px;
         }
     </style>
 </head>
@@ -126,15 +292,20 @@
         <canvas class="screen" id="screen"></canvas>
         <canvas class="screen" id="overlay" style="background: none;"></canvas>
     </div>
+
     <div id="color-picker" popover="auto" class="popunder">
-        <div class="arrow"></div>    
     </div>
+    <script file="jsx">
+        const colorPicker = document.getElementById('color-picker');
+        colorPicker.appendChild(<div class="color-slider"><div></div></div>);
+    </script>
+
     <div class="tools">
         <div class="tool" id="fullscreen">
             <img class="button" src="/google-material/fullscreen.svg">
         </div>
         <div class="tool" name="pan">
-            <img class="button" src="/google-material/pan.svg">
+            <img class="button" src="/google-material/pan-handle.svg">
         </div>
         <div class="selected tool" name="select">
             <img class="button" src="/google-material/select.svg" title="Select">
@@ -199,7 +370,6 @@
     <script>
         let currentTool = '';
 
-        const colorPicker = document.getElementById('color-picker');
         const tools = document.getElementsByClassName('tool');
         for (const tool of tools) {
             if (!tool.getAttribute('name')) continue;
@@ -251,7 +421,7 @@
             else
                 await document.body.requestFullscreen();
             fullscreen.firstElementChild.src = document.fullscreenElement
-                ? '/google-material/exit-fullscreen.svg'
+                ? '/google-material/halfscreen.svg'
                 : '/google-material/fullscreen.svg';
         })();
         const copy = document.getElementById('copy');
