@@ -1,0 +1,49 @@
+<!TEMPLATE /cardpage.html>
+<head>
+    <title>Clock Calibration Helper</title>
+</head>
+<body>
+    <canvas id="view" style="width: 100%; height: 360px;"></canvas>
+    <script>
+        const view = document.getElementById('view');
+        /** @type {CanvasRenderingContext2D} */
+        const ctx = view.getContext('2d');
+
+        let t = 0;
+        let x = 0;
+        let y = 0;
+        navigator.mediaDevices
+            .getUserMedia({ audio: true, video: false })
+            .then(stream => {
+                const context = new AudioContext();
+                const latchTime = context.sampleRate * 0.02;
+                const coolOff = context.sampleRate * 0.2;
+                let coolDown = -1;
+                let latchedTil = -1;
+                view.height = context.sampleRate;
+                view.width = 100;
+                const src = context.createMediaStreamSource(stream);
+                const node = context.createScriptProcessor();
+                node.onaudioprocess = e => {
+                    const total = e.inputBuffer.getChannelData(0);
+                    for (let i = 1; i < e.inputBuffer.numberOfChannels; i++) {
+                        const data = e.inputBuffer.getChannelData(i);
+                        for (let j = 0; j < data.length; j++)
+                            total[j] += data[j];
+                    }
+                    for (let i = 0; i < total.length; i++) {
+                        total[i] /= e.inputBuffer.numberOfChannels;
+                        if (Math.abs(total[i] / 2) > 0.03 && t > coolDown) { latchedTil = t + latchTime; coolDown = t + coolOff; }
+                        if (t < latchedTil) ctx.fillStyle = '#000000';
+                        else ctx.fillStyle = '#FFFFFF';
+                        if (++y >= view.height) { y = 0; x++; }
+                        if (x > view.width) x = 0;
+                        ctx.fillRect(x,y, 1,1);
+                        t++;
+                    }
+                }
+                src.connect(node);
+                node.connect(context.destination);
+            });
+    </script>
+</body>
