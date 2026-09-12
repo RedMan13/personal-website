@@ -33,7 +33,10 @@
                     }
                     for (let i = 0; i < total.length; i++) {
                         total[i] /= e.inputBuffer.numberOfChannels;
-                        if (Math.abs(total[i] / 2) > 0.03 && t > coolDown) { latchedTil = t + latchTime; coolDown = t + coolOff; }
+                        if (Math.abs(total[i] / 2) > 0.03 && t > coolDown) {
+                            latchedTil = t + latchTime;
+                            coolDown = t + coolOff;
+                        }
                         if (t < latchedTil) ctx.fillStyle = '#000000';
                         else ctx.fillStyle = '#FFFFFF';
                         if (++y >= view.height) { y = 0; x++; }
