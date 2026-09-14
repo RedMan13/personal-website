@@ -712,8 +712,8 @@
         const layerContainer = document.getElementById('layers');
         const layers = [...layerContainer.children];
         window.devicePixelRatio ||= 1;
-        let width = window.innerWidth * window.devicePixelRatio;
-        let height = window.innerHeight * window.devicePixelRatio;
+        let width = window.innerWidth;
+        let height = window.innerHeight;
         let currentLayer = 0;
         const zoomViewer = document.getElementById('zoom-viewer');
         function resize(w,h, xAlign = 'center', yAlign = 'center') {
