@@ -7,3 +7,4 @@ README\.md
 .*tmp.*
 server
 app.js
+\.vscode

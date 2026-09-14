@@ -196,20 +196,39 @@
             top: 0;
             width: 100vw;
             height: 100vh;
-            background-image: url('/background-pattern.png');
             image-rendering: pixelated;
             overflow: hidden;
         }
+        .overlay {
+            position: absolute;
+            left: 0;
+            top: 0;
+        }
+        .layers {
+            position: absolute;
+            left: 0;
+            top: 0;
+            background-image: url('/background-pattern.png');
+        }
+        .layers * { display: block; }
         .zoom-view {
             width: 100px;
             height: 100px;
             image-rendering: pixelated;
             overflow: hidden;
             border-radius: 100%;
-            border: 1px solid grey;
+            border: 4px solid grey;
             position: absolute;
             transform: translate(-50%, -50%); 
             pointer-events: none;
+        }
+        .zoom-view .sight {
+            width: 4px;
+            height: 4px;
+            border: 1px solid black;
+            position: relative;
+            left: calc(50% - 3px);
+            bottom: calc(50% + 7px);
         }
 
         .tool {
@@ -318,21 +337,40 @@
             left: -11px;
             top: 23px;
         }
+        .color-history {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, 24px);
+            grid-template-rows: repeat(2, 24px);
+        }
     </style>
+
+    <script src="/jszip.min.js"></script>
 </head>
 <body>
     <div class="screen" id="toucher" style="background: white">
-        <canvas class="screen" id="screen"></canvas>
-        <canvas class="screen" id="overlay" style="background: none;"></canvas>
+        <div class="layers" id="layers">
+            <canvas></canvas>
+        </div>
+        <canvas class="overlay" id="overlay" style="background: none;"></canvas>
     </div>
-    <canvas class="zoom-view" id="zoom-viewer" width="25" height="25"></canvas>
+    <div class="zoom-view" id="zoom-viewer" hidden>
+        <canvas style="width:100%" width="25" height="25"></canvas>
+        <div class="sight"></div>
+    </div>
 
     <div id="color-picker" popover="auto" class="popunder">
-        <img class="button" src="/google-material/color-picker.svg" id="pick-color">
+        <div id="color-history" class="color-history">
+            <img class="button" src="/google-material/color-picker.svg" safe="true" id="pick-color">
+        </div>
     </div>
     <script file="jsx">
+        const colorHistory = document.getElementById('color-history');
         const pickColor = document.getElementById('pick-color');
-        pickColor.onclick = () => { currentTool = 'color-picker'; }
+        pickColor.onclick = () => {
+            currentTool = 'color-picker';
+            zoomViewer.hidden = false;
+            colorPicker.hidePopover();
+        }
 
         const stopCount = 8;
         const colorPicker = document.getElementById('color-picker');
@@ -380,7 +418,7 @@
             document.addEventListener('touchmove', mouseMove);
             document.addEventListener('touchend', () => held = false);
             document.addEventListener('mouseup', () => held = false);
-            colorPicker.appendChild(sliderBody);
+            colorPicker.prepend(sliderBody);
             
             return {
                 get() {
@@ -398,16 +436,20 @@
             }
         }
 
-        const l = createColorSlider(0, 100, 100, v => `oklab(${v}% ${a.get()}% ${b.get()}% / ${A.get()}%)`);
-        const a = createColorSlider(-100, 100, 0, v => `oklab(${l.get()}% ${v}% ${b.get()}% / ${A.get()}%)`);
-        const b = createColorSlider(-100, 100, 0, v => `oklab(${l.get()}% ${a.get()}% ${v}% / ${A.get()}%)`);
         const A = createColorSlider(0, 100, 100, v => `oklab(${l.get()}% ${a.get()}% ${b.get()}% / ${v}%)`);
+        const b = createColorSlider(-100, 100, 0, v => `oklab(${l.get()}% ${a.get()}% ${v}% / ${A.get()}%)`);
+        const a = createColorSlider(-100, 100, 0, v => `oklab(${l.get()}% ${v}% ${b.get()}% / ${A.get()}%)`);
+        const l = createColorSlider(0, 100, 100, v => `oklab(${v}% ${a.get()}% ${b.get()}% / ${A.get()}%)`);
 
         colorPicker.onbeforetoggle = e => {
+            if (!e.source?.firstElementChild) return;
             targetSwatch = e.source?.firstElementChild;
-            if (!targetSwatch) return;
         }
-        colorPicker.ontoggle = () => {
+        colorPicker.ontoggle = e => {
+            if (e.newState === 'closed') {
+                pickColor.after(<div style={`background-color: ${currentColor()}`}></div>);
+                return;
+            }
             if (!targetSwatch) return;
             const color = targetSwatch.style.backgroundColor;
             if (!color.startsWith('oklab')) return;
@@ -424,11 +466,16 @@
     </script>
 
     <div class="tools">
-        <div class="tool" id="fullscreen">
-            <img class="button" src="/google-material/fullscreen.svg">
+        <div class="selected tool" style="margin-bottom: 6px;">
+            <img class="button" id="fullscreen" src="/google-material/fullscreen.svg" title="Fullscreen">
+            <input type="text" class="text" id="image-name" value="image" title="Image Name" style="margin-left: 6px">
+            <img class="button" id="save" src="/google-material/save.svg" title="Save Workspace">
+            <img class="button" id="export" src="/google-material/export.svg" title="Export Image">
+            <img class="button" id="load" src="/google-material/load.svg" title="Load Image">
+            <img class="button" id="resize" src="/google-material/resize.svg" title="Resize Workspace" style="margin-left: 6px">
         </div>
         <div class="tool" name="pan">
-            <img class="button" src="/google-material/pan-handle.svg">
+            <img class="button" src="/google-material/pan-handle.svg" title="Pan">
         </div>
         <div class="selected tool" name="select">
             <img class="button" src="/google-material/select.svg" title="Select">
@@ -468,7 +515,7 @@
             </div>
         </div>
         <div class="tool" name="pen">
-            <img class="button" src="/google-material/pen.svg">
+            <img class="button" src="/google-material/pen.svg" title="Pen">
             <div class="controls">
                 <button
                     class="color"
@@ -495,7 +542,7 @@
             </div>
         </div>
         <div class="tool" name="erase">
-            <img class="button" src="/google-material/erase.svg">
+            <img class="button" src="/google-material/erase.svg" title="Eraser">
             <div class="controls">
                 <input type="number" class="text" id="eraser-size" min="0" value="10" title="Eraser Thickness">
                 <div class="view" id="view-controls"></div>
@@ -508,6 +555,10 @@
             </div>
         </div> -->
     </div>
+
+    <a id="download" style="display: none"></a>
+    <input id="import" type="file" accept="image/*,.pif" style="display: none">
+
     <script>
         let currentTool = '';
 
@@ -524,14 +575,15 @@
                     let focusLock = false;
                     let wantsClose = false;
                     expander.onmouseenter = () => controls.classList.add('expanded');
-                    tool.onmouseleave = () => {
+                    tool.onmouseleave = e => {
                         if (focusLock) return wantsClose = true;
                         wantsClose = false;
                         // colorPicker.hidePopover();
                         controls.classList.remove('expanded');
                     }
                     controls.addEventListener('focusin', () => focusLock = true);
-                    controls.addEventListener('focusout', () => {
+                    controls.addEventListener('focusout', e => {
+                        if (e.rangeParent.id === 'color-picker') return;
                         focusLock = false;
                         if (wantsClose) {
                             // colorPicker.hidePopover();
@@ -544,11 +596,15 @@
 
             const selector = tool.firstElementChild;
             selector.onclick = () => {
-                for (const tool of tools) tool.classList.remove('selected');
+                for (const tool of tools) {
+                    if (!tool.getAttribute('name')) continue;
+                    tool.classList.remove('selected');
+                }
                 tool.classList.add('selected');
                 if (expandByDefault)
                     controls.classList.add('expanded');
                 currentTool = tool.getAttribute('name');
+                zoomViewer.hidden = true;
             }
 
             if (tool.classList.contains('selected'))
@@ -565,15 +621,77 @@
                 ? '/google-material/halfscreen.svg'
                 : '/google-material/fullscreen.svg';
         })();
+        const save = document.getElementById('save');
+        save.onclick = async () => {
+            const zip = new JSZip();
+            const promises = [];
+            for (let i = 0; i < layers.length; i++)
+                promises.push(new Promise(r => 
+                    layers[i].toBlob(blob => r(zip.file(`${i}.png`, blob))))
+                );
+            await Promise.all(promises);
+
+            const data = await zip.generateAsync({
+                type: 'blob', 
+                mimeType: 'application/gsa-paint-file',
+                compression: 'DEFLATE',
+                compressionOptions: { level: 9 }
+            });
+            const url = URL.createObjectURL(data);
+            download.href = url; download.download = imageName.value + '.pif';
+            download.click();
+            URL.revokeObjectURL(url);
+        }
+        const makeImage = document.getElementById('export');
+        makeImage.onclick = async () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            for (const layer of layers)
+                ctx.drawImage(layer, 0,0);
+            canvas.toBlob(data => {
+                const url = URL.createObjectURL(data);
+                download.href = url; download.download = imageName.value;
+                download.click();
+                URL.revokeObjectURL(url);
+            });
+        }
+        const load = document.getElementById('load');
+        load.onclick = async () => importFile.click();
+        const importFile = document.getElementById('import');
+        importFile.onchange = () => {
+            const file = importFile.files[0];
+            imageName.value = file.name.split('.').slice(0, -1).join('.');
+            const image = new Image();
+            image.onload = () => {
+                layers.forEach(layer => layer.remove());
+                layers.splice(0, layers.length);
+                currentLayer = 0;
+
+                const canvas = document.createElement('canvas');
+                layerContainer.appendChild(canvas);
+                layers.push(canvas);
+                resize(image.width, image.height);
+                const ctx = canvas.getContext('2d');
+
+                ctx.drawImage(image, 0,0);
+            }
+            image.src = URL.createObjectURL(file);
+        }
         const copy = document.getElementById('copy');
         copy.onclick = () => {
-            otx.clearRect(0,0, canvas.width, canvas.height);
+            /** @type {CanvasRenderingContext2D} */
+            const ctx = layers[currentLayer].getContext('2d');
+            otx.clearRect(0,0, overlay.width, overlay.height);
             const data = ctx.getImageData(startX, startY, selectWidth, selectHeight);
             clip = data;
         }
         const cut = document.getElementById('cut');
         cut.onclick = () => {
-            otx.clearRect(0,0, canvas.width, canvas.height);
+            /** @type {CanvasRenderingContext2D} */
+            const ctx = layers[currentLayer].getContext('2d');
+            otx.clearRect(0,0, overlay.width, overlay.height);
             const data = ctx.getImageData(startX, startY, selectWidth, selectHeight);
             ctx.clearRect(startX, startY, selectWidth, selectHeight);
             clip = data;
@@ -582,27 +700,58 @@
         paste.onclick = () => currentTool = 'paste';
         const delet = document.getElementById('delete');
         delet.onclick = () => {
-            otx.clearRect(0,0, canvas.width, canvas.height);
+            /** @type {CanvasRenderingContext2D} */
+            const ctx = layers[currentLayer].getContext('2d');
+            otx.clearRect(0,0, overlay.width, overlay.height);
             ctx.clearRect(startX, startY, selectWidth, selectHeight);
         }
+        const imageName = document.getElementById('image-name');
+        const download = document.getElementById('download');
         const toucher = document.getElementById('toucher');
         const overlay = document.getElementById('overlay');
-        const canvas = document.getElementById('screen');
+        const layerContainer = document.getElementById('layers');
+        const layers = [...layerContainer.children];
+        window.devicePixelRatio ||= 1;
+        let width = window.innerWidth * window.devicePixelRatio;
+        let height = window.innerHeight * window.devicePixelRatio;
+        let currentLayer = 0;
         const zoomViewer = document.getElementById('zoom-viewer');
-        overlay.width = canvas.width = canvas.clientWidth * (window.devicePixelRatio || 1);
-        overlay.height = canvas.height = canvas.clientHeight * (window.devicePixelRatio || 1);
-        /** @type {CanvasRenderingContext2D} */
-        const ctx = canvas.getContext('2d');
+        function resize(w,h, xAlign = 'center', yAlign = 'center') {
+            width = overlay.width = w;
+            height = overlay.height = h;
+            for (const layer of layers) {
+                const ctx = layer.getContext('2d');
+                const data = ctx.getImageData(0,0, layer.width, layer.height);
+                layer.width = w;
+                layer.height = h;
+
+                let x = 0;
+                let y = 0;
+                switch (xAlign) {
+                case 'right': x = layer.width - data.width; break;
+                case 'center': x = (layer.width - data.width) / 2; break;
+                }
+                switch (yAlign) {
+                case 'right': y = layer.height - data.height; break;
+                case 'center': y = (layer.height - data.height) / 2; break;
+                }
+                ctx.putImageData(data, x,y);
+            }
+        }
+        resize(width, height);
         /** @type {CanvasRenderingContext2D} */
         const otx = overlay.getContext('2d');
         /** @type {CanvasRenderingContext2D} */
-        const ztx = zoomViewer.getContext('2d');
+        const ztx = zoomViewer.firstElementChild.getContext('2d');
+        let backgroundPattern = 'transparent';
+        const backgroundImage = new Image();
+        backgroundImage.src = '/background-pattern.png';
 
         let panX = 0; 
         let panY = 0;
         let zoom = 1;
         function draw() {
-            canvas.style.transform = `translate(${panX}px, ${panY}px) scale(${zoom})`;
+            layerContainer.style.transform = `translate(${panX}px, ${panY}px) scale(${zoom})`;
             overlay.style.transform = `translate(${panX}px, ${panY}px) scale(${zoom})`;
 
             requestAnimationFrame(draw);
@@ -645,50 +794,7 @@
                     continue;
                 }
                 penIdent = touch.identifier;
-                const x = Math.floor(((((touch.clientX - panX) - (canvas.clientWidth / 2)) / zoom) + (canvas.clientWidth / 2)) * window.devicePixelRatio);
-                const y = Math.floor(((((touch.clientY - panY) - (canvas.clientHeight / 2)) / zoom) + (canvas.clientHeight / 2)) * window.devicePixelRatio);
-                switch (currentTool) {
-                case 'paste':
-                    ctx.putImageData(clip, x,y);
-                  
-            otx.clearRect(0,0, canvas.width, canvas.height);  break;
-                case 'pan':
-                    lastX = touch.clientX;
-                    lastY = touch.clientY;
-                    break;
-                case 'select':
-                    startX = x;
-                    startY = y;
-                    selectWidth = 0;
-                    selectHeight = 0;
-                    otx.clearRect(0,0, canvas.width, canvas.height);
-                    break;
-                case 'pencil':
-                    ctx.strokeStyle = document.getElementById('pencil-stroke').firstElementChild.style.backgroundColor;
-                    otx.fillStyle = document.getElementById('pencil-fill').firstElementChild.style.backgroundColor;
-                    ctx.lineWidth = document.getElementById('pencil-size').value * touch.force;
-                    ctx.lineCap = 'round';
-                    otx.clearRect(0,0, canvas.width, canvas.height);
-                    path.moveTo(x,y);
-                    ctx.beginPath();
-                    ctx.moveTo(x,y);
-                    ctx.lineTo(x,y +1);
-                    ctx.stroke();
-                    otx.fill(path);
-                    break;
-                case 'pen': 
-                    ctx.strokeStyle = document.getElementById('pen-stroke').firstElementChild.style.backgroundColor;
-                    ctx.fillStyle = document.getElementById('pen-fill').firstElementChild.style.backgroundColor;
-                    ctx.lineWidth = document.getElementById('pen-size').value;
-                    ctx.lineCap = 'round';
-                    path.moveTo(x,y);
-                    path.lineTo(x,y +1);
-                    ctx.stroke(path);
-                    ctx.fill(path);
-                    break;
-                }
-                lastX = x;
-                lastY = y;
+                toucher.onmousedown(touch);
             }
             
             if (!firstTouch || !secondTouch) return;
@@ -698,6 +804,64 @@
             const diffY = firstTouch.clientY - secondTouch.clientY;
             lastDistance = Math.sqrt((diffX * diffX) + (diffY * diffY));
         }
+        toucher.onmousedown = e => {
+            /** @type {CanvasRenderingContext2D} */
+            const ctx = layers[currentLayer].getContext('2d');
+            const x = Math.floor(((((e.clientX - panX) - (layerContainer.clientWidth / 2)) / zoom) + (layerContainer.clientWidth / 2)) * window.devicePixelRatio);
+            const y = Math.floor(((((e.clientY - panY) - (layerContainer.clientHeight / 2)) / zoom) + (layerContainer.clientHeight / 2)) * window.devicePixelRatio);
+
+            switch (currentTool) {
+            case 'paste':
+                ctx.putImageData(clip, x,y);
+                otx.clearRect(0,0, overlay.width, overlay.height);
+                break;
+            case 'pan':
+                lastAbsX = e.clientX;
+                lastAbsY = e.clientY;
+                break;
+            case 'select':
+                startX = x;
+                startY = y;
+                selectWidth = 0;
+                selectHeight = 0;
+                otx.clearRect(0,0, overlay.width, overlay.height);
+                break;
+            case 'pencil':
+                ctx.strokeStyle = document.getElementById('pencil-stroke').firstElementChild.style.backgroundColor;
+                otx.fillStyle = document.getElementById('pencil-fill').firstElementChild.style.backgroundColor;
+                ctx.lineWidth = document.getElementById('pencil-size').value * (e.force ?? 1);
+                ctx.lineCap = 'round';
+                otx.clearRect(0,0, overlay.width, overlay.height);
+                path.moveTo(x,y);
+                ctx.beginPath();
+                ctx.moveTo(x,y);
+                ctx.lineTo(x,y +1);
+                ctx.stroke();
+                otx.fill(path);
+                break;
+            case 'pen': 
+                ctx.strokeStyle = document.getElementById('pen-stroke').firstElementChild.style.backgroundColor;
+                ctx.fillStyle = document.getElementById('pen-fill').firstElementChild.style.backgroundColor;
+                ctx.lineWidth = document.getElementById('pen-size').value;
+                ctx.lineJoin = 'round';
+                ctx.lineCap = 'round';
+                path.moveTo(x,y);
+                path.lineTo(x,y +1);
+                ctx.stroke(path);
+                ctx.fill(path);
+                break;
+            case 'erase':
+                otx.lineWidth = document.getElementById('eraser-size').value;
+                otx.strokeStyle = otx.createPattern(backgroundImage, 'repeat');
+                otx.lineJoin = 'round';
+                otx.lineCap = 'round';
+                otx.clearRect(0,0, overlay.width, overlay.height);
+                path.moveTo(x,y);
+                break;
+            }
+            lastX = x;
+            lastY = y;
+        }
         toucher.ontouchmove = e => {
             e.preventDefault();
             let firstTouch;
@@ -706,48 +870,7 @@
                 if (touch.identifier === firstFinger) { firstTouch = touch; continue; }
                 if (touch.identifier === secondFinger) { secondTouch = touch; continue; }
                 if (touch.identifier !== penIdent) continue;
-                const x = Math.floor(((((touch.clientX - panX) - (canvas.clientWidth / 2)) / zoom) + (canvas.clientWidth / 2)) * window.devicePixelRatio);
-                const y = Math.floor(((((touch.clientY - panY) - (canvas.clientHeight / 2)) / zoom) + (canvas.clientHeight / 2)) * window.devicePixelRatio);
-
-                switch (currentTool) {
-                case 'paste':
-                    ctx.putImageData(clip, x,y);
-                    break;
-                case 'pan':
-                    panX += touch.clientX - lastAbsX;
-                    panY += touch.clientY - lastAbsY;
-                    lastAbsX = touch.clientX;
-                    lastAbsY = touch.clientY;
-                    break;
-                case 'select':
-                    otx.clearRect(0,0, canvas.width, canvas.height);
-                    otx.fillStyle = '#03B6FC1F';
-                    otx.setLineDash([4,4]);
-                    otx.strokeStyle = 'grey';
-                    otx.lineWidth = 1;
-                    selectWidth = x - startX;
-                    selectHeight = y - startY;
-                    otx.fillRect(startX, startY, selectWidth, selectHeight);
-                    otx.strokeRect(startX +1, startY +1, selectWidth -2, selectHeight -2);
-                    break;
-                case 'pencil':
-                    otx.clearRect(0,0, canvas.width, canvas.height);
-                    ctx.lineWidth = document.getElementById('pencil-size').value * touch.force;
-                    ctx.beginPath();
-                    ctx.moveTo(lastX, lastY);
-                    ctx.lineTo(x,y);
-                    path.lineTo(x,y);
-                    ctx.stroke();
-                    otx.fill(path);
-                    break;
-                case 'pen':
-                    path.lineTo(x,y);
-                    ctx.stroke(path);
-                    ctx.fill(path);
-                    break;
-                }
-                lastX = x;
-                lastY = y;
+                toucher.onmousemove(touch);
             }
             
             if (!firstTouch || !secondTouch) return;
@@ -767,21 +890,77 @@
         }
 
         toucher.onmousemove = e => {
-            const x = Math.floor(((((e.clientX - panX) - (canvas.clientWidth / 2)) / zoom) + (canvas.clientWidth / 2)) * window.devicePixelRatio);
-            const y = Math.floor(((((e.clientY - panY) - (canvas.clientHeight / 2)) / zoom) + (canvas.clientHeight / 2)) * window.devicePixelRatio);
+            /** @type {CanvasRenderingContext2D} */
+            const ctx = layers[currentLayer].getContext('2d');
+            const x = Math.floor(((((e.clientX - panX) - (layerContainer.clientWidth / 2)) / zoom) + (layerContainer.clientWidth / 2)) * window.devicePixelRatio);
+            const y = Math.floor(((((e.clientY - panY) - (layerContainer.clientHeight / 2)) / zoom) + (layerContainer.clientHeight / 2)) * window.devicePixelRatio);
+
             switch (currentTool) {
             case 'paste':
-                otx.clearRect(0,0, canvas.width, canvas.height);
+                otx.clearRect(0,0, overlay.width, overlay.height);
                 otx.putImageData(clip, x,y);
                 break;
             case 'color-picker':
-                otx.clearRect(0,0, canvas.width, canvas.height);
-                const data = ctx.getImageData(x -zoomViewer.width / 2, y -zoomViewer.height / 2, zoomViewer.width, zoomViewer.height);
+                otx.clearRect(0,0, overlay.width, overlay.height);
+                const width = zoomViewer.firstElementChild.width;
+                const height = zoomViewer.firstElementChild.height;
+                const data = ctx.getImageData(x -Math.ceil(width / 2), y -Math.ceil(height / 2), width, height);
                 ztx.putImageData(data, 0,0);
+                ztx.globalCompositeOperation = 'destination-over';
+                for (let ox = 0; ox < width / backgroundImage.width; ox++)
+                    for (let oy = 0; oy < height / backgroundImage.height; oy++)
+                        ztx.drawImage(backgroundImage, (ox * backgroundImage.width) + ((x % 2) -1), (oy * backgroundImage.height) + ((y % 2) -1));
+                const [r,g,b,a] = [...ctx.getImageData(x,y, 1,1).data].map(v => (v / 255) * 100);
+                console.log(r,g,b,a);
+                zoomViewer.style.borderColor = `rgba(${r}%, ${g}%, ${b}%, ${a}%)`;
                 zoomViewer.style.left = `${e.clientX}px`;
                 zoomViewer.style.top = `${e.clientY}px`;
                 break;
+            case 'pan':
+                if ('buttons' in e && !(e.buttons & 1)) return;
+                panX += e.clientX - lastAbsX;
+                panY += e.clientY - lastAbsY;
+                lastAbsX = e.clientX;
+                lastAbsY = e.clientY;
+                break;
+            case 'select':
+                if ('buttons' in e && !(e.buttons & 1)) return;
+                otx.clearRect(0,0, overlay.width, overlay.height);
+                otx.fillStyle = '#03B6FC1F';
+                otx.setLineDash([4,4]);
+                otx.strokeStyle = 'grey';
+                otx.lineWidth = 1;
+                selectWidth = x - startX;
+                selectHeight = y - startY;
+                otx.fillRect(startX, startY, selectWidth, selectHeight);
+                otx.strokeRect(startX +.5, startY +.5, selectWidth -1, selectHeight -1);
+                break;
+            case 'pencil':
+                if ('buttons' in e && !(e.buttons & 1)) return;
+                otx.clearRect(0,0, overlay.width, overlay.height);
+                ctx.lineWidth = document.getElementById('pencil-size').value * (e.force ?? 1);
+                ctx.beginPath();
+                ctx.moveTo(lastX, lastY);
+                ctx.lineTo(x,y);
+                path.lineTo(x,y);
+                ctx.stroke();
+                otx.fill(path);
+                break;
+            case 'pen':
+                if ('buttons' in e && !(e.buttons & 1)) return;
+                path.lineTo(x,y);
+                ctx.stroke(path);
+                ctx.fill(path);
+                break;
+            case 'erase':
+                if ('buttons' in e && !(e.buttons & 1)) return;
+                otx.clearRect(0,0, overlay.width, overlay.height);
+                path.lineTo(x,y);
+                otx.stroke(path);
+                break;
             }
+            lastX = x;
+            lastY = y;
         }
         toucher.ontouchend = e => {
             e.preventDefault();
@@ -789,33 +968,78 @@
                 if (touch.identifier === firstFinger) { firstFinger = -1; continue; }
                 if (touch.identifier === secondFinger) { secondFinger = -1; continue; }
                 if (touch.identifier !== penIdent) continue;
-                const x = Math.floor(((((touch.clientX - panX) - (canvas.clientWidth / 2)) / zoom) + (canvas.clientWidth / 2)) * window.devicePixelRatio);
-                const y = Math.floor(((((touch.clientY - panY) - (canvas.clientHeight / 2)) / zoom) + (canvas.clientHeight / 2)) * window.devicePixelRatio);
-
                 penIdent = -1;
-                switch (currentTool) {
-                case 'paste':
-                    currentTool = 'select';
-                    otx.clearRect(0,0, canvas.width, canvas.height);
-                    break;
-                case 'pencil': 
-                    otx.clearRect(0,0, canvas.width, canvas.height);
-                    ctx.strokeStyle = document.getElementById('pencil-stroke').firstElementChild.style.backgroundColor;
-                    ctx.fillStyle = document.getElementById('pencil-fill').firstElementChild.style.backgroundColor;
-                    ctx.lineWidth = document.getElementById('pencil-size').value * touch.force;
-                    ctx.beginPath();
-                    ctx.moveTo(lastX, lastY);
-                    ctx.lineTo(x,y);
-                    path.lineTo(x,y);
-                    ctx.stroke();
-                    ctx.fill(path);
-                    path = new Path2D();
-                    break;
-                case 'pen': path = new Path2D(); break;
-                }
-                lastX = x;
-                lastY = y;
+                toucher.onmouseup(touch);
             }
+        }
+        toucher.onmouseup = e => {
+            /** @type {CanvasRenderingContext2D} */
+            const ctx = layers[currentLayer].getContext('2d');
+            const x = Math.floor(((((e.clientX - panX) - (layerContainer.clientWidth / 2)) / zoom) + (layerContainer.clientWidth / 2)) * window.devicePixelRatio);
+            const y = Math.floor(((((e.clientY - panY) - (layerContainer.clientHeight / 2)) / zoom) + (layerContainer.clientHeight / 2)) * window.devicePixelRatio);
+
+            switch (currentTool) {
+            case 'color-picker': 
+                currentTool = document.querySelector('.tool.selected').getAttribute('name');
+                zoomViewer.hidden = true;
+                // stolen from https://gist.github.com/earthbound19/e7fe15fdf8ca3ef814750a61bc75b5ce#file-oklabexperiments-js-L60
+                const [r,g,B,A] = [...ctx.getImageData(x,y, 1,1).data]
+                    .map(v => v / 255)
+                    .map((c,i) => i < 3 ? (c >= 0.04045 ? Math.pow((c + 0.055) / 1.055, 2.4) : c / 12.92) : c);
+                const l = Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * B);
+                const m = Math.cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * B);
+                const s = Math.cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * B);
+                const L = l * +0.2104542553 + m * +0.7936177850 + s * -0.0040720468;
+                const a = l * +1.9779984951 + m * -2.4285922050 + s * +0.4505937099;
+                const b = l * +0.0259040371 + m * +0.7827717662 + s * -0.8086757660;
+                targetSwatch.style.backgroundColor = `oklab(${L} ${a} ${b} / ${A})`;
+                colorPicker.showPopover({ source: targetSwatch.parentElement });
+                break;
+            case 'paste':
+                currentTool = 'select';
+                otx.clearRect(0,0, overlay.width, overlay.height);
+                ctx.putImageData(clip, x,y);
+                break;
+            case 'pencil': 
+                otx.clearRect(0,0, overlay.width, overlay.height);
+                ctx.strokeStyle = document.getElementById('pencil-stroke').firstElementChild.style.backgroundColor;
+                ctx.fillStyle = document.getElementById('pencil-fill').firstElementChild.style.backgroundColor;
+                ctx.lineWidth = document.getElementById('pencil-size').value * (e.force ?? 1);
+                ctx.beginPath();
+                ctx.moveTo(lastX, lastY);
+                ctx.lineTo(x,y);
+                path.lineTo(x,y);
+                ctx.stroke();
+                ctx.fill(path);
+                path = new Path2D();
+                break;
+            case 'pen': path = new Path2D(); break;
+            case 'erase':
+                ctx.globalCompositeOperation = 'destination-out';
+                ctx.lineWidth = document.getElementById('eraser-size').value;
+                ctx.strokeStyle = otx.createPattern(backgroundImage, 'repeat');
+                ctx.lineJoin = 'round';
+                ctx.lineCap = 'round';
+                otx.clearRect(0,0, overlay.width, overlay.height);
+                path.lineTo(x,y);
+                ctx.stroke(path);
+                ctx.globalCompositeOperation = 'source-over';
+                path = new Path2D();
+                break;
+            }
+            lastX = x;
+            lastY = y;
+        }
+        toucher.onwheel = e => {
+            e.preventDefault();
+            let value = e.deltaY;
+            switch (e.deltaMode) {
+            case 0: break;
+            case 2:
+            case 1: console.warn('Bad firefox, BAD'); break;
+            }
+            zoom += e.deltaY / 100;
+            console.log(e);
         }
         // canvas.ontouchcancel = e => {
         //     e.preventDefault();
