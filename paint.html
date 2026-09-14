@@ -807,8 +807,8 @@
         toucher.onmousedown = e => {
             /** @type {CanvasRenderingContext2D} */
             const ctx = layers[currentLayer].getContext('2d');
-            const x = Math.floor(((((e.clientX - panX) - (layerContainer.clientWidth / 2)) / zoom) + (layerContainer.clientWidth / 2)) * window.devicePixelRatio);
-            const y = Math.floor(((((e.clientY - panY) - (layerContainer.clientHeight / 2)) / zoom) + (layerContainer.clientHeight / 2)) * window.devicePixelRatio);
+            const x = Math.floor((((e.clientX - panX) - (layerContainer.clientWidth / 2)) / zoom) + (layerContainer.clientWidth / 2));
+            const y = Math.floor((((e.clientY - panY) - (layerContainer.clientHeight / 2)) / zoom) + (layerContainer.clientHeight / 2));
 
             switch (currentTool) {
             case 'paste':
@@ -892,8 +892,8 @@
         toucher.onmousemove = e => {
             /** @type {CanvasRenderingContext2D} */
             const ctx = layers[currentLayer].getContext('2d');
-            const x = Math.floor(((((e.clientX - panX) - (layerContainer.clientWidth / 2)) / zoom) + (layerContainer.clientWidth / 2)) * window.devicePixelRatio);
-            const y = Math.floor(((((e.clientY - panY) - (layerContainer.clientHeight / 2)) / zoom) + (layerContainer.clientHeight / 2)) * window.devicePixelRatio);
+            const x = Math.floor((((e.clientX - panX) - (layerContainer.clientWidth / 2)) / zoom) + (layerContainer.clientWidth / 2));
+            const y = Math.floor((((e.clientY - panY) - (layerContainer.clientHeight / 2)) / zoom) + (layerContainer.clientHeight / 2));
 
             switch (currentTool) {
             case 'paste':
@@ -975,8 +975,8 @@
         toucher.onmouseup = e => {
             /** @type {CanvasRenderingContext2D} */
             const ctx = layers[currentLayer].getContext('2d');
-            const x = Math.floor(((((e.clientX - panX) - (layerContainer.clientWidth / 2)) / zoom) + (layerContainer.clientWidth / 2)) * window.devicePixelRatio);
-            const y = Math.floor(((((e.clientY - panY) - (layerContainer.clientHeight / 2)) / zoom) + (layerContainer.clientHeight / 2)) * window.devicePixelRatio);
+            const x = Math.floor((((e.clientX - panX) - (layerContainer.clientWidth / 2)) / zoom) + (layerContainer.clientWidth / 2));
+            const y = Math.floor((((e.clientY - panY) - (layerContainer.clientHeight / 2)) / zoom) + (layerContainer.clientHeight / 2));
 
             switch (currentTool) {
             case 'color-picker': 
