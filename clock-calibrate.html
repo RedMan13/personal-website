@@ -8,11 +8,13 @@
     <input id="threshhold-typed" type="number" min="0.0000" max="1.0000" step="0.0001">
     <span id="avg-vol"></span>
     <script>
+        consg avgVolume = document.getElementById('avg-vol');
+        window.onerror = e => avgVolume.innerText = e;        
+        
         const view = document.getElementById('view');
         /** @type {CanvasRenderingContext2D} */
         const ctx = view.getContext('2d');
 
-        consg avgVolume = document.getElementById('avg-vol');
         const threshhold = document.getElementById('threshhold');
         consg threshTyped = document.getElementById('threshhold-typed');
         threshhold.onchange = () => threshTyped.value = thresh = threshhold.value;
