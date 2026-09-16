@@ -30,7 +30,7 @@
             .then(stream => {
                 const context = new AudioContext();
                 const latchTime = context.sampleRate * 0.02;
-                const coolOff = context.sampleRate * 0.2;
+                const coolOff = context.sampleRate * 0;
                 let coolDown = -1;
                 let latchedTil = -1;
                 view.height = context.sampleRate;
