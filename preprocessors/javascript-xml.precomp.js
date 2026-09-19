@@ -52,11 +52,11 @@ function parseTokens(tokens, util, enableJS = true) {
             : batch.slice(1, -3);
         const children = [''];
         if (!isShorthand) { 
-            const elements = parseTokens(batch.at(-2), util);
+            const elements = parseTokens(batch.at(-2), util, enableJS);
             const mid = batch.find(tok => tok.name === 'close');
             let inside = 0;
             if (mid)
-            for (let i = mid.end; i < end.start; i++) {
+            for (let i = mid.end +1; i < end.start +1; i++) {
                 const el = elements.find(tok => i >= tok.start && i < tok.end);
                 if (el) {
                     if (inside && !Array.isArray(children.at(-1)))
