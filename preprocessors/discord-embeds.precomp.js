@@ -78,6 +78,8 @@ function makeJSON(token, util) {
         const components = token.children.map(makeJSON).filter(Boolean);
         if (components.some(child => ![2,3,5,6,7,8].includes(child.type)))
             throw new SyntaxError('Action rows can only contain one of button, string select, user select, role select, mentionable select, channel select');
+        if (components.length > 5)
+            throw new SyntaxError('Cannot have more then five buttons in an action row');
         return {
             type: 1,
             components
