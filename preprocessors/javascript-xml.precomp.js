@@ -56,7 +56,7 @@ function parseTokens(tokens, util, enableJS = true) {
             const mid = batch.find(tok => tok.name === 'close');
             let inside = 0;
             if (mid)
-            for (let i = mid.end +1; i < end.start +1; i++) {
+            for (let i = mid.end; i < end.start; i++) {
                 const el = elements.find(tok => i >= tok.start && i < tok.end);
                 if (el) {
                     if (inside && !Array.isArray(children.at(-1)))
