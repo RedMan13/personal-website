@@ -175,7 +175,7 @@ module.exports = async function(util) {
         tok.setString(util.file.slice(start, end));
         const phoTool = new PrecompUtils('', tok.str, util.manager);
         const head = parseTokens(tok.getGroups(grouping), phoTool, false);
-        const json = makeJSON(head[0]);
+        const json = { component: makeJSON(head[0]) };
         util.replace(start, end, `<script id="discord:component-embed" type="application/json">${JSON.stringify(json)}</script>`);
     }
 }
