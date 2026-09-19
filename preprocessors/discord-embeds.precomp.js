@@ -97,7 +97,7 @@ function makeJSON(token, util) {
                 ?? { name: emojiStr[1] });
         if (emoji && style[1] === 'premium')
             throw new SyntaxError('Premium buttons can not have emojis');
-        emoji.animated = !!emoji.animated;
+        if (emoji) emoji.animated = !!emoji.animated;
         const customId = token.attributes.find(attr => attr[0] === 'id' || attr[0] === 'custom-id' || attr[0] === 'sku-id');
         if (customId && style[1] === 'link')
             throw new SyntaxError('Link buttons can not have custom ids');
