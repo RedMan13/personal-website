@@ -93,7 +93,7 @@ function makeJSON(token, util) {
             throw new SyntaxError('Premium buttons can not have labels');
         const emojiStr = token.attributes.find(attr => attr[0] === 'emoji');
         const emoji = emojiStr 
-            && (/^<(?<animated>a)?:(?<name>[a-z0-9_~]*):(?<id>[0-9]+)>$/i.exec(emojiStr[1]) 
+            && (/^<(?<animated>a)?:(?<name>[a-z0-9_~]*):(?<id>[0-9]+)>$/i.exec(emojiStr[1])?.groups
                 ?? { name: emojiStr[1] });
         if (emoji && style[1] === 'premium')
             throw new SyntaxError('Premium buttons can not have emojis');
