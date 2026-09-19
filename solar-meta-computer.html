@@ -1,0 +1,28 @@
+<!TEMPLATE /cardpage.html>
+<head>
+    <title>Solar Computer</title>
+</head>
+<body>
+    <canvas id="display" width="100" height="100"></canvas>
+    <input type="number" id="latitude" value="0">
+    <input type="number" id="altitude" value="0">
+    <script>
+        const lat = document.getElementById('latitude');
+        const alt = document.getElementById('altitude');
+        const disp = document.getElementById('display');
+        /** @type {CanvasRenderingContext2D} */
+        const ctx = disp.getContext('2d');
+        ctx.arc(50,50, 50, 0, Math.PI *2);
+        ctx.stroke();
+
+        navigator.geolocation.getCurrentPosition(pos => { lat.value = pos.coords.latitude; alt.value = pos.coords.altitude; }, console.error);
+
+        const day = Math.floor((Date.now() / (1000 * 60 * 60 * 24)));
+        const declination = -Math.asin(0.39778850739794974 * Math.cos((0.017202894828549954 * (day +10)) + (0.0334 * Math.sin(0.017202894828549954 * (day -2)))));
+        const latitude = lat.value / 180 * Math.PI;
+        const altAngle = Math.sqrt(2 * ((alt.value + 6378000) / 6378000) * 0.83);
+        const position = Math.acos((Math.sin(altAngle) - (Math.sin(latitude) * Math.sin(declination))) / (Math.cos(latitude) * Math.cos(declination)));
+
+        console.log(position, day);
+    </script>
+</body>

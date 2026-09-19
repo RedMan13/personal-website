@@ -37,8 +37,9 @@ function fixCustom(tag) {
  * 
  * @typedef {[JSXStartToken, ...JSXAttributeToken, JSXAttributeCloseToken, JSXElementToken[], JSXEndToken]} JSXElementToken
  * @param {JSXElementToken[]} tokens 
+ * @param {boolean} enableJS Enables `{}` inline js syntax
  */
-function parseTokens(tokens, util) {
+function parseTokens(tokens, util, enableJS = true) {
     const output = [];
     for (const batch of tokens) {
         const end = batch.at(-1);
@@ -65,15 +66,17 @@ function parseTokens(tokens, util) {
                     i = el.end -1;
                     continue;
                 }
-                if (util.file[i] === '{') {
-                    if (inside <= 0) children.push(['']);
-                    inside++;
-                    if (inside <= 1) continue;
-                }
-                if (util.file[i] === '}') {
-                    inside--;
-                    if (inside <= 0) children.push('');
-                    if (inside <= 0) continue;
+                if (enableJS) {
+                    if (util.file[i] === '{') {
+                        if (inside <= 0) children.push(['']);
+                        inside++;
+                        if (inside <= 1) continue;
+                    }
+                    if (util.file[i] === '}') {
+                        inside--;
+                        if (inside <= 0) children.push('');
+                        if (inside <= 0) continue;
+                    }
                 }
                 if (inside > 0) {
                     const jmp = util.jumpArbit(util.file.slice(i));
@@ -86,7 +89,7 @@ function parseTokens(tokens, util) {
                     js[js.length -1] += util.file[i];
                     continue;
                 }
-                if (!/^\s/.test(util.file[i])) 
+                if (!/^\s/.test(util.file[i]) || !enableJS) 
                     children[children.length -1] += util.file[i];
             }
         }
@@ -160,11 +163,8 @@ function makeJS(token, container, parent) {
         ? res
         : `(${isAsync ? 'await ' : ''}(${isAsync ? 'async ' : ''}() => {${res} return ${container};})())`;
 }
-
-module.exports = async function(util) {
-    const isWebpack = typeof util === 'string'
-    if (isWebpack) util = new PrecompUtils('', util);
-    util.tokenize({
+function makeTokens(util, enableJS = true) {
+    return {
         end: /^(\/>|<\/(?:(?<namespace>[a-z$_][a-z$_0-9-]*):)?(?<tagname>[a-z$_][a-z$_0-9-]*\s*)>)/i,
         _(str) {
             const jmp = util.jumpArbit(str);
@@ -186,7 +186,7 @@ module.exports = async function(util) {
                     length: split + value[0].length +1
                 }
             }
-            if (val[0] !== '{') return;
+            if (val[0] !== '{' || !enableJS) return;
             let indent = 0;
             for (let i = 0; i < val.length; i++) {
                 const jmp = util.jumpArbit(val.slice(i));
@@ -206,7 +206,14 @@ module.exports = async function(util) {
             }
         },
         close: /^>/
-    }, ['start', '*attributes', '?close', '^', 'end']);
+    };
+}
+const grouping = ['start', '*attributes', '?close', '^', 'end'];
+
+module.exports = async function(util) {
+    const isWebpack = typeof util === 'string'
+    if (isWebpack) util = new PrecompUtils('', util);
+    util.tokenize(makeTokens(util), grouping);
     
     for (const usage of parseTokens(util.tokens, util)) {
         const elStr = util.file.slice(0, usage.start);
@@ -238,5 +245,9 @@ module.exports = async function(util) {
     if (isWebpack) await util.bake();
     return util.file;
 }
+module.exports.makeJS = makeJS;
+module.exports.parseTokens = parseTokens;
+module.exports.makeTokens = makeTokens;
+module.exports.grouping = grouping;
 module.exports.matchFile = util => util.matchType('.jsx');
 module.exports.weight = 2;

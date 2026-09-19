@@ -177,7 +177,7 @@
             margin: 0;
             height: 100%;
             overflow: hidden;
-            font-family: 'Open Sans' sans-serif;
+            font-family: 'Open Sans', sans-serif;
         }
         .tools {
             padding: 4px;
@@ -242,6 +242,36 @@
             border-bottom-right-radius: 4px;
         }
 
+        .layer-control {
+            display: flex;
+            flex-direction: column;
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            max-height: 96px;
+            overflow: scroll;
+        }
+        .layer-control .layer {
+            border-radius: 2px;
+            padding-top: 4px;
+            padding-left: 2px;
+            padding-right: 6px;
+        }
+        .layer-control .layer:hover { background-color: #00000010; }
+        .layer-control .layer img {
+            background-color: white;
+            height: 48px;
+        }
+        .layer-control .layer::marker { content: none; }
+        .layer-control .layer::before {
+            counter-increment: layer-count 1;
+            content: counter(layer-count);
+            display: inline-block;
+            vertical-align: top;
+            margin-top: 1rem;
+            margin-right: 2px
+        }
+
         .controls .view {
             content: "";
             display: inline-block;
@@ -268,6 +298,14 @@
         .button {
             cursor: pointer;
             border-radius: 2px;
+            padding: 0;
+            border: none;
+            width: 24px;
+            height: 24px;
+            box-sizing: border-box;
+            cursor: pointer;
+            background-color: transparent;
+            vertical-align: top;
         }
         .button:hover { background-color: #00000010; }
         .color {
@@ -342,6 +380,64 @@
             grid-template-columns: repeat(auto-fill, 24px);
             grid-template-rows: repeat(2, 24px);
         }
+
+        .external-text { width: 72px; }
+        .size-controls {
+            display: grid;
+            grid-template-columns: auto max-content auto;
+        }
+        .direction-wrapper {
+            display: flex;
+            justify-content: center;
+        }
+        .direction-selector {
+            margin: 10px 0px;
+            display: grid;
+            grid-template-columns: repeat(3, 25px);
+            grid-template-rows: repeat(3, 25px);
+            border: 1px solid grey;
+            border-top: none;
+            border-left: none;
+        }
+        .direction-selector .tile {
+            border: 1px solid grey;
+            border-bottom: none;
+            border-right: none;
+        }
+        .direction-selector .left { background-image: url('/google-material/arrow-left.svg'); }
+        .direction-selector .right { background-image: url('/google-material/arrow-right.svg'); }
+        .direction-selector .top { background-image: url('/google-material/arrow-up.svg'); }
+        .direction-selector .bottom { background-image: url('/google-material/arrow-down.svg'); }
+        .direction-selector .top-left div {
+            background-image: url('/google-material/arrow-left.svg'); 
+            transform: rotate(45deg);
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        .direction-selector .top-right div {
+            background-image: url('/google-material/arrow-right.svg'); 
+            transform: rotate(-45deg);
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        .direction-selector .bottom-left div {
+            background-image: url('/google-material/arrow-right.svg'); 
+            transform: rotate(135deg);
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        .direction-selector .bottom-right div {
+            background-image: url('/google-material/arrow-left.svg'); 
+            transform: rotate(-135deg);
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        .direction-selector .image-content { background-image: url('/google-material/image.svg'); }
+        .submit { float: right; }
     </style>
 
     <script src="/jszip.min.js"></script>
@@ -357,6 +453,68 @@
         <canvas style="width:100%" width="25" height="25"></canvas>
         <div class="sight"></div>
     </div>
+
+    <div id="size-picker" popover="auto" class="popunder">
+        <div class="size-controls">
+            <input type="number" id="width" value="100" class="external-text">
+            <img src="/google-material/x-by-y.svg">
+            <input type="number" id="height" value="100" class="external-text">
+        </div>
+        <div class="direction-wrapper">
+            <div class="direction-selector">
+                <div class="top-left tile"><div></div></div><div class="top tile"><div></div></div><div class="top-right tile"><div></div></div>
+                <div class="left tile"><div></div></div><div class="image-content tile"><div></div></div><div class="right tile"><div></div></div>
+                <div class="bottom-left tile"><div></div></div><div class="bottom tile"><div></div></div><div class="bottom-right tile"><div></div></div>
+            </div>
+        </div>
+        <button id="commit-resize" class="submit">Resize</button>
+    </div>
+    <script>
+        let dirX = 1;
+        let dirY = 1;
+        const dirTiles = document.querySelectorAll('.direction-selector .tile');
+        dirTiles.forEach((tile,i) => tile.onclick = () => {
+            dirX = i % 3;
+            dirY = Math.floor(i / 3);
+
+            dirTiles.forEach((tile,i) => {
+                [...tile.classList.values()]
+                    .filter(key => key !== 'tile')
+                    .forEach(key => tile.classList.remove(key));
+
+                const x = i % 3;
+                const y = Math.floor(i / 3);
+                if (x === dirX && y === dirY) return tile.classList.add('image-content');
+                if (Math.abs(dirX - x) > 1 || Math.abs(dirY - y) > 1) return;
+
+                let tileArrow = '';
+                if (y === (dirY -1)) tileArrow += 'top';
+                if (y === (dirY +1)) tileArrow += 'bottom';
+                if (tileArrow && Math.abs(dirX - x) === 1) tileArrow += '-';
+                if (x === (dirX -1)) tileArrow += 'left';
+                if (x === (dirX +1)) tileArrow += 'right';
+
+                if (!tileArrow) return;
+                tile.classList.add(tileArrow);
+            });
+        })
+
+        const sizePicker = document.getElementById('size-picker');
+        const userWidth = document.getElementById('width');
+        const userHeight = document.getElementById('height');
+        sizePicker.onbeforetoggle = () => {
+            userWidth.value = width;
+            userHeight.value = height;
+        }
+
+        const commitResize = document.getElementById('commit-resize');
+        commitResize.onclick = () => resize(
+            userWidth.valueAsNumber,
+            userHeight.valueAsNumber,
+            ['left', 'center', 'right'][dirX],
+            ['top', 'center', 'bottom'][dirY]
+        )
+    </script>
 
     <div id="color-picker" popover="auto" class="popunder">
         <div id="color-history" class="color-history">
@@ -472,7 +630,14 @@
             <img class="button" id="save" src="/google-material/save.svg" title="Save Workspace">
             <img class="button" id="export" src="/google-material/export.svg" title="Export Image">
             <img class="button" id="load" src="/google-material/load.svg" title="Load Image">
-            <img class="button" id="resize" src="/google-material/resize.svg" title="Resize Workspace" style="margin-left: 6px">
+            <button
+                class="button"
+                id="resize"
+                title="Resize Workspace"
+                style="margin-left: 6px; background-image: url('/google-material/resize.svg')" 
+                popovertargetaction="show"
+                popovertarget="size-picker"
+            ></button>
         </div>
         <div class="tool" name="pan">
             <img class="button" src="/google-material/pan-handle.svg" title="Pan">
@@ -555,11 +720,13 @@
             </div>
         </div> -->
     </div>
+    <ol id="layer-display" class="layer-control">
+    </ol>
 
     <a id="download" style="display: none"></a>
     <input id="import" type="file" accept="image/*,.pif" style="display: none">
 
-    <script>
+    <script file="jsx">
         let currentTool = '';
 
         const tools = document.getElementsByClassName('tool');
@@ -732,13 +899,27 @@
                 case 'center': x = (layer.width - data.width) / 2; break;
                 }
                 switch (yAlign) {
-                case 'right': y = layer.height - data.height; break;
+                case 'bottom': y = layer.height - data.height; break;
                 case 'center': y = (layer.height - data.height) / 2; break;
                 }
                 ctx.putImageData(data, x,y);
             }
         }
         resize(width, height);
+        const layerDisplay = document.getElementById('layer-display');
+        function updateLayers(force) {
+            if (layerDisplay.childElementCount !== layers.length || force) {
+                layerDisplay.innerHTML = '';
+                for (const idx in layers) 
+                    layerDisplay.appendChild(<li class="layer"><img src={layers[idx].toDataURL()} id={`layer-${idx}`}/></li>);
+                layerDisplay.appendChild(<li class="layer">Add</li>)
+                return;
+            }
+            const display = document.getElementById(`layer-${currentLayer}`);
+            const layer = layers[currentLayer];
+            display.src = layer.toDataURL();
+        }
+        updateLayers();
         /** @type {CanvasRenderingContext2D} */
         const otx = overlay.getContext('2d');
         /** @type {CanvasRenderingContext2D} */
