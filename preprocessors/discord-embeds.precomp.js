@@ -3,6 +3,7 @@ const { parseTokens, makeTokens, grouping } = require('./javascript-xml.precomp'
 
 function makeJSON(token, util) {
     if (typeof token === 'string') return;
+    token.attributes = token.attributes.map(attr => [attr[0], attr[1].slice(1, -1)]);
     switch (token.tagname) {
     case 'embed':
     case 'container': {
