@@ -109,10 +109,10 @@ function makeJSON(token, util) {
         return {
             type: 2,
             style: ['primary', 'secondary', 'success', 'danger', 'link', 'premium'].indexOf(style[1]) +1,
-            label: label?.[1],
+            label: label,
             emoji,
             custom_id: style[1] !== 'premium' && customId?.[1],
-            sku_id: style[1] === 'premium' && customId?.[1],
+            sku_id: style[1] === 'premium' ? customId?.[1] : undefined,
             url: url?.[1],
             disabled: token.attributes.some(attr => attr[0] === 'disabled')
         }
