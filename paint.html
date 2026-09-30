@@ -258,7 +258,8 @@
         }
         .layer-control .layer {
             display: grid;
-            grid-template-columns: 16px auto;
+            grid-template-columns: 24px auto;
+            gap: 2px;
             grid-template-rows: 48px;
             border-radius: 2px;
             padding: 2px;
@@ -278,6 +279,7 @@
             display: flex;
             justify-content: end;
             align-items: center;
+            flex-direction: column;
         }
         .layers-controls { width: 100%; }
 
@@ -731,8 +733,10 @@
     </div>
     <div class="layer-control">
         <div class="layers-controls">
-            <img id="create-layer" class="button" src="/google-material/add.svg">
-            <img id="delete-layer" class="button" style="float: right;" src="/google-material/delete.svg">
+            <img id="create-layer" class="button" title="Create new layer" src="/google-material/add.svg">
+            <img id="show-all-layers" class="button" title="Set all layers to visible" src="/google-material/visibility-on.svg">
+            <img id="show-current-layer" class="button" title="Set all layers except selected to invisible" style="margin-right: 6px;" src="/google-material/visibility-off.svg">
+            <img id="delete-layer" class="button" title="Delete selected layer" style="float: right;" src="/google-material/delete.svg">
         </div>
         <div id="layer-display" class="displayed-layers"></div>
     </div>
@@ -924,16 +928,27 @@
         function updateLayers(force) {
             if ((layerDisplay.childElementCount -1) !== layers.length || force) {
                 layerDisplay.innerHTML = '';
-                for (const idx in layers) 
-                    layerDisplay.appendChild(<div class={`layer ${idx == currentLayer ? 'selected' : ''}`} on:click={e => {
+                for (const idx in layers) {
+                    const layer = <div class={`layer ${idx == currentLayer ? 'selected' : ''}`} on:click={() => {
                         currentLayer = idx;
                         for (const layer of layerDisplay.children) layer.classList.remove('selected');
-                        const self = document.getElementById(`layer-${idx}`);
-                        self.parentElement.classList.add('selected');
+                        layer.classList.add('selected');
                     }}>
-                        <div class="index"><span>{Number(idx) +1}</span></div>
+                        <div class="index">
+                            <span>{Number(idx) +1}</span>
+                            <img class="button" src={layers[idx].hidden ? '/google-material/visibility-off.svg' : '/google-material/visibility-on.svg'} title="Set layer visibility" on:click={e => {
+                                e.stopPropagation();
+                                layers[idx].hidden = !layers[idx].hidden;
+                                layers[idx].style.display = layers[idx].hidden ? 'none' : '';
+                                e.target.src = layers[idx].hidden 
+                                    ? '/google-material/visibility-off.svg' 
+                                    : '/google-material/visibility-on.svg';
+                            }}/>
+                        </div>
                         <img class="content" src={layers[idx].toDataURL()} id={`layer-${idx}`}/>
-                    </div>);
+                    </div>
+                    layerDisplay.appendChild(layer);
+                }
                 return;
             }
             const display = document.getElementById(`layer-${currentLayer}`);
@@ -948,6 +963,22 @@
             canvas.height = height;
             layerContainer.appendChild(canvas);
             layers.push(canvas);
+            updateLayers(true);
+        }
+        const showAllLayers = document.getElementById('show-all-layers');
+        showAllLayers.onclick = () => {
+            for (const layer of layers) {
+                layer.hidden = false;
+                layer.style.display = '';
+            }
+            updateLayers(true);
+        }
+        const showCurrentLayer = document.getElementById('show-current-layer');
+        showCurrentLayer.onclick = () => {
+            for (const idx in layers) {
+                layers[idx].hidden = idx != currentLayer;
+                layers[idx].style.display = layers[idx].hidden ? 'none' : '';
+            }
             updateLayers(true);
         }
         const deleteLayer = document.getElementById('delete-layer');
