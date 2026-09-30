@@ -263,6 +263,7 @@
             border-radius: 2px;
             padding: 2px;
         }
+        .layer-control .layer.selected { border: 1px solid grey; }
         .layer-control .layer:hover { background-color: #00000010; }
         .layer-control .layer .content {
             background-color: white;
@@ -924,7 +925,12 @@
             if ((layerDisplay.childElementCount -1) !== layers.length || force) {
                 layerDisplay.innerHTML = '';
                 for (const idx in layers) 
-                    layerDisplay.appendChild(<div class="layer" on:click={() => { currentLayer = idx; }}>
+                    layerDisplay.appendChild(<div class={`layer ${idx == currentLayer ? 'selected' : ''}`} on:click={e => {
+                        currentLayer = idx;
+                        for (const layer of layerDisplay.children) layer.classList.remove('selected');
+                        const self = document.getElementById(`layer-${idx}`);
+                        self.parentElement.classList.add('selected');
+                    }}>
                         <div class="index"><span>{Number(idx) +1}</span></div>
                         <img class="content" src={layers[idx].toDataURL()} id={`layer-${idx}`}/>
                     </div>);
@@ -942,7 +948,7 @@
             canvas.height = height;
             layerContainer.appendChild(canvas);
             layers.push(canvas);
-            updateLayers();
+            updateLayers(true);
         }
         const deleteLayer = document.getElementById('delete-layer');
         deleteLayer.onclick = () => {
@@ -950,7 +956,7 @@
             const deleted = layers.splice(currentLayer, 1);
             deleted.forEach(el => el.remove());
             if (currentLayer >= layers.length) currentLayer = layers.length -1;
-            updateLayers();
+            updateLayers(true);
         }
         /** @type {CanvasRenderingContext2D} */
         const otx = overlay.getContext('2d');
