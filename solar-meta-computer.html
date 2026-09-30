@@ -5,9 +5,12 @@
 <body>
     <canvas id="display" width="100" height="100"></canvas>
     <input type="number" id="latitude" value="0">
+    <input type="number" id="longitude" value="0">
     <input type="number" id="altitude" value="0">
     <script>
+        const unixSinceJd = 21078182000000;
         const lat = document.getElementById('latitude');
+        const long = document.getElementById('longitude');
         const alt = document.getElementById('altitude');
         const disp = document.getElementById('display');
         /** @type {CanvasRenderingContext2D} */
@@ -15,13 +18,38 @@
         ctx.arc(50,50, 50, 0, Math.PI *2);
         ctx.stroke();
 
-        navigator.geolocation.getCurrentPosition(pos => { lat.value = pos.coords.latitude; alt.value = pos.coords.altitude; }, console.error);
+        navigator.geolocation.getCurrentPosition(pos => {
+            lat.value = pos.coords.latitude;
+            long.value = pos.coords.longitude;
+            alt.value = pos.coords.altitude;
+        }, console.error);
 
-        const day = Math.floor((Date.now() / (1000 * 60 * 60 * 24)));
-        const declination = -Math.asin(0.39778850739794974 * Math.cos((0.017202894828549954 * (day +10)) + (0.0334 * Math.sin(0.017202894828549954 * (day -2)))));
+        function metaAt(date) {
+            const anomaly = (357.529 + 0.98560028 * date) / 180 * Math.PI;
+            const sunLong = (280.459 + (0.98564736 * date) + (1.915 * Math.sin(anomaly + 0.00034906585039886593) * Math.sin(2 * anomaly))) / 180 * Math.PI;
+            const obliquity = (23.439 - (0.00000036 * date)) / Math.PI * 180;
+            const declination = Math.sin(obliquity) * Math.sin(sunLong);
+            const rightAscension = Math.cos(obliquity) * Math.sin(sunLong) / Math.cos(sunLong);
+
+            return { declination, rightAscension };
+        }
+
+        const date = ((Date.now() + unixSinceJd) / 1000 / 60 / 60 / 24) - 2451545;
+        const day = Math.floor((Date.now() / (1000 * 60 * 60 * 24)) % 365.0462962962963);
+        const { rightAscension: rightAscensionYesterday } = metaAt(date -1);
+        const { declination, rightAscension: rightAscensionNow } = metaAt(date);
+        const { rightAscension: rightAscensionTomorrow } = metaAt(date +1);
         const latitude = lat.value / 180 * Math.PI;
         const altAngle = Math.sqrt(2 * ((alt.value + 6378000) / 6378000) * 0.83);
         const position = Math.acos((Math.sin(altAngle) - (Math.sin(latitude) * Math.sin(declination))) / (Math.cos(latitude) * Math.cos(declination)));
+        const sideRealTime = mod (6.697375 + 0.065707485828 DUT + 1.0027379 H + 0.0854103 date / 36525 + 0.0000258 T2, 24) h
+
+        ctx.beginPath();
+        ctx.moveTo(50,50);
+        ctx.lineTo((Math.cos(position - (Math.PI / 2)) * 50) + 50, (Math.sin(position - (Math.PI / 2)) * 50) + 50);
+        ctx.moveTo(50,50);
+        ctx.lineTo((Math.cos(-position - (Math.PI / 2)) * 50) + 50, (Math.sin(-position - (Math.PI / 2)) * 50) + 50);
+        ctx.stroke();
 
         console.log(position, day);
     </script>

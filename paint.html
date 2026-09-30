@@ -243,34 +243,42 @@
         }
 
         .layer-control {
-            display: flex;
-            flex-direction: column;
             position: absolute;
             bottom: 0;
             right: 0;
-            max-height: 96px;
+            height: 120px;
+            user-select: none;
+            padding: 6px;
+        }
+        .layer-control .displayed-layers {
+            display: flex;
+            flex-direction: column-reverse;
             overflow: scroll;
+            height: 96px;
         }
         .layer-control .layer {
+            display: grid;
+            grid-template-columns: 16px auto;
+            grid-template-rows: 48px;
             border-radius: 2px;
-            padding-top: 4px;
-            padding-left: 2px;
-            padding-right: 6px;
+            padding: 2px;
         }
         .layer-control .layer:hover { background-color: #00000010; }
-        .layer-control .layer img {
+        .layer-control .layer .content {
             background-color: white;
             height: 48px;
+            grid-column: 2;
+            grid-row: 1;
         }
-        .layer-control .layer::marker { content: none; }
-        .layer-control .layer::before {
-            counter-increment: layer-count 1;
-            content: counter(layer-count);
-            display: inline-block;
-            vertical-align: top;
-            margin-top: 1rem;
-            margin-right: 2px
+        .layer-control .layer .index {
+            grid-column: 1;
+            grid-row: 1;
+            width: 100%;
+            display: flex;
+            justify-content: end;
+            align-items: center;
         }
+        .layers-controls { width: 100%; }
 
         .controls .view {
             content: "";
@@ -720,8 +728,13 @@
             </div>
         </div> -->
     </div>
-    <ol id="layer-display" class="layer-control">
-    </ol>
+    <div class="layer-control">
+        <div class="layers-controls">
+            <img id="create-layer" class="button" src="/google-material/add.svg">
+            <img id="delete-layer" class="button" style="float: right;" src="/google-material/delete.svg">
+        </div>
+        <div id="layer-display" class="displayed-layers"></div>
+    </div>
 
     <a id="download" style="display: none"></a>
     <input id="import" type="file" accept="image/*,.pif" style="display: none">
@@ -908,11 +921,13 @@
         resize(width, height);
         const layerDisplay = document.getElementById('layer-display');
         function updateLayers(force) {
-            if (layerDisplay.childElementCount !== layers.length || force) {
+            if ((layerDisplay.childElementCount -1) !== layers.length || force) {
                 layerDisplay.innerHTML = '';
                 for (const idx in layers) 
-                    layerDisplay.appendChild(<li class="layer"><img src={layers[idx].toDataURL()} id={`layer-${idx}`}/></li>);
-                layerDisplay.appendChild(<li class="layer">Add</li>)
+                    layerDisplay.appendChild(<div class="layer" on:click={() => { currentLayer = idx; }}>
+                        <div class="index"><span>{Number(idx) +1}</span></div>
+                        <img class="content" src={layers[idx].toDataURL()} id={`layer-${idx}`}/>
+                    </div>);
                 return;
             }
             const display = document.getElementById(`layer-${currentLayer}`);
@@ -920,6 +935,23 @@
             display.src = layer.toDataURL();
         }
         updateLayers();
+        const createLayer = document.getElementById('create-layer');
+        createLayer.onclick = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            layerContainer.appendChild(canvas);
+            layers.push(canvas);
+            updateLayers();
+        }
+        const deleteLayer = document.getElementById('delete-layer');
+        deleteLayer.onclick = () => {
+            if (layers.length <= 1) return;
+            const deleted = layers.splice(currentLayer, 1);
+            deleted.forEach(el => el.remove());
+            if (currentLayer >= layers.length) currentLayer = layers.length -1;
+            updateLayers();
+        }
         /** @type {CanvasRenderingContext2D} */
         const otx = overlay.getContext('2d');
         /** @type {CanvasRenderingContext2D} */
