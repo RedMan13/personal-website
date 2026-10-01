@@ -14,6 +14,7 @@ const localRoot = process.cwd();
 
 const localHashes = await hash();
 const remoteHashes = await fetch('https://godslayerakp.gay/hash-list').then(req => req.json()).catch(() => ({}));
+const allFiles = Object.keys(Object.assign({}, localHashes, remoteHashes));
 
 sftp.on('keyboard-interactive', (name, instructions, nil, prompts, resolve) => resolve([process.argv[2]]));
 await sftp.connect({
@@ -26,13 +27,14 @@ await sftp.connect({
 
 // if there are no local changes, assume a full fresh-start rebuild was intended
 if (allFiles.every(file => localHashes[file] === remoteHashes[file])) {
-    for (const key in remoteHashes)
+    for (const key in remoteHashes) {
+        if (!(key in localHashes)) delete allFiles[key];
         delete remoteHashes[key];
+    }
     await sftp.exec(`rm -rf '${path.resolve(remoteRoot, './server').replace('\'', '\'\\\'\'')}'`);
     await sftp.exec(`rm -rf '${path.resolve(remoteRoot, './dist').replace('\'', '\'\\\'\'')}'`);
 }
 
-const allFiles = Object.keys(Object.assign({}, localHashes, remoteHashes));
 const hashFiles = Object.fromEntries(Object.entries(remoteHashes).map(a => [a[1],a[0]]));
 
 console.log('Logged in! uploading changes.');
