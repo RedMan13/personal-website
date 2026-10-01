@@ -766,7 +766,8 @@
                 scale = 0
                 initiateSelfDestruct()
             }
-            card.setAttribute('scale', scale)
+            card.style.fontSize = `${24 / scale}px`;
+            card.setAttribute('scale', scale);
             card.style.transform = `scale(${scale})`;
             window.oncardrescale?.(old);
         };
