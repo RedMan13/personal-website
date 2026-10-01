@@ -47,6 +47,7 @@ for (const name of allFiles) promises.push((async () => {
     const localFile = path.resolve(localRoot, name);
     if (name in remoteHashes) {
         console.log('U', name);
+        await sftp.delete(remoteFile);
         await sftp.fastPut(localFile, remoteFile);
         return;
     }
