@@ -8,3 +8,4 @@ README\.md
 server
 app.js
 \.vscode
+\.push-changes-sftp.js

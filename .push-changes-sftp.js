@@ -26,6 +26,14 @@ await sftp.connect({
     // debug: console.debug
 });
 
+// if there are no local changes, assume a full fresh-start rebuild was intended
+if (allFiles.every(file => localHashes[file] === remoteHashes[file])) {
+    for (const key in remoteHashes)
+        delete remoteHashes[key];
+    await sftp.exec(`rm -rf '${path.resolve(remoteRoot, './server').replace('\'', '\'\\\'\'')}'`);
+    await sftp.exec(`rm -rf '${path.resolve(remoteRoot, './dist').replace('\'', '\'\\\'\'')}'`);
+}
+
 console.log('Logged in! uploading changes.');
 const promises = [];
 for (const name of allFiles) promises.push((async () => {
