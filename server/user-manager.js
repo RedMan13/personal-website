@@ -157,7 +157,7 @@ class UserManager {
      * @param {string|string[]} features The feature name(s) to check for
      */
     async allowUse(username, features) {
-        if (!Array.isArray(feature)) features = [features];
+        if (!Array.isArray(features)) features = [features];
         this.access.create(features.map(feature => ({ username, authClass: feature })));
     }
     /**
