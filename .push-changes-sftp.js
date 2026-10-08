@@ -63,7 +63,7 @@ for (const name of allFiles) promises.push((async () => {
         return;
     }
     console.log('A', name);
-    await sftp.mkdir(path.dirname(remoteFile), true);
+    await sftp.mkdir(path.dirname(remoteFile), true).catch(() => {});
     await sftp.fastPut(localFile, remoteFile);
 })());
 await Promise.all(promises);

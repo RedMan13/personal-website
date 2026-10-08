@@ -4,8 +4,8 @@ const path = require('path');
 const { createReadStream } = require('fs');
 
 async function hash() {
-    const dist = await fs.readdir('./dist', { withFileTypes: true });
-    const server = await fs.readdir('./server', { withFileTypes: true });
+    const dist = await fs.readdir('./dist', { recursive: true, withFileTypes: true });
+    const server = await fs.readdir('./server', { recursive: true, withFileTypes: true });
     const root = process.cwd();
 
     const promises = [];
