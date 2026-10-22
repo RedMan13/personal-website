@@ -825,7 +825,7 @@
         if (!location.pathname.startsWith('/' + realFileMeta.getAttribute('content')) && !/index(\..*)?$/i.test(realFileMeta.getAttribute('content')))
             pushAchievement('Hacker', 'Its funny what this server software allows.');
 
-        if (Math.random() < 0.00001) {
+        if (Math.random() < 0.00001 || location.hash === '#tiles') {
             const can = document.createElement('canvas');
             can.id = 'background';
             can.hidden = true;
