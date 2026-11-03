@@ -103,4 +103,13 @@ module.exports = server => {
         res.header('Content-Type', 'text/html');
         res.send(generateFileList(files, true));
     });
+
+    fetch('https://discord.com/api/v10/channels/913034595912540160/message', {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bot ${process.env.botToken}`,
+            'User-Agent': `DiscordBot (https://godslayerakp.gay/discord-bot, v1)`
+        },
+        body: JSON.stringify({ content: 'Website started, reconnect file shares' })
+    })
 }

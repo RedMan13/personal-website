@@ -1,5 +1,5 @@
 module.exports = async function(req, res, reject, codes) {}
-/*const nacl = require('tweetnacl');
+const nacl = require('tweetnacl');
 const { InteractionType, InteractionCallbackType, MessageComponentType, ComponentButtonStyle } = require('./enums');
 const { fromApi } = require('./web-requests');
 const { commands } = require('./commands');
@@ -8,7 +8,7 @@ const { createQuoteCard, createQuoteMessage } = require('./quote-generator');
 const os = require('os');
 const fs = require('fs/promises');
 
-/** @type {{ [key: string]: { expires: number, pages: string[], page: number, message: string } }} *
+/** @type {{ [key: string]: { expires: number, pages: string[], page: number, message: string } }} **/
 const buttons = {};
 function MB(num) {
     const Kb = num / 1000;
@@ -38,7 +38,7 @@ setInterval(() => {
  * @param {import('express').Response} res 
  * @param {(code: number, message: string, res: import('express').Response, retry: boolean) => void} reject 
  * @param {{ [key: string]: number }} codes 
- *
+ **/
 module.exports = async function(req, res, reject, codes) {
     if (!req.headers['x-signature-ed25519'] || !req.headers['x-signature-timestamp']) {
         console.log('Recieved missing signatures');
@@ -258,4 +258,4 @@ module.exports = async function(req, res, reject, codes) {
     res.header('Content-Type', 'application/json');
     console.log('Replying with', JSON.stringify(result))
     res.send(JSON.stringify(result));
-}*/
+}
