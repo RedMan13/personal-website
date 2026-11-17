@@ -4,7 +4,8 @@
     <%
         const meta = new URLSearchParams(req.body?.toString?.());
         const accessor = req.username;
-        const user = meta.get('user') || accessor;
+        const canModifyOthers = await users.canUse(accessor, 'edit-users');
+        const user = canModifyOthers ? req.query.user || accessor : accessor;
         if (!req.authorized || !await users.userExists(accessor)) return res.redirect('/sign-in');
         const profile = await users.getFullProfile(user);
         if (meta.has('submitted')) {
@@ -13,7 +14,7 @@
             profile.bio = meta.get('bio').slice(0, 1024);
             profile.styles = meta.get('styles').slice(0, 4096);
             profile.email = meta.get('email').slice(0, 128);
-            if (await users.canUse(accessor, 'edit-users')) {
+            if (canModifyOthers) {
                 profile.username = meta.get('username').slice(0, 64);
                 const auths = JSON.parse(meta.get('authorizations'));
                 const removed = profile.authorizations.filter(auth => !auths.includes(auth));
