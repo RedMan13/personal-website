@@ -7,7 +7,7 @@
         const user = meta.get('user') || accessor;
         if (!req.authorized || !await users.userExists(accessor)) return res.redirect('/sign-in');
         const profile = await users.getFullProfile(user);
-        if ('submitted' in meta) {
+        if (meta.has('submitted')) {
             profile.username = meta.get('username').slice(0, 64);
             profile.picture = meta.get('picture').slice(0, 512);
             profile.banner = meta.get('banner').slice(0, 512);
