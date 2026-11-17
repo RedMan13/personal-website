@@ -101,7 +101,18 @@ module.exports = server => {
                     content: packet.content,
                     reference: packet.reference
                 });
-                socket.send(JSON.stringify({ t: 'confirm', nonce: packet.nonce }));
+                const packet = JSON.stringify({
+                    t: 'newMessage',
+                    nonce: packet.nonce,
+                    setAt: new Date().toISOString(),
+                    content: packet.content,
+                    reference: packet.reference
+                });
+                socket.send(packet);
+                connections.forEach(ident => {
+                    if (ident.target !== target) return;
+                    ident.socket.send(packet);
+                })
                 break;
             case 'nextHistory': {
                 const messages = await users.fetchMessages(ident.target, 40, packet.id);

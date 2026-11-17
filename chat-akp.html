@@ -118,7 +118,6 @@
         const deleteChat = document.getElementById('delete');
         const leaveChat = document.getElementById('leave');
         const socket = new WebSocket('/chatbot');
-        let protoMessage = {};
         let targetSelected = false;
         let targetPage = 0;
         let searchPage = 0;
@@ -139,8 +138,12 @@
                     messages.prepend(<TargetEntry target={target}/>);
                 break;
             case 'deleted': leaveChat.onclick(); break;
-            case 'confirm':
-                messages.prepend(<SingleMessage self={true} content={protoMessage.content} timestamp={protoMessage.setAt}/>);
+            case 'newMessage':
+                messages.prepend(<SingleMessage
+                    self={packet.author === username}
+                    content={packet.content}
+                    timestamp={packet.setAt}
+                />);
                 content.value = '';
                 content.readOnly = false;
                 send.disabled = false;
@@ -170,12 +173,9 @@
             content.readOnly = true;
             send.disabled = true;
 
-            protoMessage.content = content.value;
-            protoMessage.setAt = new Date().toISOString();
-
             socket.send(JSON.stringify({
                 t: 'send',
-                ...protoMessage
+                content: content.value
             }));
         }
         deleteChat.onclick = () => {
