@@ -144,13 +144,13 @@ class UserManager {
     async updateProfile(username, keys) {
         const user = await this.profiles.findOne({ username });
         if (!user) return;
-        if ('username' in keys) {
-            await this.tokens.updateMany(
-                { username: user.username },
-                { username: keys.username }
-            );
-            user.username = keys.username;
-        }
+        // if ('username' in keys) {
+        //     await this.tokens.updateMany(
+        //         { username: user.username },
+        //         { username: keys.username }
+        //     );
+        //     user.username = keys.username;
+        // }
         if ('email' in keys) user.email = keys.email;
         if ('bio' in keys) user.bio = keys.bio;
         if ('picture' in keys) user.picture = keys.picture;
