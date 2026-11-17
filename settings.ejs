@@ -2,18 +2,19 @@
 <head>
     <title>Settings</title>
     <%
+        const meta = new URLSearchParams(req.body?.toString?.());
         const accessor = req.username;
-        const user = req.query.user || accessor;
+        const user = meta.user || accessor;
         if (!req.authorized || !await users.userExists(accessor)) return res.redirect('/sign-in');
         const profile = await users.getFullProfile(user);
-        if ('submitted' in req.query) {
-            profile.username = req.query.username.slice(0, 64);
-            profile.picture = req.query.picture.slice(0, 512);
-            profile.banner = req.query.banner.slice(0, 512);
-            profile.bio = req.query.bio.slice(0, 1024);
-            profile.styles = req.query.styles.slice(0, 4096);
-            profile.email = req.query.email.slice(0, 128);
-            const auths = JSON.parse(req.query.authorizations);
+        if ('submitted' in meta) {
+            profile.username = meta.username.slice(0, 64);
+            profile.picture = meta.picture.slice(0, 512);
+            profile.banner = meta.banner.slice(0, 512);
+            profile.bio = meta.bio.slice(0, 1024);
+            profile.styles = meta.styles.slice(0, 4096);
+            profile.email = meta.email.slice(0, 128);
+            const auths = JSON.parse(meta.authorizations);
             const removed = profile.authorizations.filter(auth => !auths.includes(auth));
             const added = auths.filter(auth => !profile.authorizations.includes(auth));
             if ((removed.length || added.length) && await users.canUse(accessor, 'edit-users')) {
@@ -21,8 +22,8 @@
                 await users.allowUse(user, added);
                 await users.disallowUse(user, removed);
             }
-            if (profile.banned != req.query.banned && await users.canUse(accessor, 'ban-users'))
-                profile.banned = !(req.query.banned !== 'true');
+            if (profile.banned != meta.banned && await users.canUse(accessor, 'ban-users'))
+                profile.banned = !(meta.banned !== 'true');
             await users.updateProfile(user, profile); 
             return res.redirect('/profile?user=' + user);
         }
@@ -75,7 +76,7 @@
     </style>
 </head>
 <body>
-    <form method="get">
+    <form method="post">
         <p>PFP Image Url:</p>
         <input class="text-input" type="url" name="picture" maxlength="512" value="<%= profile.picture %>">
         <p>Banner Image Url</p>
