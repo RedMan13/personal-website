@@ -8,19 +8,21 @@
         if (!req.authorized || !await users.userExists(accessor)) return res.redirect('/sign-in');
         const profile = await users.getFullProfile(user);
         if (meta.has('submitted')) {
-            profile.username = meta.get('username').slice(0, 64);
             profile.picture = meta.get('picture').slice(0, 512);
             profile.banner = meta.get('banner').slice(0, 512);
             profile.bio = meta.get('bio').slice(0, 1024);
             profile.styles = meta.get('styles').slice(0, 4096);
             profile.email = meta.get('email').slice(0, 128);
-            const auths = JSON.parse(meta.get('authorizations'));
-            const removed = profile.authorizations.filter(auth => !auths.includes(auth));
-            const added = auths.filter(auth => !profile.authorizations.includes(auth));
-            if ((removed.length || added.length) && await users.canUse(accessor, 'edit-users')) {
-                profile.authorizations = auths;
-                await users.allowUse(user, added);
-                await users.disallowUse(user, removed);
+            if (await users.canUse(accessor, 'edit-users')) {
+                profile.username = meta.get('username').slice(0, 64);
+                const auths = JSON.parse(meta.get('authorizations'));
+                const removed = profile.authorizations.filter(auth => !auths.includes(auth));
+                const added = auths.filter(auth => !profile.authorizations.includes(auth));
+                if ((removed.length || added.length)) {
+                    profile.authorizations = auths;
+                    await users.allowUse(user, added);
+                    await users.disallowUse(user, removed);
+                }
             }
             if (profile.banned != meta.get('banned') && await users.canUse(accessor, 'ban-users'))
                 profile.banned = !(meta.get('banned') !== 'true');
