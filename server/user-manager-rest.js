@@ -32,8 +32,10 @@ module.exports = server => {
 
     const connections = [];
     server.ws('/chatbot', async (req, res) => {
+        console.log('Charbot user connected o algo');
         const socket = await res.accept();
         if (!req.authorized || !await users.userExists(req.username)/* || !await users.canUse(req.username, 'chatbot') */) {
+            console.log('ahhh they couldnt use it');
             socket.send(JSON.stringify({ "t": "unauthorized" }));
             socket.close();
             return;
@@ -67,6 +69,7 @@ module.exports = server => {
                 start: true
             }));
         }
+        console.log('okay now the client should be working');
 
         socket.onmessage = async e => {
             const packet = JSON.parse(e.data);
@@ -77,6 +80,7 @@ module.exports = server => {
                     socket.send(JSON.stringify({
                         t: 'targets',
                         targets,
+                        final: targets.length < 20,
                         start: !packet.page,
                         nonce: packet.nonce
                     }));

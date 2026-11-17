@@ -133,7 +133,7 @@
                     messages.appendChild(loadMore);
                     elevated = true;
                 }
-                loadMore.style.display = packet.final ? 'hidden' : '';
+                loadMore.hidden = packet.final;
                 for (const target of packet.targets)
                     messages.prepend(<TargetEntry target={target}/>);
                 break;
@@ -155,7 +155,7 @@
                     messages.innerHTML = '';
                     messages.appendChild(loadMore);
                 }
-                loadMore.style.display = packet.final ? 'hidden' : '';
+                loadMore.hidden = packet.final;
                 for (const message of packet.messages)
                     messages.prepend(<SingleMessage
                         self={message.author === username}
