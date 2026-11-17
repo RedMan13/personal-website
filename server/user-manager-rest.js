@@ -108,7 +108,6 @@ module.exports = server => {
                     content: packet.content,
                     reference: packet.reference
                 });
-                socket.send(outgoing);
                 connections.forEach(o => {
                     if (o.target !== ident.target) return;
                     o.socket.send(outgoing);
