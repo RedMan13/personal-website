@@ -1,0 +1,197 @@
+<!TEMPLATE /cardpage.html>
+<head>
+    <title>ChatAKP</title>
+    <style>
+        #main {
+            height: 100%;
+            display: grid;
+            gap: .2em;
+            grid-template-rows: 1fr max-content;
+            padding: 0 .2em .2em .05em;
+            box-sizing: border-box;
+        }
+        .chat-controls {
+            position: absolute;
+            right: 0;
+            top: 0;
+        }
+        .message-wrapper {
+            position: relative;
+            display: flex;
+            flex-direction: column-reverse;
+
+            box-sizing: border-box;
+            box-shadow: inset 0px 0px 4px grey;
+            border-radius: 10px;
+            padding: 5px;
+            overflow: scroll;
+        }
+        .message-content {
+            box-sizing: border-box;
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr max-content max-content max-content;
+            gap: .1em;
+        }
+        .input-button { padding: 0; }
+        .input-button img {
+            height: 1.4em;
+            display: block;
+        }
+
+        .load-more { margin-bottom: .85em; }
+    </style>
+</head>
+<body>
+    <div id="messages" class="message-wrapper">
+        <button id="load-more" class="load-more">Load More</button>
+    </div>
+    <div class="message-content">
+        <input id="content" type="text" placeholder="Message the chatbot">
+        <button id="send" class="input-button">
+            <img src="/google-material/send-message.svg" title="Send message">
+        </button>
+        <button id="delete" class="input-button">
+            <img src="/google-material/delete.svg" title="Delete chat">
+        </button>
+        <button id="leave" class="input-button">
+            <img src="/google-material/exit-chat.svg" title="Leave chat">
+        </button>
+    </div>
+    <script file="jsx">
+        const SingleMessage = <define
+            self={false}
+            content=""
+            timestamp=""
+            referenced=""
+            on:attributes={function () { this.redraw() }}
+        >
+            <style>{`
+                .message {
+                    justify-self: left;
+                    text-align: left;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: left;
+                }
+                .message.self {
+                    justify-self: right;
+                    text-align: right;
+                    align-items: right;
+                }
+
+                .content {
+                }
+
+                .timestamp {
+                    font-size: 0.75em;
+                }
+            `}</style>
+            <div class={`message ${this.self && 'self'}`}>
+                <div class="content">{this.content}</div>
+                <span class="timestamp">Sent {(() => {
+                    const time = new Date(this.timestamp);
+                    const delta = (Date.now() - time.getTime());
+                    if (delta > (24 * 60 * 60 * 1000))
+                        return time.toLocaleString();
+                    if (delta > (60 * 60 * 1000))
+                        return time.toLocaleTimeString();
+                    if (delta < (60 * 1000))
+                        return 'now';
+                    return `${Math.floor((delta / 60 / 1000) % 60)} minutes ago`;
+                })()}</span>
+            </div>
+        </define>;
+        const TargetEntry = <define target="" on:attributes={function () { this.redraw() }}>
+            <button
+                on:click={() => socket.send(JSON.stringify({ t: 'select', selected: this.target }))}
+                style="font-size: 1em; width: 100%; text-align: center;"
+            >
+                {this.target}
+            </button>
+        </define>
+
+        const messages = document.getElementById('messages');
+        const content = document.getElementById('content');
+        const send = document.getElementById('send');
+        const loadMore = document.getElementById('load-more');
+        const deleteChat = document.getElementById('delete');
+        const leaveChat = document.getElementById('leave');
+        const socket = new WebSocket('/chatbot');
+        let protoMessage = {};
+        let targetSelected = false;
+        let targetPage = 0;
+        let searchPage = 0;
+        let lastMessageId = null;
+        let elevated = false;
+
+        socket.onmessage = e => {
+            const packet = JSON.parse(e.data);
+            switch (packet.t) {
+            case 'targets': // first packet is targets, indicating the api expects us to select a target first
+                if (packet.start) {
+                    messages.innerHTML = '';
+                    messages.appendChild(loadMore);
+                    elevated = true;
+                }
+                loadMore.style.display = packet.final ? 'hidden' : '';
+                for (const target of packet.targets)
+                    messages.prepend(<TargetEntry target={target}/>);
+                break;
+            case 'deleted': leaveChat.onclick(); break;
+            case 'confirm':
+                messages.prepend(<SingleMessage self={true} content={protoMessage.content} timestamp={protoMessage.setAt}/>);
+                content.value = '';
+                content.readOnly = false;
+                send.disabled = false;
+                break;
+            case 'history':
+                targetSelected = true;
+                lastMessageId = packet.messages.at(-1).id;
+                if (packet.start) {
+                    messages.innerHTML = '';
+                    messages.appendChild(loadMore);
+                }
+                loadMore.style.display = packet.final ? 'hidden' : '';
+                for (const message of packet.messages)
+                    messages.prepend(<SingleMessage
+                        self={message.author === username}
+                        content={message.content}
+                        timestamp={message.setAt}
+                    />);
+                break;
+            }
+        }
+        content.onkeypress = e => {
+            if (e.key !== 'Enter') return;
+            send.onclick();
+        }
+        send.onclick = () => {
+            content.readOnly = true;
+            send.disabled = true;
+
+            protoMessage.content = content.value;
+            protoMessage.setAt = new Date().toISOString();
+
+            socket.send(JSON.stringify({
+                t: 'send',
+                ...protoMessage
+            }));
+        }
+        deleteChat.onclick = () => {
+            if (!confirm('Are you sure you want to permanently erase this chat?')) return;
+            socket.send(JSON.stringify({ t: 'delete' }));
+        }
+        leaveChat.onclick = () => {
+            if (!elevated) return window.close();
+            socket.send(JSON.stringify({ t: 'targets', page: 0 }));
+        }
+        loadMore.onclick = e => {
+            if (!targetSelected) {
+                socket.send(JSON.stringify({ t: 'targets', page: ++targetPage }));
+                return;
+            }
+            socket.send(JSON.stringify({ t: 'nextHistory', id: lastMessageId }));
+        }
+    </script>
+</body>

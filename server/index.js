@@ -1,5 +1,4 @@
 const handleURL = require('./url-preprosesor.js');
-const ShareManager = require('./share-port.js');
 console.log('creating expressjs server');
 const { WebSocketExpress } = require('websocket-express');
 const runPHP = require('./php-execute.js');
@@ -9,10 +8,7 @@ const server = new WebSocketExpress();
 const fs = require('fs');
 const { handleReject, codes } = require('./handle-reject.js');
 const mongoose = require('mongoose');
-const UserManager = require('./user-manager.js');
-const https = require('https');
-const http = require('http');
-const mime = require('mime');
+const UserManager = require('./user-manager/core.js');
 
 console.log(new Date().toUTCString());
 const onces = {};
@@ -45,30 +41,19 @@ server.useHTTP((req, res, next) => {
         shouldParse: () => true
     });
 });
-server.useHTTP(async (req, res, next) => {
-    const { username, password } = req.cookies;
-    if (username && password && await users.authorize(username, password)) {
-        res.header('Server-Timing', `authorized`);
+server.use(async (req, res, next) => {
+    const { token } = req.cookies;
+    const username = await users.checkToken(token, req.ip);
+    if (username) {
+        res.header('Server-Timing', `authorized, username;desc=${username}`);
         req.authorized = true;
+        req.username = username;
     }
     next();
 });
 
 require('./share-port-rest.js')(server);
 require('./user-manager-rest.js')(server);
-server.get('/proxy', (req, res) => {
-    (req.query.u.startsWith('https') ? https : http).get(req.query.u, req => {
-        // this proxy is intended solely for image media
-        // so, only mirror information that would be relevant to an image
-        if (req.statusCode >= 300) 
-            return handleReject(codes.MisdirectedRequest, 'This proxy is not for apis!! please only use for media, like images.', res, false);
-        res.status(200);
-        if ('content-type' in req.headers) res.header('Content-Type', req.headers['content-type']);
-        if ('content-encoding' in req.headers) res.header('Content-Encoding', req.headers['content-encoding']);
-        if ('content-length' in req.headers) res.header('Content-Length', req.headers['content-length']);
-        req.pipe(res);
-    }).on('error', e => { console.error(e); handleReject(codes['BadRequest'], e.message, res, false); });
-});
 
 console.log('setting up main file dealer');
 server.useHTTP(handleURL);

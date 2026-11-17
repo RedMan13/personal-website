@@ -8,7 +8,9 @@
     <meta name="theme-color" content="white">
     <meta name="color-scheme" content="light">
     <script>
-        const authorized = !!performance.getEntriesByType('navigation')[0].serverTiming.find(v => v.name === 'authorized');
+        const navPerf = performance.getEntriesByType('navigation');
+        const authorized = !!navPerf[0].serverTiming.find(v => v.name === 'authorized');
+        const username = navPerf[0].serverTiming.find(v => v.name === 'username')?.description;
 
         const elementClassNames = {
             "a": 'HTMLAnchorElement',
@@ -104,8 +106,7 @@
                     if (extend) 
                         return document.createElement(extend, { is: name });
                     super();
-                    if (!this.display) this.display = this.attachShadow({ mode: 'open' });
-                    innerGen.apply(this, [this.display]);
+                    this.redraw();
                     for (const [key, val] of Object.entries(attributes)) {
                         if (key.startsWith('on')) {
                             this.addEventListener(key.slice(2), val.bind(this));
@@ -114,10 +115,14 @@
                         this.setAttribute(key, val);
                     }
                 }
+                redraw() {
+                    if (!this.display) this.display = this.attachShadow({ mode: 'open' });
+                    this.display.innerHTML = '';
+                    innerGen.apply(this, [this.display]);
+                }
                 attributeChangedCallback(key, oldVal, newVal) {
+                    if (!(key in newElement.prototype)) this[key] = newVal;
                     onAttributes?.apply?.(this, [key, oldVal, newVal]);
-                    if (key in newElement.prototype) return;
-                    this[key] = newVal;
                 }
             }
             for (const key in attributes) {
@@ -326,6 +331,17 @@
             height: 100%;
             font-family: 'Open Sans', serif;
         }
+        button,
+        textarea,
+        input {
+            font-size: .85em;
+            padding: .05em .11em;
+            border: .05em solid grey;
+            border-radius: .11em;
+        }
+        button,
+        input[type=submit],
+        input[type=button] { padding: .05em .23em; }
         .exit-to-source {
             position: absolute;
             left: 0;

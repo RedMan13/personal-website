@@ -30,6 +30,8 @@
         const nonce = crypto.randomUUID();
     %>
     <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src localhost:8000 localhost:3000 godslayerakp.gay/proxy; script-src 'nonce-<%- nonce %>'; style-src 'nonce-<%- nonce %>'">
+    <!-- The single un shakable change... -->
+    <style nonce="<%- nonce %>"> html { font-family: sans-serif; } </style>
 </head>
 <body class="backdrop">
     <img class="banner" id="banner" src="/proxy?u=<%- encodeURI(profile.banner) %>" alt=" ">

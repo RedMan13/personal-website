@@ -55,6 +55,7 @@ function parseTokens(tokens, util, enableJS = true) {
             const elements = parseTokens(batch.at(-2), util, enableJS);
             const mid = batch.find(tok => tok.name === 'close');
             let inside = 0;
+            let lineStart = true;
             if (mid)
             for (let i = mid.end; i < end.start; i++) {
                 const el = elements.find(tok => i >= tok.start && i < tok.end);
@@ -89,8 +90,10 @@ function parseTokens(tokens, util, enableJS = true) {
                     js[js.length -1] += util.file[i];
                     continue;
                 }
-                if (!/^\s/.test(util.file[i]) || !enableJS) 
+                if (!lineStart || !/\s/.test(util.file[i])) {
+                    lineStart = util.file[i] === '\n';
                     children[children.length -1] += util.file[i];
+                }
             }
         }
 

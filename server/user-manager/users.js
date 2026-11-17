@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 
 const UserProfile = new mongoose.Schema({
     username: String,
@@ -15,23 +16,21 @@ const UserAccess = new mongoose.Schema({
     username: String,
     authClass: String // what, by name, they are authorized to use
 });
-const Achievement = new mongoose.Schema({
-    id: String, // id of the achievement itself
-    username: String
+const TokenList = new mongoose.Schema({
+    username: String,
+    token: String,
+    ip: String
 });
 
 class UserManager {
-    /** @type {mongoose.Connection} */
-    connection = null;
     /**
      * Manages everything to do with users, including things like network tracking and achievements
      * @param {mongoose.Connection} connection 
      */
     constructor(connection) {
-        this.connection = connection;
         this.profiles = connection.model('user-profiles', UserProfile);
         this.access = connection.model('user-access', UserAccess);
-        this.achievements = connection.model('user-achievments', Achievement);
+        this.tokens = connection.model('token-list', TokenList);
     }
     
     /**
@@ -43,18 +42,44 @@ class UserManager {
         const user = await this.profiles.findOne({ username });
         return !!user;
     }
+
     /**
-     * Checks if the given credentials are valid for logging in the user
+     * Obtains an access token for an account
+     * @param {string} ip The remote ip that triggered this query. Helps prevent token stealing, maybe
      * @param {string} username 
      * @param {string} password The users password string
-     * @returns {Promise<boolean>} If the login info is correct
+     * @returns {Promise<string>} The token to use for this log in
      */
-    async authorize(username, password) {
+    async getToken(ip, username, password) {
         const user = await this.profiles.findOne({ username });
-        if (user.banned) return false; // can not log in to a banned account
-        if (!user) return false;
-        return bcrypt.compare(password, user.passcode);
+        if (!user) throw new Error('Bad password or username');
+        if (user.banned) throw new Error('User is banned'); // can not log in to a banned account
+        const valid = bcrypt.compare(password, user.passcode);
+        if (!valid) throw new Error('Bad password or username');
+
+        // if this ip already has a token, then simply use that existing token, dont treat it like a truly new login
+        const standing = await this.tokens.findOne({ ip });
+        if (standing) return standing.token;
+
+        // if theres toooo many tokens, delete which ever ones come up first for the username and add this one
+        const numTokens = await this.tokens.countDocuments({ username });
+        if (numTokens > 5) await this.tokens.deleteOne({ username });
+        
+        const token = crypto.randomUUID(); // token just needs to be entirely unique
+        (await this.tokens.create({ token, ip, username })).save();
+        return token;
     }
+    /**
+     * Verifies that a token is valid, and what account that token belongs too
+     * @param {string} token
+     * @param {string} ip The remote ip that triggered this query
+     * @returns {Promise<string?>} The username from the token, or void if token/ip is invalid
+     */
+    async checkToken(token, ip) {
+        const instance = await this.tokens.findOne({ token, ip });
+        return instance?.username;
+    }
+
     /**
      * Creates a new user and blank profile to go with
      * @param {string} username The new profiles username
@@ -172,21 +197,7 @@ class UserManager {
         }
         await this.access.deleteMany({ username, authClass: { $in: features } });
     }
-    /**
-     * Gets all achievements held by a specific user
-     * @param {string} username
-     * @returns {Promise<string[]>} The achievement IDs that this user holds
-     */
-    async getAchievements(username) {
-        const achievements = await this.achievements.aggregate([ { $match: { username } } ]);
-        return achievements.map(v => v.id);
-    }
-    /**
-     * Adds an achievement to a user
-     * @param {string} username 
-     * @param {string} id The id of the achievement to add
-     */
-    async addAchievement(username, id) { (await this.achievements.create({ username, id })).save(); }
+
     /**
      * Gets only the users profile information
      * @param {string} username 

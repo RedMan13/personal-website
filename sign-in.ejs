@@ -4,33 +4,54 @@
     <%
         const meta = new URLSearchParams(req.body?.toString?.());
         const hasSubmitted = !!req.body?.length;
-        const loggedIn = hasSubmitted &&
+        const token = hasSubmitted &&
             meta.get('username').length > 1 && 
-            await users.authorize(meta.get('username').slice(0, 64), meta.get('password').slice(0, 64));
-        if (loggedIn) {
-            res.header('Set-Cookie', `username=${escape(meta.get('username'))}; Max-Age=${400 * 24 * 60 * 60}`);
-            res.header('Set-Cookie', `password=${escape(meta.get('password'))}; Secure; HttpOnly; Max-Age=${400 * 24 * 60 * 60}`);
-        } 
+            await users.getToken(req.ip, meta.get('username').slice(0, 64), meta.get('password').slice(0, 64))
+                .catch(err => err);
+        if (typeof token === 'string')
+            res.header('Set-Cookie', `token=${escape(token)}; Secure; HttpOnly; Max-Age=${400 * 24 * 60 * 60}`);
     %>
     <style>
         p {
             margin: 0px;
             margin-top: 6px;
         }
-        form { padding: 6px; }
+        form {
+            padding: 6px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .inputs-wrapper {
+            width: 45%;
+            margin-bottom: 1em;
+        }
+        .text-input {
+            width: 100%;
+            padding: .35em;
+            border-radius: .4em;
+        }
+        input[type=submit] {
+            padding: .1em .4em !important;
+            border-radius: .4em;
+        }
     </style>
 </head>
 <body>
     <% if (!hasSubmitted) { %>
         <form method="post">
-            <p>Username:</p>
-            <input type="text" name="username" minlength="2" maxlength="64" required placeholder="John Sigma">
-            <p>Password:</p>
-            <input type="password" name="password" minlength="8" maxlength="64" required><br><br>
-            <input type="submit" name="login">
+            <div class="inputs-wrapper">
+                <p>Username:</p>
+                <input class="text-input" type="text" name="username" minlength="2" maxlength="64" required placeholder="John Sigma">
+                <p>Password:</p>
+                <input class="text-input" type="password" name="password" minlength="8" maxlength="64" required>
+            </div>
+            <input type="submit" name="login" value="Log in">
         </form>
-    <% } else if (!loggedIn) { %>
+    <% } else if (token instanceof Error && !token.message.includes('banned')) { %>
         <p>Oops! looks like that account info wasnt correct. Maybe you spelled something wrong? Make sure you already have an account before you try signing into it.</p>
+    <% } else if (token instanceof Error) { %>
+        <p><%= token.message %></p>
     <% } else { %>
         <p>Logged in!</p>
     <% } %>
