@@ -101,17 +101,16 @@ module.exports = server => {
                     content: packet.content,
                     reference: packet.reference
                 });
-                const packet = JSON.stringify({
+                const outgoing = JSON.stringify({
                     t: 'newMessage',
-                    nonce: packet.nonce,
                     setAt: new Date().toISOString(),
                     content: packet.content,
                     reference: packet.reference
                 });
-                socket.send(packet);
+                socket.send(outgoing);
                 connections.forEach(ident => {
                     if (ident.target !== target) return;
-                    ident.socket.send(packet);
+                    ident.socket.send(outgoing);
                 });
                 break;
             case 'nextHistory': {
