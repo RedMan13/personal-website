@@ -104,13 +104,14 @@ module.exports = server => {
                 const outgoing = JSON.stringify({
                     t: 'newMessage',
                     setAt: new Date().toISOString(),
+                    author: req.username,
                     content: packet.content,
                     reference: packet.reference
                 });
                 socket.send(outgoing);
-                connections.forEach(ident => {
-                    if (ident.target !== target) return;
-                    ident.socket.send(outgoing);
+                connections.forEach(o => {
+                    if (o.target !== ident.target) return;
+                    o.socket.send(outgoing);
                 });
                 break;
             case 'nextHistory': {
