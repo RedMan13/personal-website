@@ -43,7 +43,7 @@ server.useHTTP((req, res, next) => {
 });
 server.use(async (req, res, next) => {
     const { token } = req.cookies;
-    console.log(token);
+    console.log(req.ip);
     const username = await users.checkToken(token, req.ip);
     if (username) {
         res.header('Server-Timing', `authorized, username;desc=${username}`);
