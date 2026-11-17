@@ -112,7 +112,7 @@ module.exports = server => {
                 connections.forEach(ident => {
                     if (ident.target !== target) return;
                     ident.socket.send(packet);
-                })
+                });
                 break;
             case 'nextHistory': {
                 const messages = await users.fetchMessages(ident.target, 40, packet.id);
@@ -134,6 +134,13 @@ module.exports = server => {
                 socket.send(JSON.stringify({ t: 'search', messages, nonce: packet.nonce }));
                 break;
             }
+            case 'delete': 
+                await users.deleteTarget(ident.target);
+                connections.forEach(ident => {
+                    if (ident.target !== target) return;
+                    ident.socket.send({ t: 'deleted' });
+                });
+                break;
             }
         }
     })
