@@ -35,7 +35,7 @@ module.exports = server => {
         console.log('Charbot user connected o algo');
         const socket = await res.accept();
         if (!req.authorized || !await users.userExists(req.username)/* || !await users.canUse(req.username, 'chatbot') */) {
-            console.log('ahhh they couldnt use it');
+            console.log('ahhh they couldnt use it', req.authorized, req.username);
             socket.send(JSON.stringify({ "t": "unauthorized" }));
             socket.close();
             return;
