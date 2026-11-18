@@ -51,7 +51,8 @@ for (const name of allFiles) promises.push((async () => {
     }
     if ((name in remoteHashes) && !(name in localHashes)) {
         console.log('D', name);
-        await sftp.delete(remoteFile);
+        // serv00s sftp api seems to try twice, which fails because it already deleted the file
+        await sftp.delete(remoteFile).catch(() => {});
         return;
     }
 
