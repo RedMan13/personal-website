@@ -62,7 +62,7 @@ class UserManager {
         if (!valid) throw new Error('Bad password or username');
 
         // if this ip already has a token, then simply use that existing token, dont treat it like a truly new login
-        const standing = await this.tokens.findOne({ ip });
+        const standing = await this.tokens.findOne({ ip, username });
         if (standing) return standing.token;
 
         // if theres toooo many tokens, delete which ever ones come up first for the username and add this one
