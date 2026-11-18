@@ -16,7 +16,7 @@ module.exports = server => {
         }
         next();
     });
-    
+
     server.get('/logs', async (req, res) => {
         if (!req.authorized || !await users.userExists(req.username))
             return handleReject(codes.Forbidden, 'You must login to be able to view this content', res, false);
