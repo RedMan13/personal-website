@@ -139,9 +139,9 @@ module.exports = server => {
             }
             case 'delete': 
                 await users.deleteTarget(ident.target);
-                connections.forEach(ident => {
-                    if (ident.target !== target) return;
-                    ident.socket.send({ t: 'deleted' });
+                connections.forEach(o => {
+                    if (o.target !== ident.target) return;
+                    o.socket.send({ t: 'deleted' });
                 });
                 break;
             }
