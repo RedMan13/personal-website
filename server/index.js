@@ -41,16 +41,6 @@ server.useHTTP((req, res, next) => {
         shouldParse: () => true
     });
 });
-server.use(async (req, res, next) => {
-    const { token } = req.cookies;
-    const username = await users.checkToken(token, req.headers['x-real-ip'] || req.ip);
-    if (username) {
-        res.header('Server-Timing', `authorized, username;desc=${username}`);
-        req.authorized = true;
-        req.username = username;
-    }
-    next();
-});
 
 require('./share-port-rest.js')(server);
 require('./user-manager-rest.js')(server);

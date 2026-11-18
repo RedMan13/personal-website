@@ -6,6 +6,17 @@ const http = require('http');
 
 const logs = path.resolve('../logs/error.log');
 module.exports = server => {
+    server.use(async (req, res, next) => {
+        const { token } = req.cookies;
+        const username = await users.checkToken(token, req.headers['x-real-ip'] || req.ip);
+        if (username) {
+            res.header('Server-Timing', `authorized, username;desc=${username}`);
+            req.authorized = true;
+            req.username = username;
+        }
+        next();
+    });
+    
     server.get('/logs', async (req, res) => {
         if (!req.authorized || !await users.userExists(req.username))
             return handleReject(codes.Forbidden, 'You must login to be able to view this content', res, false);
