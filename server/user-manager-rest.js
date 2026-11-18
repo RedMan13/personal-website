@@ -90,7 +90,7 @@ module.exports = server => {
                 case 'select': {
                     if (!ident.elevated) return;
                     ident.target = packet.selected;
-                    ident.target = packet.selected.split('/')[0];
+                    ident.username = packet.selected.split('/')[1];
                     const messages = await users.fetchMessages(ident.target, 40);
                     socket.send(JSON.stringify({
                         t: 'history',
@@ -120,7 +120,7 @@ module.exports = server => {
                     content: packet.content
                 });
                 connections.forEach(o => {
-                    if (o.elevated) o.socket.send(notification);
+                    if (o.elevated || o.username === ident.username) o.socket.send(notification);
                     if (o.target !== ident.target) return;
                     o.socket.send(outgoing);
                 });

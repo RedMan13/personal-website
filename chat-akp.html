@@ -190,6 +190,13 @@
             const packet = JSON.parse(e.data);
             switch (packet.t) {
             case 'targets': // first packet is targets, indicating the api expects us to select a target first
+                if (location.hash) {
+                    socket.send(JSON.stringify({
+                        t: 'select',
+                        selected: location.hash.slice(1)
+                    }));
+                    return;
+                }
                 if (packet.start) {
                     messages.innerHTML = '';
                     messages.appendChild(loadMore);
