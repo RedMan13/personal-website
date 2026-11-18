@@ -44,7 +44,8 @@ module.exports = server => {
         const ident = {
             target: `chatbot/${req.username}`,
             socket,
-            elevated: await users.canUse(req.username, 'acting-chatbot')
+            elevated: await users.canUse(req.username, 'acting-chatbot'),
+            username: req.username
         }
         socket.onclose = () => {
             const idx = connections.indexOf(ident);
@@ -89,6 +90,7 @@ module.exports = server => {
                 case 'select': {
                     if (!ident.elevated) return;
                     ident.target = packet.selected;
+                    ident.target = packet.selected.split('/')[0];
                     const messages = await users.fetchMessages(ident.target, 40);
                     socket.send(JSON.stringify({
                         t: 'history',
@@ -112,13 +114,13 @@ module.exports = server => {
                     content: packet.content,
                     reference: packet.reference
                 });
+                const notification = JSON.stringify({
+                    t: 'notify',
+                    target: ident.target,
+                    content: packet.content
+                });
                 connections.forEach(o => {
-                    if (o.elevated) {
-                        o.socket.send(JSON.stringify({
-                            t: 'notify',
-                            target: ident.target
-                        }));
-                    }
+                    if (o.elevated) o.socket.send(notification);
                     if (o.target !== ident.target) return;
                     o.socket.send(outgoing);
                 });

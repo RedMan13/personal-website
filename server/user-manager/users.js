@@ -23,6 +23,10 @@ const TokenList = new mongoose.Schema({
 });
 
 class UserManager {
+    static validUsername(username) {
+        return username.replace(/[a-z0-9\-]+/gi, '-');
+    }
+
     /**
      * Manages everything to do with users, including things like network tracking and achievements
      * @param {mongoose.Connection} connection 
@@ -88,6 +92,7 @@ class UserManager {
      * @returns {boolean} If the account was registered or not
      */
     async register(username, password, email = '') {
+        username = UserManager.validUsername(username);
         const user = await this.userExists(username);
         if (user) return false;
         (await this.profiles.create({
