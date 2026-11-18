@@ -8,19 +8,19 @@ const logs = path.resolve('../logs/error.log');
 module.exports = server => {
     server.use(async (req, res, next) => {
         const { token } = req.cookies;
-        const username = await users.checkToken(token, req.headers['x-real-ip'] || req.ip);
-        if (username) {
-            res.header('Server-Timing', `authorized, username;desc=${username}`);
+        const userId = await users.checkToken(token, req.headers['x-real-ip'] || req.ip);
+        if (userId) {
+            res.header('Server-Timing', `authorized, id;desc=${userId}`);
             req.authorized = true;
-            req.username = username;
+            req.userId = userId;
         }
         next();
     });
 
     server.get('/logs', async (req, res) => {
-        if (!req.authorized || !await users.userExists(req.username))
+        if (!req.authorized || !await users.userExists(req.userId))
             return handleReject(codes.Forbidden, 'You must login to be able to view this content', res, false);
-        if (!await users.canUse(req.username, 'view-logs'))
+        if (!await users.canUse(req.userId, 'view-logs'))
             return handleReject(codes.Forbidden, 'You are not permitted to view this content', res, false);
         const data = await fs.readFile(logs, 'utf8');
         res.header('Content-Type', 'text/plain');
@@ -45,18 +45,18 @@ module.exports = server => {
     server.ws('/chatbot', async (req, res) => {
         console.log('Charbot user connected o algo');
         const socket = await res.accept();
-        if (!req.authorized || !await users.userExists(req.username)/* || !await users.canUse(req.username, 'chatbot') */) {
-            console.log('ahhh they couldnt use it', req.authorized, req.username);
+        if (!req.authorized || !await users.userExists(req.userId)/* || !await users.canUse(req.userId, 'chatbot') */) {
+            console.log('ahhh they couldnt use it');
             socket.send('{ "t": "unauthorized" }');
             socket.close();
             return;
         }
 
         const ident = {
-            target: `chatbot/${req.username}`,
+            target: `chatbot/${req.userId}`,
             socket,
-            elevated: await users.canUse(req.username, 'acting-chatbot'),
-            username: req.username
+            elevated: await users.canUse(req.userId, 'acting-chatbot'),
+            username: req.userId
         }
         socket.onclose = () => {
             const idx = connections.indexOf(ident);
@@ -113,7 +113,7 @@ module.exports = server => {
                     break;
                 }
             case 'send':
-                await users.createMessage(req.username, {
+                await users.createMessage(req.userId, {
                     target: ident.target,
                     content: packet.content,
                     reference: packet.reference
@@ -121,7 +121,7 @@ module.exports = server => {
                 const outgoing = JSON.stringify({
                     t: 'newMessage',
                     setAt: new Date().toISOString(),
-                    author: req.username,
+                    author: req.userId,
                     content: packet.content,
                     reference: packet.reference
                 });

@@ -10,7 +10,7 @@
     <script>
         const navPerf = performance.getEntriesByType('navigation');
         const authorized = !!navPerf[0].serverTiming.find(v => v.name === 'authorized');
-        const username = navPerf[0].serverTiming.find(v => v.name === 'username')?.description;
+        const userId = navPerf[0].serverTiming.find(v => v.name === 'id')?.description;
 
         const elementClassNames = {
             "a": 'HTMLAnchorElement',

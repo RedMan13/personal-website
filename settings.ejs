@@ -3,19 +3,19 @@
     <title>Settings</title>
     <%
         const meta = new URLSearchParams(req.body?.toString?.());
-        const accessor = req.username;
+        const accessor = req.userId;
         const canModifyOthers = await users.canUse(accessor, 'edit-users');
         const user = canModifyOthers ? req.query.user || accessor : accessor;
         if (!req.authorized || !await users.userExists(accessor)) return res.redirect('/sign-in');
         const profile = await users.getFullProfile(user);
         if (meta.has('submitted')) {
+            profile.username = meta.get('username').slice(0, 64);
             profile.picture = meta.get('picture').slice(0, 512);
             profile.banner = meta.get('banner').slice(0, 512);
             profile.bio = meta.get('bio').slice(0, 1024);
             profile.styles = meta.get('styles').slice(0, 4096);
             profile.email = meta.get('email').slice(0, 128);
             if (canModifyOthers) {
-                profile.username = meta.get('username').slice(0, 64);
                 const auths = JSON.parse(meta.get('authorizations'));
                 const removed = profile.authorizations.filter(auth => !auths.includes(auth));
                 const added = auths.filter(auth => !profile.authorizations.includes(auth));
@@ -80,6 +80,8 @@
 </head>
 <body>
     <form method="post">
+        <p>Username:</p>
+        <input class="text-input" name="username" type="text" maxlength="64" value="<%= profile.username %>">
         <p>PFP Image Url:</p>
         <input class="text-input" type="url" name="picture" maxlength="512" value="<%= profile.picture %>">
         <p>Banner Image Url</p>
@@ -95,8 +97,6 @@
             <fieldset>
                 <legend>Moderator Controls</legend>
 
-                <p>Username:</p>
-                <input class="text-input" name="username" type="text" maxlength="64" value="<%= profile.username %>">
                 <p>Permissions:</p>
                 <div class="permissions-list" id="permissions-list">
                     <input type="text" id="new-authorization"><button type="button" onclick="handleAdd()">Add</button><br><br>

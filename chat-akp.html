@@ -210,7 +210,7 @@
             case 'newMessage':
                 contentIds[packet.id] = packet.content;
                 messages.prepend(<SingleMessage
-                    self={packet.author === username}
+                    self={packet.author === userId}
                     reference={packet.reference}
                     content={packet.content}
                     timestamp={packet.setAt}
@@ -229,7 +229,7 @@
                 for (const message of packet.messages) {
                     contentIds[message.id] = message.content;
                     messages.prepend(<SingleMessage
-                        self={message.author === username}
+                        self={message.author === userId}
                         reference={message.reference}
                         content={message.content}
                         timestamp={message.setAt}

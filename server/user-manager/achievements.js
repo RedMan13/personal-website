@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 const Achievement = new mongoose.Schema({
     id: String, // id of the achievement itself
-    username: String
+    userId: String
 });
 
 class AchievementManager {
@@ -15,19 +15,19 @@ class AchievementManager {
     }
     /**
      * Gets all achievements held by a specific user
-     * @param {string} username
+     * @param {string} id User id
      * @returns {Promise<string[]>} The achievement IDs that this user holds
      */
-    async getAchievements(username) {
-        const achievements = await this.achievements.aggregate([ { $match: { username } } ]);
+    async getAchievements(id) {
+        const achievements = await this.achievements.aggregate([ { $match: { userId: id } } ]);
         return achievements.map(v => v.id);
     }
     /**
      * Adds an achievement to a user
-     * @param {string} username 
+     * @param {string} userId 
      * @param {string} id The id of the achievement to add
      */
-    async addAchievement(username, id) { (await this.achievements.create({ username, id })).save(); }
+    async addAchievement(userId, id) { (await this.achievements.create({ userId, id })).save(); }
 }
 
 module.exports = AchievementManager;
