@@ -98,7 +98,7 @@ class MessageManager {
                 }
             } },
             filters.author && { $match: { author: filters.author } },
-            { $sort: { date: filters.descending ? -1 : 1 } },
+            { $sort: { date: filters.descending ? 1 : -1 } },
             { $skip: page * pages },
             { $limit: pages },
             { $unset: '_id' },
@@ -119,7 +119,7 @@ class MessageManager {
         }
         const messages = await this.messages.find([
             { $match: { target } },
-            { $sort: { date: 1 } },
+            { $sort: { date: -1 } },
             position,
             { $limit: count }
         ].filter(Boolean));

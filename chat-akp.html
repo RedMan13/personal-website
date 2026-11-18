@@ -30,8 +30,13 @@
             box-sizing: border-box;
             width: 100%;
             display: grid;
+            grid-template-rows: max-content max-content;
             grid-template-columns: 1fr max-content max-content max-content;
             gap: .1em;
+        }
+        .message-replying {
+            grid-column: 1 / 4;
+            text-align: right;
         }
         .input-button { padding: 0; }
         .input-button img {
@@ -47,6 +52,11 @@
         <button id="load-more" class="load-more">Load More</button>
     </div>
     <div class="message-content">
+        <a class="message-replying" hidden id="replying-text">Replying to a message</a>
+        <button id="cancel-reply" hidden class="input-button">
+            <img src="/google-material/x-by-y.svg" title="Cancel reply">
+        </button>
+
         <input id="content" type="text" placeholder="Message the chatbot">
         <button id="send" class="input-button">
             <img src="/google-material/send-message.svg" title="Send message">
@@ -63,7 +73,8 @@
             self={false}
             content=""
             timestamp=""
-            referenced=""
+            reference=""
+            message=""
             on:attributes={function () { this.redraw() }}
         >
             <style>{`
@@ -73,6 +84,7 @@
                     display: flex;
                     flex-direction: column;
                     align-items: left;
+                    margin-bottom: .85em;
                 }
                 .message.self {
                     justify-self: right;
@@ -80,15 +92,61 @@
                     align-items: right;
                 }
 
-                .content {
+                .reference { font-size: 0.75em; }
+                .reference div {
+                    height: .5em;
+                    width: 2em;
+                    border-top-left-radius: 1em;
+                    border-top: 1px solid grey;
+                    margin-top: .5em;
+                    float: left;
+                }
+                .self .reference div {
+                    border-top-left-radius: 0;
+                    border-top-right-radius: 1em;
+                    float: right;
                 }
 
                 .timestamp {
                     font-size: 0.75em;
                 }
+
+                .message:hover .input-button { display: inline; }
+                .input-button {
+                    display: none;
+                    padding: 0;
+                    font-size: .85em;
+                    vertical-align: bottom;
+                    margin-right: .1em;
+                }
+                .input-button img {
+                    height: 1em;
+                    display: block;
+                }
             `}</style>
             <div class={`message ${this.self && 'self'}`}>
-                <div class="content">{this.content}</div>
+                {this.reference && 
+                    <a class="reference" on:click={() => {
+                        const el = document.getElementById(this.reference);
+                        el.scrollIntoView();
+                    }}>
+                        {contentIds[this.reference] ?? '<Not loaded>'}
+                        <div/>
+                    </a>}
+                <div class="content">
+                    {this.self ? null : this.content}
+                    <button
+                        class="input-button"
+                        on:click={() => {
+                            replyingText.hidden = false;
+                            cancelReply.hidden = false;
+                            repliedMessage = this.message;
+                        }}
+                    >
+                        <img src="/google-material/exit-chat.svg" title="Reply to message"/>
+                    </button>
+                    {this.self ? this.content : null}
+                </div>
                 <span class="timestamp">Sent {(() => {
                     const time = new Date(this.timestamp);
                     const delta = (Date.now() - time.getTime());
@@ -117,7 +175,11 @@
         const loadMore = document.getElementById('load-more');
         const deleteChat = document.getElementById('delete');
         const leaveChat = document.getElementById('leave');
+        const replyingText = document.getElementById('replying-text');
+        const cancelReply = document.getElementById('cancel-reply');
         const socket = new WebSocket('/chatbot');
+        const contentIds = [];
+        let repliedMessage = null;
         let targetSelected = false;
         let targetPage = 0;
         let searchPage = 0;
@@ -139,14 +201,15 @@
                 break;
             case 'deleted': leaveChat.onclick(); break;
             case 'newMessage':
+                contentIds[packet.id] = packet.content;
                 messages.prepend(<SingleMessage
                     self={packet.author === username}
+                    reference={packet.reference}
                     content={packet.content}
                     timestamp={packet.setAt}
+                    message={packet.id}
+                    id={packet.id}
                 />);
-                content.value = '';
-                content.readOnly = false;
-                send.disabled = false;
                 break;
             case 'history':
                 targetSelected = true;
@@ -156,12 +219,17 @@
                     messages.appendChild(loadMore);
                 }
                 loadMore.hidden = packet.final;
-                for (const message of packet.messages)
+                for (const message of packet.messages) {
+                    contentIds[message.id] = message.content;
                     messages.prepend(<SingleMessage
                         self={message.author === username}
+                        reference={message.reference}
                         content={message.content}
                         timestamp={message.setAt}
+                        message={message.id}
+                        id={message.id}
                     />);
+                }
                 break;
             }
         }
@@ -170,13 +238,16 @@
             send.onclick();
         }
         send.onclick = () => {
-            content.readOnly = true;
-            send.disabled = true;
-
             socket.send(JSON.stringify({
                 t: 'send',
-                content: content.value
+                content: content.value,
+                reference: repliedMessage
             }));
+
+            content.value = '';
+            repliedMessage = null;
+            replyingText.hidden = true;
+            cancelReply.hidden = true;
         }
         deleteChat.onclick = () => {
             if (!confirm('Are you sure you want to permanently erase this chat?')) return;
@@ -186,12 +257,17 @@
             if (!elevated) return window.close();
             socket.send(JSON.stringify({ t: 'targets', page: 0 }));
         }
-        loadMore.onclick = e => {
+        loadMore.onclick = () => {
             if (!targetSelected) {
                 socket.send(JSON.stringify({ t: 'targets', page: ++targetPage }));
                 return;
             }
             socket.send(JSON.stringify({ t: 'nextHistory', id: lastMessageId }));
+        }
+        cancelReply.onclick = () => {
+            repliedMessage = null;
+            replyingText.hidden = true;
+            cancelReply.hidden = true;
         }
     </script>
 </body>

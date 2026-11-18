@@ -36,7 +36,7 @@ module.exports = server => {
         const socket = await res.accept();
         if (!req.authorized || !await users.userExists(req.username)/* || !await users.canUse(req.username, 'chatbot') */) {
             console.log('ahhh they couldnt use it', req.authorized, req.username);
-            socket.send(JSON.stringify({ "t": "unauthorized" }));
+            socket.send('{ "t": "unauthorized" }');
             socket.close();
             return;
         }
@@ -113,6 +113,12 @@ module.exports = server => {
                     reference: packet.reference
                 });
                 connections.forEach(o => {
+                    if (o.elevated) {
+                        o.socket.send(JSON.stringify({
+                            t: 'notify',
+                            target: ident.target
+                        }));
+                    }
                     if (o.target !== ident.target) return;
                     o.socket.send(outgoing);
                 });
@@ -141,7 +147,7 @@ module.exports = server => {
                 await users.deleteTarget(ident.target);
                 connections.forEach(o => {
                     if (o.target !== ident.target) return;
-                    o.socket.send({ t: 'deleted' });
+                    o.socket.send('{ "t": "deleted" }');
                 });
                 break;
             }
