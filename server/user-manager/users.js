@@ -148,7 +148,7 @@ class UserManager {
     async updateProfile(id, keys) {
         const user = await this.profiles.findOne({ id });
         if (!user) return;
-        if ('username' in keys && !await this.usernameUsed(username))
+        if ('username' in keys && !await this.usernameUsed(keys.username))
             user.username = keys.username;
         if ('email' in keys) user.email = keys.email;
         if ('bio' in keys) user.bio = keys.bio;
