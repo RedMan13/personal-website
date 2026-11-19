@@ -5,7 +5,7 @@ self.addEventListener('activate', async () => {
 
     function connect() {
         console.log('Notification service connecting...');
-        const socket = new WebSocket('/chatbot');
+        const socket = new WebSocket('wss://godslayerakp.gay/chatbot');
         const inter = setInterval(() => socket.send('{"t":"ping"}'), 4000);
         socket.onclose = () => {
             clearInterval(inter);
