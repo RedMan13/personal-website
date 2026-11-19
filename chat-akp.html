@@ -288,7 +288,7 @@
             }
         }
         socket.onclose = () => {
-            alertLoading.style.display = 'revert';
+            alertLoading.style.display = 'inherit';
             alertLoading.innerHTML = '<span>Connection terminated...</span>'
         }
         content.onkeypress = e => {
