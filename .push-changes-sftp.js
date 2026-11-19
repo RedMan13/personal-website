@@ -77,6 +77,7 @@ if (localHashes['server/package.json'] !== remoteHashes['server/package.json']) 
     await sftp.rcopy(path.resolve(remoteRoot, './server/package.json'), path.resolve(remoteRoot, './package.json'));
     await sftp.exec(`cd '${remoteRoot.replace('\'', '\'\\\'\'')}' && npm i`);
 }
+await sftp.exec(`devil www restart godslayerakp.gay`);
 console.log('All opperations finished.');
 await sftp.end();
 
