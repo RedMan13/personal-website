@@ -45,6 +45,43 @@
         }
 
         .load-more { margin-bottom: .85em; }
+
+        .cover-all {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #00000044;
+
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .loader {
+            position: absolute;
+            overflow: hidden;
+            bottom: 50%;
+            border-bottom: .1em solid black;
+            animation: loading-line 3s infinite ease-in-out;
+        }
+        @keyframes loading-line {
+            0% {
+                left: 0;
+                width: 2em;
+                height: 0;
+            }
+            50% {
+                left: calc(50% - 2.5em);
+                width: 5em;
+                height: 2em;
+            }
+            100% {
+                left: 100%;
+                width: 2em;
+                height: 0;
+            }
+        }
     </style>
 </head>
 <body>
@@ -58,15 +95,18 @@
         </button>
 
         <input id="content" type="text" placeholder="Message the chatbot">
-        <button id="send" class="input-button">
+        <div><button id="send" class="input-button">
             <img src="/google-material/send-message.svg" title="Send message">
-        </button>
-        <button id="delete" class="input-button">
+        </button></div>
+        <div><button id="delete" class="input-button">
             <img src="/google-material/delete.svg" title="Delete chat">
-        </button>
-        <button id="leave" class="input-button">
+        </button></div>
+        <div><button id="leave" class="input-button">
             <img src="/google-material/exit-chat.svg" title="Leave chat">
-        </button>
+        </button></div>
+    </div>
+    <div class="cover-all" id="alerts-loading">
+        <div class="loader">Loading...</div>
     </div>
     <script file="jsx">
         const SingleMessage = <define
@@ -118,6 +158,7 @@
                     font-size: .85em;
                     vertical-align: bottom;
                     margin-right: .1em;
+                    margin-left: .1em;
                 }
                 .input-button img {
                     height: 1em;
@@ -177,6 +218,7 @@
         const leaveChat = document.getElementById('leave');
         const replyingText = document.getElementById('replying-text');
         const cancelReply = document.getElementById('cancel-reply');
+        const alertLoading = document.getElementById('alerts-loading');
         const socket = new WebSocket('/chatbot');
         const contentIds = [];
         let repliedMessage = null;
@@ -186,6 +228,7 @@
         let lastMessageId = null;
         let elevated = false;
 
+        socket.onopen = () => alertLoading.hidden = true;
         socket.onmessage = e => {
             const packet = JSON.parse(e.data);
             switch (packet.t) {
@@ -206,7 +249,10 @@
                 for (const target of packet.targets)
                     messages.prepend(<TargetEntry target={target}/>);
                 break;
-            case 'deleted': leaveChat.onclick(); break;
+            case 'deleted':
+                messages.innerHTML = '';
+                leaveChat.onclick();
+                break;
             case 'newMessage':
                 contentIds[packet.id] = packet.content;
                 messages.prepend(<SingleMessage
@@ -239,6 +285,10 @@
                 }
                 break;
             }
+        }
+        socket.onclose = () => {
+            alertLoading.hidden = false;
+            alertLoading.innerHTML = '<span>Connection terminated...</span>'
         }
         content.onkeypress = e => {
             if (e.key !== 'Enter') return;
