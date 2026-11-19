@@ -328,6 +328,9 @@
             cancelReply.hidden = true; 
         }
 
-        navigator.serviceWorker.register('/notification-service.js', { scope: location.pathname });
+        navigator.serviceWorker.register('/notification-service.js', { scope: location.pathname })
+            .then(worker => {
+                worker.active.onerror = console.error;
+            });
     </script>
 </body>
