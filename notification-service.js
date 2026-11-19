@@ -6,7 +6,11 @@ self.addEventListener('activate', async () => {
     function connect() {
         console.log('Notification service connecting...');
         const socket = new WebSocket('/chatbot');
-        socket.onclose = connect;
+        const inter = setInterval(() => socket.send('{"t":"ping"}'), 4000);
+        socket.onclose = () => {
+            clearInterval(inter);
+            connect();
+        }
         socket.onmessage = e => {
             const packet = JSON.parse(e.data);
             switch (packet.t) {
