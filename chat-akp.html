@@ -228,10 +228,11 @@
         let lastMessageId = null;
         let elevated = false;
 
-        socket.onopen = () => alertLoading.hidden = true;
+        socket.onopen = () => alertLoading.style.display = 'none';
         socket.onmessage = e => {
             const packet = JSON.parse(e.data);
             switch (packet.t) {
+            case 'unauthorized': open('/sign-in', '_self'); break;
             case 'targets': // first packet is targets, indicating the api expects us to select a target first
                 if (location.hash) {
                     socket.send(JSON.stringify({
@@ -287,7 +288,7 @@
             }
         }
         socket.onclose = () => {
-            alertLoading.hidden = false;
+            alertLoading.style.display = 'revert';
             alertLoading.innerHTML = '<span>Connection terminated...</span>'
         }
         content.onkeypress = e => {
@@ -327,6 +328,6 @@
             cancelReply.hidden = true; 
         }
 
-        navigator.serviceWorker.register('/notification-service.js')
+        navigator.serviceWorker.register('/notification-service.js');
     </script>
 </body>
