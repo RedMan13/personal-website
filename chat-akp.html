@@ -82,6 +82,23 @@
                 height: 0;
             }
         }
+        @keyframes slide-in {
+            from {
+                left: -100%;
+            }
+            to {
+                left: 0;
+            }
+        }
+        .el-evil-error-banner {
+            position: absolute;
+            display: inline-block;
+            width: 480px;
+            background-color: black;
+            color: white;
+            text-align: center;
+            animation: slide-in 1s 1 ease-out;
+        }
     </style>
 </head>
 <body>
@@ -289,7 +306,7 @@
         }
         socket.onclose = () => {
             alertLoading.style.display = 'inherit';
-            alertLoading.innerHTML = '<span>Connection terminated...</span>'
+            alertLoading.innerHTML = '<div class="el-evil-error-banner">Connection terminated...</div>'
         }
         setInterval(() => socket.send('{"t":"ping"}'), 4000);
 
