@@ -291,6 +291,8 @@
             alertLoading.style.display = 'inherit';
             alertLoading.innerHTML = '<span>Connection terminated...</span>'
         }
+        setInterval(() => socket.send('{"t":"ping"}'), 4000);
+
         content.onkeypress = e => {
             if (e.key !== 'Enter') return;
             send.onclick();
