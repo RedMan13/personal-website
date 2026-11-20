@@ -20,7 +20,10 @@ const UserAccess = new mongoose.Schema({
 const TokenList = new mongoose.Schema({
     id: String,
     token: String,
-    ip: String
+    created: {
+        type: Date,
+        expires: 400 * 24 * 60 * 60 * 1000
+    }
 });
 
 class UserManager {
@@ -54,7 +57,7 @@ class UserManager {
      * @param {string} password The users password string
      * @returns {Promise<string>} The token to use for this log in
      */
-    async getToken(ip, username, password) {
+    async getToken(username, password) {
         const user = await this.profiles.findOne({ username });
         if (!user) throw new Error('Bad password or username');
         if (user.banned) throw new Error('User is banned'); // can not log in to a banned account
@@ -70,7 +73,11 @@ class UserManager {
         if (numTokens > 5) await this.tokens.deleteOne({ id: user.id });
         
         const token = crypto.randomUUID(); // token just needs to be entirely unique
-        (await this.tokens.create({ token, ip, username, id: user.id })).save();
+        (await this.tokens.create({
+            token,
+            id: user.id,
+            created: new Date()
+        })).save();
         return token;
     }
     /**
@@ -79,8 +86,8 @@ class UserManager {
      * @param {string} ip The remote ip that triggered this query
      * @returns {Promise<string?>} The id from the token, or void if token/ip is invalid
      */
-    async checkToken(token, ip) {
-        const instance = await this.tokens.findOne({ token, ip });
+    async checkToken(token) {
+        const instance = await this.tokens.findOne({ token });
         return instance?.id;
     }
 

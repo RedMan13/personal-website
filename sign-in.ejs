@@ -6,7 +6,7 @@
         const hasSubmitted = !!req.body?.length;
         const token = hasSubmitted &&
             meta.get('username').length > 1 && 
-            await users.getToken(req.headers['x-real-ip'] || req.ip, meta.get('username').slice(0, 64), meta.get('password').slice(0, 64))
+            await users.getToken(meta.get('username').slice(0, 64), meta.get('password').slice(0, 64))
                 .catch(err => err);
         if (typeof token === 'string')
             res.header('Set-Cookie', `token=${escape(token)}; Secure; HttpOnly; Max-Age=${400 * 24 * 60 * 60}`);

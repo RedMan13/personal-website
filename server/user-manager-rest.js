@@ -8,7 +8,7 @@ const logs = path.resolve('../logs/error.log');
 module.exports = server => {
     server.use(async (req, res, next) => {
         const { token } = req.cookies;
-        const userId = await users.checkToken(token, req.headers['x-real-ip'] || req.ip);
+        const userId = await users.checkToken(token);
         if (userId) {
             res.header('Server-Timing', `authorized, id;desc=${userId}`);
             req.authorized = true;
