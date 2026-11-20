@@ -53,10 +53,11 @@ module.exports = server => {
         }
 
         const ident = {
-            target: `chatbot/${req.userId}`,
+            target: null,
             socket,
             elevated: await users.canUse(req.userId, 'acting-chatbot'),
-            username: req.userId
+            username: req.userId,
+            isNew: true
         }
         socket.onclose = () => {
             const idx = connections.indexOf(ident);
@@ -73,7 +74,9 @@ module.exports = server => {
                 start: true
             }));
         } else {
+            ident.target = `chatbot/${req.userId}`;
             const messages = await users.fetchMessages(ident.target, 40);
+            ident.isNew = !messages.length;
             socket.send(JSON.stringify({
                 t: 'history',
                 messages,
@@ -101,6 +104,17 @@ module.exports = server => {
                 case 'select': {
                     if (!ident.elevated) return;
                     ident.target = packet.selected;
+                    if (!ident.target) {
+                        const targets = await users.fetchTargets('chatbot/', packet.page);
+                        socket.send(JSON.stringify({
+                            t: 'targets',
+                            targets,
+                            final: targets.length < 20,
+                            start: true,
+                            nonce: packet.nonce
+                        }));
+                        return;
+                    }
                     ident.username = packet.selected.split('/')[1];
                     const messages = await users.fetchMessages(ident.target, 40);
                     socket.send(JSON.stringify({
@@ -125,16 +139,13 @@ module.exports = server => {
                     content: packet.content,
                     reference: packet.reference
                 });
-                const notification = JSON.stringify({
-                    t: 'notify',
-                    target: ident.target,
-                    content: packet.content
-                });
                 connections.forEach(o => {
-                    if (o.elevated || o.username === ident.username) o.socket.send(notification);
+                    if (ident.isNew && o.elevated && !o.target)
+                        o.socket.send(JSON.stringify({ t: 'newTarget', target: ident.target }));
                     if (o.target !== ident.target) return;
                     o.socket.send(outgoing);
                 });
+                if (ident.isNew) ident.isNew = false;
                 break;
             case 'nextHistory': {
                 const messages = await users.fetchMessages(ident.target, 40, packet.id);

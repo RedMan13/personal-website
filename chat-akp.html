@@ -264,8 +264,13 @@
                     elevated = true;
                 }
                 loadMore.hidden = packet.final;
+                if (packet.targets.length <= 0)
+                    messages.innerText = 'No more chats!';
                 for (const target of packet.targets)
                     messages.prepend(<TargetEntry target={target}/>);
+                break;
+            case 'newTarget':
+                messages.prepend(<TargetEntry target={packet.target}/>);
                 break;
             case 'deleted':
                 messages.innerHTML = '';
@@ -290,6 +295,8 @@
                     messages.appendChild(loadMore);
                 }
                 loadMore.hidden = packet.final;
+                if (packet.targets.length <= 0)
+                    messages.innerText = 'Send a message to get started.';
                 for (const message of packet.messages) {
                     contentIds[message.id] = message.content;
                     messages.prepend(<SingleMessage
@@ -332,7 +339,7 @@
         }
         leaveChat.onclick = () => {
             if (!elevated) return window.close();
-            socket.send(JSON.stringify({ t: 'targets', page: 0 }));
+            socket.send(JSON.stringify({ t: 'select', target: null }));
         }
         loadMore.onclick = () => {
             if (!targetSelected) {
