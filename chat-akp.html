@@ -274,6 +274,8 @@
                 break;
             case 'deleted':
                 messages.innerHTML = '';
+                alertLoading.style.display = 'inherit';
+                alertLoading.innerHTML = '<div class="el-evil-error-banner">Chat deleted.</div>';
                 leaveChat.onclick();
                 break;
             case 'newMessage':
@@ -313,7 +315,7 @@
         }
         socket.onclose = () => {
             alertLoading.style.display = 'inherit';
-            alertLoading.innerHTML = '<div class="el-evil-error-banner">Connection terminated.</div>'
+            alertLoading.innerHTML = '<div class="el-evil-error-banner">Connection terminated.</div>';
         }
         setInterval(() => socket.send('{"t":"ping"}'), 4000);
 
