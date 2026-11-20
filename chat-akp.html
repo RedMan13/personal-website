@@ -347,9 +347,10 @@
             cancelReply.hidden = true; 
         }
 
-        navigator.serviceWorker.register('/notification-service.js', { scope: location.pathname })
-            .then(worker => {
-                worker.active.onerror = console.error;
-            });
+        // because of the way serv00 works, i dont think this will work, even if i could figure out service workers
+        // navigator.serviceWorker.register('/notification-service.js', { scope: location.pathname })
+        //     .then(worker => {
+        //         worker.active.onerror = console.error;
+        //     });
     </script>
 </body>
