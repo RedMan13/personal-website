@@ -306,7 +306,7 @@
         }
         socket.onclose = () => {
             alertLoading.style.display = 'inherit';
-            alertLoading.innerHTML = '<div class="el-evil-error-banner">Connection terminated...</div>'
+            alertLoading.innerHTML = '<div class="el-evil-error-banner">Connection terminated.</div>'
         }
         setInterval(() => socket.send('{"t":"ping"}'), 4000);
 
