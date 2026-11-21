@@ -325,7 +325,7 @@
                     messages.appendChild(loadMore);
                 }
                 loadMore.hidden = packet.final;
-                if (packet.targets.length <= 0)
+                if (packet.messages.length <= 0)
                     messages.innerText = 'Send a message to get started.';
                 for (const message of packet.messages) {
                     contentIds[message.id] = message.content;
