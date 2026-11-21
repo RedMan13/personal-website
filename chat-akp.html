@@ -220,16 +220,14 @@
                         {contentIds[this.reference] ?? '<Not loaded>'}
                         <div/>
                     </a>}
-                <div class="content">
-                    {(() => {
-                        const content = <span/>;
-                        content.innerHTML = marked
-                            .use(markedFootnote())
-                            .parse(this.content);
-                        
-                        return content;
-                    })()}
-                </div>
+                {(() => {
+                    const content = <div class="content"/>;
+                    content.innerHTML = marked
+                        .use(markedFootnote())
+                        .parse(this.content);
+                    
+                    return content;
+                })()}
                 <span class="timestamp">Sent {(() => {
                     const time = new Date(this.timestamp);
                     const delta = (Date.now() - time.getTime());
