@@ -214,7 +214,7 @@
             <div
                 class={`message ${this.self && 'self'}`}
                 on:click={e => {
-                    if (this.contentDiv?.contains?.(e.target)) return;
+                    if (this.contentDiv?.contains?.(e.target) && e.target !== this.contentDiv) return;
                     replyingText.hidden = false;
                     cancelReply.hidden = false;
                     repliedMessage = this.message;
