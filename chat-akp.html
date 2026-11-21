@@ -38,6 +38,7 @@
             gap: .1em;
         }
         .text-box {
+            max-height: 10em;
             font-size: .85em;
             padding: .05em .11em;
             border: .05em solid grey;
@@ -158,12 +159,19 @@
                     flex-direction: column;
                     align-items: left;
                     margin-bottom: .85em;
+                    cursor: url('/google-material/exit-chat.svg'), auto
                 }
                 .message.self {
                     justify-self: right;
                     text-align: right;
                     align-items: right;
                 }
+
+                .content * {
+                    cursor: text;
+                    width: max-content;
+                }
+                p { margin: .2em; }
 
                 .reference {
                     font-size: 0.75em;
@@ -218,19 +226,8 @@
                         content.innerHTML = marked
                             .use(markedFootnote())
                             .parse(this.content);
-                        const reply = <button
-                                class="input-button"
-                                on:click={() => {
-                                    replyingText.hidden = false;
-                                    cancelReply.hidden = false;
-                                    repliedMessage = this.message;
-                                }}
-                            >
-                                <img src="/google-material/exit-chat.svg" title="Reply to message"/>
-                            </button>;
                         
-                        if (this.self) return [reply, content];
-                        return [content, reply];
+                        return content;
                     })()}
                 </div>
                 <span class="timestamp">Sent {(() => {
