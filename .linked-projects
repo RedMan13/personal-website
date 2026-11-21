@@ -1,4 +1,4 @@
 js-beautify/lib/beautifier.min.js   -> /beautifier.min.js
 jszip                               -> /jszip.min.js
 marked                              -> /marked.min.js
-marked-footnote                     -> /marked-footnote.min.js
+marked-footnote                     -> /footnotes.min.js
