@@ -211,7 +211,15 @@
                     display: block;
                 }
             `}</style>
-            <div class={`message ${this.self && 'self'}`}>
+            <div
+                class={`message ${this.self && 'self'}`}
+                on:click={e => {
+                    if (this.contentDiv?.contains?.(e.target)) return;
+                    replyingText.hidden = false;
+                    cancelReply.hidden = false;
+                    repliedMessage = this.message;
+                }}
+            >
                 {this.reference && 
                     <a class="reference" on:click={() => {
                         const el = document.getElementById(this.reference);
@@ -225,6 +233,7 @@
                     content.innerHTML = marked
                         .use(markedFootnote())
                         .parse(this.content);
+                    this.contentDiv = content;
                     
                     return content;
                 })()}
