@@ -165,7 +165,12 @@
                     align-items: right;
                 }
 
-                .reference { font-size: 0.75em; }
+                .reference {
+                    font-size: 0.75em;
+                    white-space: nowrap;
+                    text-overflow: ellipsis;
+                    max-width: 50%;
+                }
                 .reference div {
                     height: .5em;
                     width: 2em;
@@ -208,18 +213,25 @@
                         <div/>
                     </a>}
                 <div class="content">
-                    {this.self ? null : this.content}
-                    <button
-                        class="input-button"
-                        on:click={() => {
-                            replyingText.hidden = false;
-                            cancelReply.hidden = false;
-                            repliedMessage = this.message;
-                        }}
-                    >
-                        <img src="/google-material/exit-chat.svg" title="Reply to message"/>
-                    </button>
-                    {this.self ? this.content : null}
+                    {(() => {
+                        const content = <span/>;
+                        content.innerHTML = marked
+                            .use(markedFootnote())
+                            .parse(this.content);
+                        const reply = <button
+                                class="input-button"
+                                on:click={() => {
+                                    replyingText.hidden = false;
+                                    cancelReply.hidden = false;
+                                    repliedMessage = this.message;
+                                }}
+                            >
+                                <img src="/google-material/exit-chat.svg" title="Reply to message"/>
+                            </button>;
+                        
+                        if (this.self) return [reply, content];
+                        return [content, reply];
+                    })()}
                 </div>
                 <span class="timestamp">Sent {(() => {
                     const time = new Date(this.timestamp);

@@ -69,7 +69,13 @@ function parseTokens(tokens, util, enableJS = true) {
                 }
                 if (enableJS) {
                     if (util.file[i] === '{') {
-                        if (inside <= 0) children.push(['']);
+                        if (inside <= 0) {
+                            const atHtml = util.file.slice(i +1, i +6);
+                            const arr = [''];
+                            arr.html = atHtml === '@html';
+                            if (arr.html) i += 5;
+                            children.push(arr);
+                        }
                         inside++;
                         if (inside <= 1) continue;
                     }
