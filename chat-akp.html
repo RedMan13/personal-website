@@ -1,6 +1,9 @@
 <!TEMPLATE /cardpage.html>
 <head>
     <title>ChatAKP</title>
+
+    <script src="/marked.min.js"></script>
+    <script src="/marked-footnote.min.js"></script>
     <style>
         #main {
             height: 100%;
@@ -33,6 +36,19 @@
             grid-template-rows: max-content max-content;
             grid-template-columns: 1fr max-content max-content max-content;
             gap: .1em;
+        }
+        .text-box {
+            font-size: .85em;
+            padding: .05em .11em;
+            border: .05em solid grey;
+            border-radius: .11em;
+        }
+        .text-box:empty::before {
+            content: 'Message the chatbot';
+            width: 0;
+            color: grey;
+            display: inline-block;
+            white-space: nowrap;
         }
         .message-replying {
             grid-column: 1 / 4;
@@ -111,7 +127,7 @@
             <img src="/google-material/x-by-y.svg" title="Cancel reply">
         </button>
 
-        <input id="content" type="text" placeholder="Message the chatbot">
+        <div id="content" class="text-box" contenteditable></div>
         <div><button id="send" class="input-button">
             <img src="/google-material/send-message.svg" title="Send message">
         </button></div>
@@ -320,17 +336,17 @@
         setInterval(() => socket.send('{"t":"ping"}'), 4000);
 
         content.onkeypress = e => {
-            if (e.key !== 'Enter') return;
+            if (e.key !== 'Enter' || e.shiftKey) return;
             send.onclick();
         }
         send.onclick = () => {
             socket.send(JSON.stringify({
                 t: 'send',
-                content: content.value,
+                content: content.textContent,
                 reference: repliedMessage
             }));
 
-            content.value = '';
+            content.textContent = '';
             repliedMessage = null;
             replyingText.hidden = true;
             cancelReply.hidden = true;

@@ -1,0 +1,22 @@
+allowBuilds:
+  '@node-3d/deps-freeimage': true
+  '@node-3d/deps-opengl': true
+  '@node-3d/glfw': true
+  '@node-3d/image': true
+  '@node-3d/segfault': true
+  '@node-3d/uv-loop': true
+  '@node-3d/webgl': true
+  bluetooth-serial-port: true
+  canvas: true
+  cpu-features: true
+  deps-freeimage-raub: true
+  deps-opengl-raub: true
+  erlpack: true
+  glfw-raub: true
+  image-raub: true
+  node-bluetooth-serial-port: false
+  protobufjs: true
+  segfault-raub: true
+  ssh2: true
+  usb: true
+  webgl-raub: true
