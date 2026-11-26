@@ -141,7 +141,7 @@ module.exports = server => {
                 });
                 if (!ident.elevated && !connections.some(o => o.elevated && o.target === ident.target)) {
                     console.log('new message o algo')
-                    fetch('https://discord.com/api/v10/channels/860534367856099332/messages', {
+                    fetch('https://discord.com/api/v10/channels/1575352674113822730/messages', {
                         method: 'POST',
                         headers: {
                             'Authorization': `Bot ${process.env.botToken}`,
