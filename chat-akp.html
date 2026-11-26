@@ -167,11 +167,17 @@
                     align-items: right;
                 }
 
+                .content {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: left;
+                }
                 .content * {
                     cursor: text;
                     width: max-content;
                 }
                 p { margin: .2em; }
+                .self .content * { align-items: right; }
 
                 .reference {
                     font-size: 0.75em;
