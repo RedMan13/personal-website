@@ -139,6 +139,17 @@ module.exports = server => {
                     content: packet.content,
                     reference: packet.reference
                 });
+                if (!ident.elevated && !connections.some(o => o.target === ident.target)) {
+                    fetch('https://discord.com/api/v10/channels/860534367856099332/messages', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bot ${process.env.botToken}`,
+                            'User-Agent': `DiscordBot (https://godslayerakp.gay/discord-bot, v1)`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ content: `<@&1575352722050523290> new message at \`${ident.target}\`` })
+                    })
+                }
                 connections.forEach(o => {
                     if (ident.isNew && o.elevated && !o.target)
                         o.socket.send(JSON.stringify({ t: 'newTarget', target: ident.target }));
