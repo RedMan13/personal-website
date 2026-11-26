@@ -358,7 +358,8 @@
         setInterval(() => socket.send('{"t":"ping"}'), 4000);
 
         content.onkeypress = e => {
-            if (e.key !== 'Enter' || e.shiftKey) return;
+            if (e.key !== 'Enter' && !e.shiftKey) return;
+            e.preventDefault();
             send.onclick();
         }
         send.onclick = () => {
