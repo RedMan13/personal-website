@@ -365,11 +365,11 @@
         send.onclick = () => {
             socket.send(JSON.stringify({
                 t: 'send',
-                content: content.textContent,
+                content: content.innerText,
                 reference: repliedMessage
             }));
 
-            content.textContent = '';
+            content.innerText = '';
             repliedMessage = null;
             replyingText.hidden = true;
             cancelReply.hidden = true;
