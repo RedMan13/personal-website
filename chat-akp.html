@@ -299,14 +299,14 @@
                         selected: location.hash.slice(1)
                     }));
                     elevated = true;
-                    blockUser.hidden = false;
+                    // blockUser.hidden = false;
                     return;
                 }
                 if (packet.start) {
                     messages.innerHTML = '';
                     messages.appendChild(loadMore);
                     elevated = true;
-                    blockUser.hidden = false;
+                    // blockUser.hidden = false;
                 }
                 loadMore.hidden = packet.final;
                 if (packet.targets.length <= 0)
