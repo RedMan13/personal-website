@@ -139,7 +139,7 @@ module.exports = server => {
                     content: packet.content,
                     reference: packet.reference
                 });
-                if (!ident.elevated && !connections.some(o => o.target === ident.target)) {
+                if (!ident.elevated && !connections.some(o => o.elevated && o.target === ident.target)) {
                     fetch('https://discord.com/api/v10/channels/860534367856099332/messages', {
                         method: 'POST',
                         headers: {
