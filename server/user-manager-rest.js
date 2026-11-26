@@ -148,7 +148,7 @@ module.exports = server => {
                             'User-Agent': `DiscordBot (https://godslayerakp.gay/discord-bot, v1)`,
                             'Content-Type': 'application/json'
                         },
-                        body: JSON.stringify({ content: `<@&1575352722050523290> new message at \`${ident.target}\`` })
+                        body: JSON.stringify({ content: `<@&1575352722050523290> new message at [\`${ident.target}\`](<https://godslayerakp.gay/>)` })
                     })
                 }
                 connections.forEach(o => {
