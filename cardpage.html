@@ -738,7 +738,7 @@
             ctx.textBaseline = 'top';
             let y = -lastScroll;
             lastScroll = (((Math.round(scrollPos / 17) * 17) - lastScroll) * 0.2) + lastScroll;
-            for (const title in titles) {
+            for (const title of titles) {
                 const proximity = Math.min(Math.max(1- (Math.abs(y) / 17), 0), 1);
                 ctx.resetTransform();
                 ctx.scale(1, 0.85 ** (y / 25));
