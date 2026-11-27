@@ -743,7 +743,7 @@
                 ctx.resetTransform();
                 ctx.scale(1, 0.85 ** (y / 25));
                 ctx.font = `${(5 * proximity) + 15}px sans-serif`;
-                const text = title + ' : ' + titles[title];
+                const text = title + ' : ' + achievementIds[title];
                 const measuresTitle = ctx.measureText(title);
                 const measuresPlate = ctx.measureText(text);
                 const targetPos = proximity > 0.5 ? 0 : measuresPlate.width - measuresTitle.width;
